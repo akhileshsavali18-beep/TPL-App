@@ -3,7 +3,7 @@
 // ==========================================
 
 // ⚠️ ನಿಮ್ಮ Firebase Authentication Users ಟ್ಯಾಬ್‌ನಲ್ಲಿರುವ UID ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ:
-const AUTHORIZED_ADMIN_UID = VsGSj7MPsoXIwLbBKPey4rV4Oxg1
+const AUTHORIZED_ADMIN_UID = "VsGSj7MPsoXIwLbBKPey4rV4Oxg1";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCMFViBcyJVEawOZASTQ9qr2zDwIqhqKn8",
