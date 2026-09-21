@@ -176,24 +176,22 @@
       }
     });
 
-    async function handleLogin(e) {
+        async function handleLogin(e) {
       e.preventDefault();
-      const email = document.getElementById('adminEmail').value;
-      const pass = document.getElementById('adminPassword').value;
+      const email = document.getElementById('adminEmail').value.trim();
+      const pass = document.getElementById('adminPassword').value.trim();
       const errBox = document.getElementById('loginError');
       errBox.classList.add('hidden');
 
       try {
         await auth.signInWithEmailAndPassword(email, pass);
       } catch (err) {
+        alert("Firebase Error Code: " + err.code + "\nMessage: " + err.message);
         errBox.innerText = err.message;
         errBox.classList.remove('hidden');
       }
-    }
-
-    function handleLogout() {
-      auth.signOut();
-    }
+        }
+    
 
     function switchTab(tab) {
       const pTab = document.getElementById('tab-payouts');
