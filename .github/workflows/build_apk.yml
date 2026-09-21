@@ -45,14 +45,12 @@ jobs:
             cp temp_backup/google-services.json android/app/google-services.json
           fi
 
-          sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/' android/app/build.gradle || true
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/' android/app/build.gradle || true
-          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/' android/app/build.gradle || true
-          sed -i 's/minSdk [0-9]*/minSdk 21/' android/app/build.gradle || true
+          # Safe single replacement for minSdk
+          sed -i 's/flutter.minSdkVersion/21/g' android/app/build.gradle || true
 
+          # Google Services Gradle configuration
           sed -i '/plugins {/a \    id "com.google.gms.google-services" version "4.4.2" apply false' android/settings.gradle || true
           sed -i '/plugins {/a \    id "com.google.gms.google-services"' android/app/build.gradle || true
-          echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
 
       - name: Install Flutter Dependencies
         run: flutter pub get
