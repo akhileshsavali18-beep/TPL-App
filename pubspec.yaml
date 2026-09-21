@@ -16,7 +16,7 @@ dependencies:
   google_sign_in: ^6.2.1
   unity_ads_plugin: ^0.3.14
   http: ^1.2.0
-  share_plus: ^9.0.0
+  share_plus: ^10.0.2
 
 dev_dependencies:
   flutter_test:
