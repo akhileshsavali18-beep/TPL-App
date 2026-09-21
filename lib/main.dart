@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 
 // Screens import
 import 'screens/splash_login.dart';
@@ -20,6 +21,15 @@ void main() async {
   } catch (e) {
     debugPrint("Firebase initialization notice: $e");
   }
+
+  // Initialize Unity Ads
+  UnityAds.init(
+    gameId: '600377042', // Nimma Unity Game ID
+    testMode: true,      // Testing complete aada mele false madabahudu
+    onComplete: () => debugPrint('Unity Ads Initialization Complete'),
+    onFailed: (error, message) => debugPrint('Unity Ads Init Failed: $error $message'),
+  );
+
   runApp(const TPLApp());
 }
 
@@ -119,8 +129,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
-  // --- FIRESTORE DATABASE MUTATIONS ---
-
   Future<void> _updateCoinsInFirebase(int addCoins, String reason) async {
     if (currentUid == null) return;
     try {
@@ -175,13 +183,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     User? user = FirebaseAuth.instance.currentUser;
 
     try {
-      // 1. Deduct balance from user
       await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
         isTask ? 'taskCash' : 'referCash': FieldValue.increment(-amount),
         isTask ? 'hasTaskWithdrawnToday' : 'hasReferWithdrawnToday': true,
       });
 
-      // 2. Add request to Admin collection
       await FirebaseFirestore.instance.collection('withdrawals').add({
         'uid': currentUid,
         'userName': user?.displayName ?? 'TPL Player',
