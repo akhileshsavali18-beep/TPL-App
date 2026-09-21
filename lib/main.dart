@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 void main() {
@@ -10,7 +11,7 @@ class TPLApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'TPL - Task Premier League',
+      title: 'TPL',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -29,7 +30,7 @@ class TPLApp extends StatelessWidget {
 }
 
 // ----------------------------------------------------
-// 1. SPLASH SCREEN (Flow Router)
+// 1. SPLASH SCREEN
 // ----------------------------------------------------
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -39,7 +40,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  // Firebase ಜೋಡಿಸುವವರೆಗೆ ಮೊದಲ ಬಾರಿ ಲಾಗಿನ್ ಸ್ಕ್ರೀನ್ ಬರಲು false ಇಡಲಾಗಿದೆ
   final bool isLoggedIn = false;
 
   @override
@@ -47,17 +47,12 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
-        if (isLoggedIn) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => isLoggedIn ? const MainNavigationScreen() : const LoginScreen(),
+          ),
+        );
       }
     });
   }
@@ -70,39 +65,32 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.asset(
-                'assets/images/logo.png',
-                width: 160,
-                height: 160,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 130,
-                  height: 130,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E2235),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFF00FF87), width: 2),
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: const Color(0xFF151922),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF00FF87), width: 3),
+              ),
+              child: const Center(
+                child: Text(
+                  'TPL',
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                    color: Color(0xFF00FF87),
                   ),
-                  child: const Icon(Icons.bolt, size: 65, color: Color(0xFF00FF87)),
                 ),
               ),
             ),
             const Spacer(),
-            const Text(
-              'Powered by',
-              style: TextStyle(fontSize: 12, color: Colors.grey, letterSpacing: 1.2),
-            ),
+            const Text('Powered by', style: TextStyle(fontSize: 12, color: Colors.grey)),
             const SizedBox(height: 4),
             const Text(
               'A28 TECHNOLOGIES',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-                color: Colors.white,
-              ),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2),
             ),
             const SizedBox(height: 35),
           ],
@@ -113,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 // ----------------------------------------------------
-// 2. FIRST-TIME LOGIN & WELCOME SCREEN
+// 2. LOGIN SCREEN
 // ----------------------------------------------------
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -135,66 +123,30 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
-              // App Logo
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 90,
-                  height: 90,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E2235),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF00FF87), width: 1.5),
-                    ),
-                    child: const Icon(Icons.bolt, size: 40, color: Color(0xFF00FF87)),
-                  ),
+              const SizedBox(height: 30),
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF151922),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF00FF87), width: 2),
+                ),
+                child: const Center(
+                  child: Text('TPL', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF00FF87))),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'TASK PREMIER LEAGUE',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 1.5),
-              ),
+              const Text('TASK PREMIER LEAGUE', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
               const SizedBox(height: 6),
-              const Text(
-                'Play Tasks • Spin Wheels • Earn Real UPI Cash',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 30),
+              const Text('Play Tasks • Earn Real UPI Cash', style: TextStyle(fontSize: 13, color: Colors.grey)),
+              const SizedBox(height: 35),
 
-              // Feature Highlights Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF151922),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: Column(
-                  children: [
-                    _highlightRow(Icons.bolt, 'Instant UPI Withdrawal from ₹5', const Color(0xFF00FF87)),
-                    const SizedBox(height: 12),
-                    _highlightRow(Icons.sports_esports, '3 Daily Free Spins & Scratch Cards', const Color(0xFFFFD700)),
-                    const SizedBox(height: 12),
-                    _highlightRow(Icons.group, 'Invite Friends & Earn ₹5 per Referral', const Color(0xFF6C63FF)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Referral Code Toggle / Box
               if (!_hasReferralCode)
                 TextButton.icon(
                   onPressed: () => setState(() => _hasReferralCode = true),
                   icon: const Icon(Icons.card_giftcard, size: 18, color: Color(0xFF00FF87)),
-                  label: const Text('Have a Referral Code? Enter to get bonus', style: TextStyle(color: Color(0xFF00FF87), fontSize: 13)),
+                  label: const Text('Have an invite code? Enter here', style: TextStyle(color: Color(0xFF00FF87))),
                 )
               else
                 Container(
@@ -208,7 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _referralController,
                     textCapitalization: TextCapitalization.characters,
                     decoration: InputDecoration(
-                      hintText: 'Enter Invite Code (e.g. TPL8821)',
+                      hintText: 'Enter Referral Code',
                       hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
                       border: InputBorder.none,
                       suffixIcon: IconButton(
@@ -218,15 +170,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 25),
 
-              // Google Sign-In Button
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Firebase login will be linked here
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
@@ -235,34 +185,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.g_mobiledata, color: Colors.red, size: 30),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Continue with Google',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
+                      Icon(Icons.g_mobiledata, color: Colors.red, size: 30),
+                      SizedBox(width: 8),
+                      Text('Continue with Google', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'By signing in, you agree to our Terms & Privacy Policy',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -270,20 +203,10 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  Widget _highlightRow(IconData icon, String text, Color color) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 12),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-      ],
-    );
-  }
 }
 
 // ----------------------------------------------------
-// 3. MAIN NAVIGATION CONTAINER (Tabs)
+// 3. MAIN CONTAINER (5 TABS & WORKING DRAWER)
 // ----------------------------------------------------
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -293,14 +216,14 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentIndex = 0;
 
+  // Global Reactive States
   int coins = 12450;
   double taskCash = 100.00;
   double referCash = 15.00;
-  int taskWithdrawCount = 0;
-  int referWithdrawCount = 0;
-  int totalInvitedFriends = 3;
+  String? savedUpiId = "akhilesh@okhdfcbank"; // Saved UPI demo state
 
   bool hasConvertedToday = false;
   bool hasTaskWithdrawnToday = false;
@@ -308,11 +231,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   int spinsLeft = 3;
   int scratchLeft = 2;
+  bool streakClaimedToday = false;
 
   final List<String> coinHistory = [
     '+50 Coins - Daily Streak Day 1',
     '+25 Coins - Spin & Win Reward',
-    '+1200 Coins - Monlix App Offer',
+    '+1200 Coins - Notik Game Offer',
     '-1000 Coins - Converted to ₹10 Cash',
   ];
 
@@ -327,10 +251,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     '+₹5.00 - Friend Praveen Joined',
   ];
 
+  final List<Map<String, String>> invitedFriends = [
+    {'name': 'Suresh K', 'id': 'TPL#4102', 'reward': '₹5.00', 'status': 'Completed'},
+    {'name': 'Ramesh P', 'id': 'TPL#8891', 'reward': '₹5.00', 'status': 'Completed'},
+    {'name': 'Praveen M', 'id': 'TPL#2201', 'reward': '₹5.00', 'status': 'Completed'},
+    {'name': 'Vinay B', 'id': 'TPL#9012', 'reward': '₹0.00', 'status': 'Pending (Need 1 Task)'},
+  ];
+
   void switchTab(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    setState(() => _currentIndex = index);
   }
 
   @override
@@ -338,13 +267,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screens = [
       HomeScreen(
         coins: coins,
-        onClaimStreak: (amount) {
+        onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        onOpenWallet: () => switchTab(4),
+        streakClaimed: streakClaimedToday,
+        onClaimStreak: () {
           setState(() {
-            coins += amount;
-            coinHistory.insert(0, '+$amount Coins - Daily Streak Claimed');
+            coins += 20;
+            streakClaimedToday = true;
+            coinHistory.insert(0, '+20 Coins - Daily Streak Claimed');
           });
         },
-        onOpenWallet: () => switchTab(3),
+        onTaskClick: (taskName, coinReward) {
+          switchTab(1); // Redirect to Tasks tab
+        },
+      ),
+      TasksTabScreen(
+        onCompleteTask: (name, reward) {
+          setState(() {
+            coins += reward;
+            coinHistory.insert(0, '+$reward Coins - Completed $name');
+          });
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Task Finished: +$reward Coins!')));
+        },
       ),
       GamesScreen(
         spinsLeft: spinsLeft,
@@ -366,52 +310,53 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       ReferScreen(
         referCash: referCash,
-        invitedCount: totalInvitedFriends,
-        onNavigateToWallet: () => switchTab(3),
+        invitedFriends: invitedFriends,
+        onNavigateToWallet: () => switchTab(4),
       ),
       WalletScreen(
         coins: coins,
         taskCash: taskCash,
         referCash: referCash,
-        taskWithdrawCount: taskWithdrawCount,
-        referWithdrawCount: referWithdrawCount,
-        totalInvited: totalInvitedFriends,
+        savedUpiId: savedUpiId,
         hasConvertedToday: hasConvertedToday,
         hasTaskWithdrawnToday: hasTaskWithdrawnToday,
         hasReferWithdrawnToday: hasReferWithdrawnToday,
         coinHistory: coinHistory,
         cashHistory: cashHistory,
         referHistory: referHistory,
-        onConvert: (int enteredCoins) {
+        onSaveUpi: (newUpi) {
+          setState(() => savedUpiId = newUpi);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('UPI ID Saved Successfully!')));
+        },
+        onConvertCoins: (int enteredCoins) {
           double convertedRupees = enteredCoins / 100.0;
           setState(() {
             coins -= enteredCoins;
             taskCash += convertedRupees;
             hasConvertedToday = true;
-            coinHistory.insert(0, '-$enteredCoins Coins - Converted to Cash');
+            coinHistory.insert(0, '-$enteredCoins Coins - Converted to ₹${convertedRupees.toStringAsFixed(2)}');
             cashHistory.insert(0, '+₹${convertedRupees.toStringAsFixed(2)} - Converted from Coins');
           });
         },
-        onTaskWithdraw: (double amount) {
+        onWithdrawTaskCash: (double amount) {
           setState(() {
             taskCash -= amount;
-            taskWithdrawCount++;
             hasTaskWithdrawnToday = true;
-            cashHistory.insert(0, '-₹${amount.toStringAsFixed(2)} - Task Cash Withdrawn');
+            cashHistory.insert(0, '-₹${amount.toStringAsFixed(2)} - UPI Paid to $savedUpiId');
           });
         },
-        onReferWithdraw: (double amount) {
+        onWithdrawReferCash: (double amount) {
           setState(() {
             referCash -= amount;
-            referWithdrawCount++;
             hasReferWithdrawnToday = true;
-            referHistory.insert(0, '-₹${amount.toStringAsFixed(2)} - Referral Cash Withdrawn');
+            referHistory.insert(0, '-₹${amount.toStringAsFixed(2)} - UPI Paid to $savedUpiId');
           });
         },
       ),
     ];
 
     return Scaffold(
+      key: _scaffoldKey,
       drawer: const SideProfileDrawer(),
       body: screens[_currentIndex],
       bottomNavigationBar: Container(
@@ -428,6 +373,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home, color: Color(0xFF00FF87)),
               label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.assignment_outlined),
+              selectedIcon: Icon(Icons.assignment, color: Color(0xFF00FF87)),
+              label: 'Tasks',
             ),
             NavigationDestination(
               icon: Icon(Icons.sports_esports_outlined),
@@ -452,7 +402,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 }
 
 // ----------------------------------------------------
-// 4. SIDE PROFILE DRAWER (With Working Logout to Test)
+// 4. SIDE PROFILE DRAWER
 // ----------------------------------------------------
 class SideProfileDrawer extends StatelessWidget {
   const SideProfileDrawer({super.key});
@@ -471,64 +421,40 @@ class SideProfileDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const CircleAvatar(
-                  radius: 34,
+                  radius: 32,
                   backgroundColor: Color(0xFF6C63FF),
-                  child: Icon(Icons.person, size: 40, color: Colors.white),
+                  child: Icon(Icons.person, size: 38, color: Colors.white),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Akhilesh Savale',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  'akhilesh@gmail.com',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 10),
+                const Text('Akhilesh Savale', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('akhilesh@gmail.com', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0B0E14),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('TPL ID: #88219', style: TextStyle(fontSize: 12, color: Color(0xFF00FF87))),
-                      SizedBox(width: 8),
-                      Icon(Icons.copy, size: 14, color: Colors.grey),
-                    ],
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFF0B0E14), borderRadius: BorderRadius.circular(6)),
+                  child: const Text('TPL ID: #88219', style: TextStyle(fontSize: 12, color: Color(0xFF00FF87))),
                 ),
               ],
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.verified_user_outlined, color: Colors.white70),
-            title: const Text('Account Verification'),
-            subtitle: const Text('Verified Member', style: TextStyle(fontSize: 12, color: Color(0xFF00FF87))),
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
             leading: const Icon(Icons.telegram, color: Color(0xFF29B6F6)),
-            title: const Text('Telegram Support Bot'),
-            subtitle: const Text('Get instant help & proofs', style: TextStyle(fontSize: 12)),
+            title: const Text('Join Telegram Channel'),
             onTap: () => Navigator.pop(context),
           ),
           ListTile(
-            leading: const Icon(Icons.chat, color: Color(0xFF25D366)),
-            title: const Text('WhatsApp Helpline'),
+            leading: const Icon(Icons.camera_alt, color: Color(0xFFE1306C)),
+            title: const Text('Follow Instagram'),
+            onTap: () => Navigator.pop(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.play_circle_fill, color: Color(0xFFFF0000)),
+            title: const Text('Subscribe YouTube'),
             onTap: () => Navigator.pop(context),
           ),
           ListTile(
             leading: const Icon(Icons.help_outline, color: Colors.white70),
-            title: const Text('How to Earn (Guide)'),
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined, color: Colors.white70),
-            title: const Text('Privacy Policy'),
+            title: const Text('FAQs & Payment Proofs'),
             onTap: () => Navigator.pop(context),
           ),
           const Divider(color: Colors.white12),
@@ -537,18 +463,8 @@ class SideProfileDrawer extends StatelessWidget {
             title: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
             },
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'TPL v1.0.0 • Powered by A28 Technologies',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
           ),
         ],
       ),
@@ -557,43 +473,98 @@ class SideProfileDrawer extends StatelessWidget {
 }
 
 // ----------------------------------------------------
-// 5. HOME SCREEN
+// 5. TAB 1: HOME SCREEN (Hero Slider, Compact Streak, Tasks)
 // ----------------------------------------------------
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final int coins;
-  final Function(int) onClaimStreak;
+  final VoidCallback onOpenDrawer;
   final VoidCallback onOpenWallet;
+  final bool streakClaimed;
+  final VoidCallback onClaimStreak;
+  final Function(String, int) onTaskClick;
 
   const HomeScreen({
     super.key,
     required this.coins,
-    required this.onClaimStreak,
+    required this.onOpenDrawer,
     required this.onOpenWallet,
+    required this.streakClaimed,
+    required this.onClaimStreak,
+    required this.onTaskClick,
   });
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final PageController _bannerController = PageController();
+  int _currentBannerIndex = 0;
+
+  final List<Map<String, dynamic>> banners = [
+    {
+      'title': '🔥 Notik Super Offerwall',
+      'desc': 'Play Popular Games & Earn up to ₹500',
+      'color': const Color(0xFF6C63FF),
+      'tag': 'TOP OFFER'
+    },
+    {
+      'title': '⚡ EarnKaro App Deals',
+      'desc': 'Install Meesho & Kotak 811 to get ₹45 Cash',
+      'color': const Color(0xFFFF6584),
+      'tag': 'HIGH PAY'
+    },
+    {
+      'title': '📱 Official Telegram Channel',
+      'desc': 'Join for Daily Giveaway Codes & Instant 100 Coins',
+      'color': const Color(0xFF0088CC),
+      'tag': 'FREE BONUS'
+    },
+    {
+      'title': '📸 Follow us on Instagram',
+      'desc': 'Watch Payment Proofs & Earn 50 Coins',
+      'color': const Color(0xFFE1306C),
+      'tag': 'SOCIAL'
+    },
+    {
+      'title': '👥 Invite & Earn Big',
+      'desc': 'Get ₹5 Instant Cash on Every Friend Join',
+      'color': const Color(0xFF00FF87),
+      'tag': 'REFERRAL'
+    },
+    {
+      'title': '🎯 Spin & Win Real Cash',
+      'desc': '3 Free Daily Spins are Waiting for You!',
+      'color': const Color(0xFFFFD700),
+      'tag': 'GAMES'
+    },
+  ];
+
+  @override
   Widget build(BuildContext context) {
+    double rupees = widget.coins / 100.0;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const CircleAvatar(
-              radius: 17,
-              backgroundColor: Color(0xFF1E2235),
-              child: Icon(Icons.person, color: Colors.white, size: 20),
-            ),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+        leading: IconButton(
+          icon: const CircleAvatar(
+            radius: 17,
+            backgroundColor: Color(0xFF1E2235),
+            child: Icon(Icons.person, color: Colors.white, size: 20),
           ),
+          onPressed: widget.onOpenDrawer,
         ),
+        // Item 4: Only "TPL"
         title: const Text(
-          'TPL PREMIER',
-          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 18),
+          'TPL',
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 22, color: Color(0xFF00FF87)),
         ),
         actions: [
+          // Item 5: Coins + Rupees (₹)
           GestureDetector(
-            onTap: onOpenWallet,
+            onTap: widget.onOpenWallet,
             child: Container(
               margin: const EdgeInsets.only(right: 16),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -603,10 +574,20 @@ class HomeScreen extends StatelessWidget {
                 border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.5)),
               ),
               child: Row(
-                children: [
+              children: [
                   const Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 18),
-                  const SizedBox(width: 6),
-                  Text('$coins', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 5),
+                  Text('${widget.coins}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  Container(
+                    height: 14,
+                    width: 1,
+                    color: Colors.white24,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  Text(
+                    '₹${rupees.toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00FF87), fontSize: 13),
+                  ),
                 ],
               ),
             ),
@@ -618,101 +599,101 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Live Payout Ticker
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF151922),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white10),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.bolt, color: Color(0xFF00FF87), size: 16),
-                  SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Live: User 98****12 just withdrew ₹50 via UPI • Instant',
-                      style: TextStyle(fontSize: 12, color: Colors.white70),
-                      overflow: TextOverflow.ellipsis,
+            // Item 6: Chillar-like Hero Carousel (6 Slides)
+            SizedBox(
+              height: 140,
+              child: PageView.builder(
+                controller: _bannerController,
+                itemCount: banners.length,
+                onPageChanged: (i) => setState(() => _currentBannerIndex = i),
+                itemBuilder: (context, index) {
+                  final b = banners[index];
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [b['color'].withOpacity(0.85), const Color(0xFF151922)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white12),
                     ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black45,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(b['tag'], style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(b['title'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text(b['desc'], style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Dots Indicator
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                banners.length,
+                (i) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: _currentBannerIndex == i ? 16 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: _currentBannerIndex == i ? const Color(0xFF00FF87) : Colors.white24,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 18),
 
-            // 7-Day Login Streak Card
+            // Item 2: Compact Chillar-style Daily Streak
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF261C52), Color(0xFF16192E)],
-                ),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.3)),
+                color: const Color(0xFF151922),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white10),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '🔥 7-Day Login Streak',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      Text('Day 1 Active', style: TextStyle(color: Color(0xFF00FF87), fontSize: 12)),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: List.generate(7, (index) {
-                        int dayNumber = index + 1;
-                        int reward = dayNumber == 7 ? 250 : (dayNumber * 10);
-                        bool isCurrent = dayNumber == 1;
-
-                        return Container(
-                          margin: const EdgeInsets.only(right: 10),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isCurrent ? const Color(0xFF00FF87).withOpacity(0.2) : const Color(0xFF121522),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isCurrent ? const Color(0xFF00FF87) : Colors.white12,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Text('Day $dayNumber', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                              const SizedBox(height: 6),
-                              const Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 20),
-                              const SizedBox(height: 4),
-                              Text('+$reward', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        );
-                      }),
+                  const Icon(Icons.card_giftcard, color: Color(0xFFFFD700), size: 26),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Daily Check-in (Day 1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text('Claim 20 Coins daily bonus', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        onClaimStreak(10);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Day 1: +10 Coins Added!')),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00FF87),
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('CLAIM TODAY (10 COINS)', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ElevatedButton(
+                    onPressed: widget.streakClaimed ? null : widget.onClaimStreak,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00FF87),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(
+                      widget.streakClaimed ? 'CLAIMED' : 'CLAIM +20',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   )
                 ],
@@ -720,92 +701,284 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 22),
 
-            // Offerwall Cards
-            const Text('Super Offerwalls', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
+            // Item 7: Dual Earning Section (Notik + EarnKaro)
+            const Text('Super Earning Walls', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1F2C),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFFF6584).withOpacity(0.4)),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('🔥 MONLIX', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF6584))),
-                        SizedBox(height: 4),
-                        Text('High Pay Tasks', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                        Text('Earn ₹10 - ₹500', style: TextStyle(fontSize: 11, color: Color(0xFF00FF87))),
-                      ],
-                    ),
+                  child: _cardWall(
+                    title: '🎮 Notik Wall',
+                    subtitle: 'Games & Surveys',
+                    payout: 'Earn ₹10 - ₹200',
+                    color: const Color(0xFF6C63FF),
+                    onTap: () => widget.onTaskClick('Notik Wall', 500),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1F2C),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.4)),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('⚡ CPALEAD', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6C63FF))),
-                        SizedBox(height: 4),
-                        Text('Fast Installs', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                        Text('Instant Credits', style: TextStyle(fontSize: 11, color: Color(0xFF00FF87))),
-                      ],
-                    ),
+                  child: _cardWall(
+                    title: '⚡ EarnKaro Hub',
+                    subtitle: 'Meesho & Finance',
+                    payout: 'Earn ₹25 - ₹100',
+                    color: const Color(0xFFFF6584),
+                    onTap: () => widget.onTaskClick('EarnKaro Hub', 1000),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
 
-            // Direct Tasks
-            const Text('Premier Daily Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _taskItem('Join Official Telegram', '+100 Coins (₹1.00)', Icons.send, const Color(0xFF0088CC)),
-            _taskItem('Subscribe A28 YouTube', '+100 Coins (₹1.00)', Icons.play_arrow, const Color(0xFFFF0000)),
-            _taskItem('Install Meesho & Register', '+1200 Coins (₹12.00)', Icons.shopping_bag, const Color(0xFF9C27B0)),
+            // Item 7: Social Channels Section
+            const Text('Official Channels & Social Tasks', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            _taskTile(
+              title: 'Join Official Telegram',
+              desc: 'Get live redeem codes & proof',
+              reward: '+100 Coins (₹1.00)',
+              icon: Icons.send,
+              color: const Color(0xFF0088CC),
+              onTap: () => widget.onTaskClick('Join Telegram', 100),
+            ),
+            _taskTile(
+              title: 'Subscribe A28 YouTube',
+              desc: 'Watch tutorials & app updates',
+              reward: '+100 Coins (₹1.00)',
+              icon: Icons.play_arrow,
+              color: const Color(0xFFFF0000),
+              onTap: () => widget.onTaskClick('Subscribe YouTube', 100),
+            ),
+            _taskTile(
+              title: 'Follow on Instagram',
+              desc: 'Follow for daily contest alerts',
+              reward: '+50 Coins (₹0.50)',
+              icon: Icons.camera_alt,
+              color: const Color(0xFFE1306C),
+              onTap: () => widget.onTaskClick('Follow Instagram', 50),
+            ),
           ],
         ),
       ),
     );
   }
-Widget _taskItem(String title, String reward, IconData icon, Color bg) {
+  Widget _cardWall({
+    required String title,
+    required String subtitle,
+    required String payout,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF151922),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.4)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: color)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+            const SizedBox(height: 2),
+            Text(payout, style: const TextStyle(fontSize: 11, color: Color(0xFF00FF87), fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _taskTile({
+    required String title,
+    required String desc,
+    required String reward,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151922),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withOpacity(0.2),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        subtitle: Text(desc, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(reward, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF00FF87))),
+            const SizedBox(height: 2),
+            const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+          ],
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+// ----------------------------------------------------
+// 6. TAB 2: TASKS SCREEN (Item 8: Ongoing, Completed, Expired)
+// ----------------------------------------------------
+class TasksTabScreen extends StatelessWidget {
+  final Function(String, int) onCompleteTask;
+
+  const TasksTabScreen({super.key, required this.onCompleteTask});
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Task Central', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.transparent,
+          bottom: const TabBar(
+            indicatorColor: Color(0xFF00FF87),
+            labelColor: Color(0xFF00FF87),
+            unselectedLabelColor: Colors.grey,
+            tabs: [
+              Tab(text: 'Ongoing'),
+              Tab(text: 'Completed'),
+              Tab(text: 'Expired'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            // Ongoing Tasks
+            ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _ongoingItem(context, 'Install Meesho & Register (EarnKaro)', '+1200 Coins (₹12)', 1200),
+                _ongoingItem(context, 'Play Lords Mobile 5 mins (Notik)', '+450 Coins (₹4.5)', 450),
+                _ongoingItem(context, 'Kotak 811 Account Open (EarnKaro)', '+3500 Coins (₹35)', 3500),
+              ],
+            ),
+            // Completed Tasks
+            ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _completedItem('Join Official Telegram', '+100 Coins', 'Verified'),
+                _completedItem('Daily Streak Day 1', '+20 Coins', 'Claimed'),
+                _completedItem('Welcome Bonus', '+50 Coins', 'Claimed'),
+              ],
+            ),
+            // Expired Tasks
+            ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _expiredItem('Weekend Special Cricket Survey', 'Expired 2 days ago'),
+                _expiredItem('Ludo Supreme 10-min Trial', 'Offer Limit Reached'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _ongoingItem(BuildContext context, String title, String reward, int coinValue) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFF151922),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: bg.withOpacity(0.2),
-            child: Icon(icon, color: bg, size: 20),
+          const CircleAvatar(
+            backgroundColor: Color(0xFF261C52),
+            child: Icon(Icons.bolt, color: Color(0xFF00FF87)),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                const SizedBox(height: 2),
-                Text(reward, style: const TextStyle(color: Color(0xFF00FF87), fontSize: 12)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(reward, style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11)),
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+          ElevatedButton(
+            onPressed: () => onCompleteTask(title, coinValue),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00FF87),
+              foregroundColor: Colors.black,
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            child: const Text('Complete', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _completedItem(String title, String reward, String status) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151922),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, color: Color(0xFF00FF87)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(reward, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+              ],
+            ),
+          ),
+          Text(status, style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _expiredItem(String title, String reason) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151922),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.history, color: Colors.grey),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.white60, fontSize: 13)),
+                Text(reason, style: const TextStyle(color: Colors.redAccent, fontSize: 11)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -813,9 +986,9 @@ Widget _taskItem(String title, String reward, IconData icon, Color bg) {
 }
 
 // ----------------------------------------------------
-// 6. GAMES SCREEN (3 Spins & Scratch)
+// 7. TAB 3: GAMES SCREEN (Item 9: Upgraded Wheel & Scratch)
 // ----------------------------------------------------
-class GamesScreen extends StatelessWidget {
+class GamesScreen extends StatefulWidget {
   final int spinsLeft;
   final int scratchLeft;
   final Function(int) onSpinWin;
@@ -830,6 +1003,67 @@ class GamesScreen extends StatelessWidget {
   });
 
   @override
+  State<GamesScreen> createState() => _GamesScreenState();
+}
+
+class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _spinController;
+  late Animation<double> _spinAnimation;
+  double _currentAngle = 0;
+  bool _isSpinning = false;
+  bool _scratchRevealed = false;
+
+  final List<int> sliceRewards = [10, 50, 25, 100, 15, 200];
+
+  @override
+  void initState() {
+    super.initState();
+    _spinController = AnimationController(vsync: this, duration: const Duration(seconds: 3));
+  }
+
+  @override
+  void dispose() {
+    _spinController.dispose();
+    super.dispose();
+  }
+
+  void _spinWheel() {
+    if (widget.spinsLeft <= 0 || _isSpinning) return;
+
+    setState(() => _isSpinning = true);
+    final random = math.Random();
+    int chosenIndex = random.nextInt(sliceRewards.length);
+    double targetAngle = _currentAngle + (math.pi * 2 * 5) + (chosenIndex * (math.pi * 2 / sliceRewards.length));
+
+    _spinAnimation = Tween<double>(begin: _currentAngle, end: targetAngle).animate(
+      CurvedAnimation(parent: _spinController, curve: Curves.decelerate),
+    )..addListener(() {
+        setState(() {});
+      });
+
+    _spinController.forward(from: 0).then((_) {
+      _currentAngle = targetAngle % (math.pi * 2);
+      int wonCoins = sliceRewards[chosenIndex];
+      widget.onSpinWin(wonCoins);
+      setState(() => _isSpinning = false);
+
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          backgroundColor: const Color(0xFF151922),
+          title: const Text('🎉 Congratulations!'),
+          content: Text('You won $wonCoins Coins from Spin & Win!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('Claim to Wallet', style: TextStyle(color: Color(0xFF00FF87))),
+            )
+          ],
+        ),
+      );
+    });
+  }
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -840,6 +1074,7 @@ class GamesScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Spins & Scratch counter
             Row(
               children: [
                 Expanded(
@@ -853,9 +1088,9 @@ class GamesScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.refresh, color: Color(0xFF00FF87)),
-                        const SizedBox(width: 8),
-                        Text('Spins Left: $spinsLeft / 3', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const Icon(Icons.refresh, color: Color(0xFF00FF87), size: 18),
+                        const SizedBox(width: 6),
+                        Text('Spins: ${widget.spinsLeft} / 3', style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -872,9 +1107,9 @@ class GamesScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.card_giftcard, color: Color(0xFFFFD700)),
-                        const SizedBox(width: 8),
-                        Text('Scratch: $scratchLeft / 2', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const Icon(Icons.card_giftcard, color: Color(0xFFFFD700), size: 18),
+                        const SizedBox(width: 6),
+                        Text('Cards: ${widget.scratchLeft} / 2', style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -883,6 +1118,7 @@ class GamesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
+            // Realistic Spin Wheel Container
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -892,62 +1128,52 @@ class GamesScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Text('Spin & Win Real Coins', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text('Win up to 200 Coins in every spin!', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const Text('Lucky Spin Wheel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  const Text('Spin & win up to 200 Coins', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 20),
+
+                  // Wheel Stack with Pointer
                   Stack(
-                    alignment: Alignment.center,
+                    alignment: Alignment.topCenter,
                     children: [
-                      Container(
-                        width: 190,
-                        height: 190,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF00FF87), width: 4),
-                          gradient: const SweepGradient(
-                            colors: [
-                              Color(0xFF6C63FF),
-                              Color(0xFF261C52),
-                              Color(0xFF00FF87),
-                              Color(0xFFFFD700),
-                              Color(0xFF6C63FF),
-                            ],
+                      Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: Transform.rotate(
+                          angle: _isSpinning ? _spinAnimation.value : _currentAngle,
+                          child: CustomPaint(
+                            size: const Size(200, 200),
+                            painter: WheelPainter(sliceRewards),
                           ),
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: spinsLeft > 0
-                            ? () {
-                                onSpinWin(50);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('🎉 You won 50 Coins!')),
-                                );
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          shape: const CircleBorder(),
-                          padding: const EdgeInsets.all(22),
-                          backgroundColor: const Color(0xFF0B0E14),
-                        ),
-                        child: Text(
-                          spinsLeft > 0 ? 'SPIN' : 'LIMIT',
-                          style: TextStyle(
-                            color: spinsLeft > 0 ? const Color(0xFF00FF87) : Colors.grey,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      // Pointer Arrow
+                      const Icon(Icons.arrow_drop_down, size: 36, color: Colors.white),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  if (spinsLeft == 0)
-                    const Text('Watch Video Ad to unlock extra spins (Coming Soon)', style: TextStyle(fontSize: 12, color: Colors.orange)),
+                  SizedBox(
+                    width: 160,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: (_isSpinning || widget.spinsLeft <= 0) ? null : _spinWheel,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00FF87),
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                      ),
+                      child: Text(
+                        _isSpinning ? 'SPINNING...' : (widget.spinsLeft > 0 ? 'SPIN NOW' : 'DAILY LIMIT OVER'),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
+            // Interactive Golden Scratch Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -955,44 +1181,50 @@ class GamesScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white12),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF261C52),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFFD700)),
+                  const Text('Golden Scratch & Win', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 4),
+                  const Text('Tap or scratch to reveal your mystery coins', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 14),
+                  GestureDetector(
+                    onTap: () {
+                      if (widget.scratchLeft > 0 && !_scratchRevealed) {
+                        setState(() => _scratchRevealed = true);
+                        widget.onScratchWin(45);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('🎉 Wow! You revealed 45 Coins!')),
+                        );
+                      }
+                    },
+                    child: Container(
+                      height: 100,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: _scratchRevealed
+                            ? const LinearGradient(colors: [Color(0xFF261C52), Color(0xFF151922)])
+                            : const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFA000)]),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFD700)),
+                      ),
+                      child: Center(
+                        child: _scratchRevealed
+                            ? const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 32),
+                                  SizedBox(height: 4),
+                                  Text('+45 COINS REVEALED!', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00FF87))),
+                                ],
+                              )
+                            : Text(
+                                widget.scratchLeft > 0 ? 'TAP TO SCRATCH' : 'TODAY LIMIT COMPLETED',
+                                style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.black87, letterSpacing: 1.5),
+                              ),
+                      ),
                     ),
-                    child: const Icon(Icons.touch_app, color: Color(0xFFFFD700), size: 30),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Golden Scratch Card', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
-                        Text(
-                          scratchLeft > 0 ? 'Tap to scratch & reveal coins' : 'Today limit finished',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: scratchLeft > 0
-                        ? () {
-                            onScratchWin(30);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('🎉 Revealed 30 Coins!')),
-                            );
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: Colors.black),
-                    child: const Text('Scratch'),
-                  )
                 ],
               ),
             ),
@@ -1003,18 +1235,65 @@ class GamesScreen extends StatelessWidget {
   }
 }
 
+// Custom Wheel Painter
+class WheelPainter extends CustomPainter {
+  final List<int> slices;
+  WheelPainter(this.slices);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    final sweepAngle = (math.pi * 2) / slices.length;
+
+    final colors = [
+      const Color(0xFF6C63FF),
+      const Color(0xFF00FF87),
+      const Color(0xFFFF6584),
+      const Color(0xFFFFD700),
+      const Color(0xFF0088CC),
+      const Color(0xFF9C27B0),
+    ];
+
+    for (int i = 0; i < slices.length; i++) {
+      final paint = Paint()..color = colors[i % colors.length];
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        i * sweepAngle,
+        sweepAngle,
+        true,
+        paint,
+      );
+
+      // Border outline
+      final borderPaint = Paint()
+        ..color = Colors.black26
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+      canvas.drawArc(Rect.fromCircle(center: center, radius: radius), i * sweepAngle, sweepAngle, true, borderPaint);
+    }
+
+    // Center peg
+    canvas.drawCircle(center, 22, Paint()..color = const Color(0xFF0B0E14));
+    canvas.drawCircle(center, 18, Paint()..color = const Color(0xFF00FF87));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
 // ----------------------------------------------------
-// 7. REFER & EARN SCREEN
+// 8. TAB 4: REFER & EARN (Item 10: With Invited Users List)
 // ----------------------------------------------------
 class ReferScreen extends StatelessWidget {
   final double referCash;
-  final int invitedCount;
+  final List<Map<String, String>> invitedFriends;
   final VoidCallback onNavigateToWallet;
 
   const ReferScreen({
     super.key,
     required this.referCash,
-    required this.invitedCount,
+    required this.invitedFriends,
     required this.onNavigateToWallet,
   });
 
@@ -1029,6 +1308,7 @@ class ReferScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Referral Cash Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -1042,28 +1322,25 @@ class ReferScreen extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Referral Cash Balance', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                      const Text('Referral Earnings', style: TextStyle(fontSize: 12, color: Colors.grey)),
                       const SizedBox(height: 4),
                       Text('₹${referCash.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF00FF87))),
-                      Text('$invitedCount Friends Invited', style: const TextStyle(fontSize: 11, color: Colors.white60)),
+                      Text('${invitedFriends.length} Friends Invited', style: const TextStyle(fontSize: 11, color: Colors.white70)),
                     ],
                   ),
-                  ElevatedButton.icon(
+                  ElevatedButton(
                     onPressed: onNavigateToWallet,
-                    icon: const Icon(Icons.arrow_forward, size: 16),
-                    label: const Text('WITHDRAW'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00FF87),
-                      foregroundColor: Colors.black,
-                    ),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black),
+                    child: const Text('WITHDRAW', style: TextStyle(fontWeight: FontWeight.bold)),
                   )
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
+            // Code Box
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFF151922),
                 borderRadius: BorderRadius.circular(16),
@@ -1071,10 +1348,10 @@ class ReferScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Text('Your Referral Code', style: TextStyle(color: Colors.grey, fontSize: 13)),
-                  const SizedBox(height: 8),
+                  const Text('Your Invite Code', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0B0E14),
                       borderRadius: BorderRadius.circular(10),
@@ -1083,27 +1360,22 @@ class ReferScreen extends StatelessWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'TPL8821',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 2),
-                        ),
-                        SizedBox(width: 14),
-                        Icon(Icons.copy, color: Color(0xFF00FF87), size: 20),
+                        Text('TPL8821', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                        SizedBox(width: 10),
+                        Icon(Icons.copy, color: Color(0xFF00FF87), size: 18),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    height: 46,
+                    height: 44,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Opening WhatsApp to share invite link...')),
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invite message copied & ready to share!')));
                       },
-                      icon: const Icon(Icons.share, color: Colors.white),
-                      label: const Text('SHARE ON WHATSAPP', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      icon: const Icon(Icons.share, color: Colors.white, size: 18),
+                      label: const Text('SHARE ON WHATSAPP (EARN ₹5)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
                     ),
                   ),
@@ -1112,22 +1384,52 @@ class ReferScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF151922),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Referral Rules:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
-                  Text('1. Friend signs up using your code.', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                  Text('2. You get ₹5 instantly on their first task.', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                  Text('3. 1st withdrawal at ₹5. Next withdrawals at ₹50 (10 invites).', style: TextStyle(fontSize: 12, color: Color(0xFF00FF87))),
-                ],
-              ),
+            // Item 10: Invited Users List
+            const Row(
+              children: [
+                Icon(Icons.people, color: Color(0xFF00FF87), size: 18),
+                SizedBox(width: 8),
+                Text('Invited Friends List', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: invitedFriends.length,
+              itemBuilder: (context, index) {
+                final friend = invitedFriends[index];
+                bool isCompleted = friend['status'] == 'Completed';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF151922),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(friend['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text(friend['id']!, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(friend['reward']!, style: TextStyle(fontWeight: FontWeight.bold, color: isCompleted ? const Color(0xFF00FF87) : Colors.grey)),
+                          Text(friend['status']!, style: TextStyle(fontSize: 10, color: isCompleted ? const Color(0xFF00FF87) : Colors.orange)),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -1136,15 +1438,13 @@ class ReferScreen extends StatelessWidget {
   }
 }
 // ----------------------------------------------------
-// 8. WALLET SCREEN (Daily 1 Limit & 3 Passbooks)
+// 9. TAB 5: WALLET SCREEN (Item 11: Custom Convert & Saved UPI)
 // ----------------------------------------------------
 class WalletScreen extends StatelessWidget {
   final int coins;
   final double taskCash;
   final double referCash;
-  final int taskWithdrawCount;
-  final int referWithdrawCount;
-  final int totalInvited;
+  final String? savedUpiId;
   final bool hasConvertedToday;
   final bool hasTaskWithdrawnToday;
   final bool hasReferWithdrawnToday;
@@ -1152,27 +1452,27 @@ class WalletScreen extends StatelessWidget {
   final List<String> cashHistory;
   final List<String> referHistory;
 
-  final Function(int) onConvert;
-  final Function(double) onTaskWithdraw;
-  final Function(double) onReferWithdraw;
+  final Function(String) onSaveUpi;
+  final Function(int) onConvertCoins;
+  final Function(double) onWithdrawTaskCash;
+  final Function(double) onWithdrawReferCash;
 
   const WalletScreen({
     super.key,
     required this.coins,
     required this.taskCash,
     required this.referCash,
-    required this.taskWithdrawCount,
-    required this.referWithdrawCount,
-    required this.totalInvited,
+    required this.savedUpiId,
     required this.hasConvertedToday,
     required this.hasTaskWithdrawnToday,
     required this.hasReferWithdrawnToday,
     required this.coinHistory,
     required this.cashHistory,
     required this.referHistory,
-    required this.onConvert,
-    required this.onTaskWithdraw,
-    required this.onReferWithdraw,
+    required this.onSaveUpi,
+    required this.onConvertCoins,
+    required this.onWithdrawTaskCash,
+    required this.onWithdrawReferCash,
   });
 
   @override
@@ -1181,7 +1481,7 @@ class WalletScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('TPL Passbook & Wallet', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text('Passbook & Payouts', style: TextStyle(fontWeight: FontWeight.bold)),
           backgroundColor: Colors.transparent,
         ),
         body: SingleChildScrollView(
@@ -1189,7 +1489,40 @@ class WalletScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. COIN BANK (Daily 1 Convert)
+              // Saved UPI Management Box
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF151922),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.account_balance, color: Color(0xFF00FF87)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Linked UPI Account', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          Text(
+                            savedUpiId ?? 'No UPI ID Added Yet',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _showUpiDialog(context),
+                      child: Text(savedUpiId == null ? 'ADD UPI' : 'CHANGE', style: const TextStyle(color: Color(0xFF00FF87))),
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 1. Coin Bank (Item 11: Custom Amount Convert)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1207,19 +1540,19 @@ class WalletScreen extends StatelessWidget {
                         Text('100 Coins = ₹1.00', style: TextStyle(fontSize: 12, color: Colors.grey)),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Text('$coins Coins', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFFFFD700))),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: hasConvertedToday ? null : () => _showConvertDialog(context),
+                        onPressed: hasConvertedToday ? null : () => _showCustomConvertDialog(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFD700),
                           foregroundColor: Colors.black,
                         ),
                         child: Text(
-                          hasConvertedToday ? 'CONVERTED TODAY (COME TOMORROW)' : 'CONVERT COINS TO CASH',
+                          hasConvertedToday ? 'CONVERTED TODAY (LIMIT 1/DAY)' : 'CONVERT COINS TO CASH',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1229,7 +1562,7 @@ class WalletScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // 2. TASK CASH WALLET
+              // 2. Task Cash Wallet (With Saved UPI Payout)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1240,33 +1573,23 @@ class WalletScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('💵 Task & Games Cash', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: const Color(0xFF0B0E14), borderRadius: BorderRadius.circular(6)),
-                          child: Text(
-                            taskWithdrawCount == 0 ? 'Next Min: ₹5' : (taskWithdrawCount == 1 ? 'Next Min: ₹25' : 'Min: ₹50'),
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF00FF87)),
-                          ),
-                        )
+                        Text('💵 Task Cash', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('Instant UPI Transfer', style: TextStyle(fontSize: 11, color: Color(0xFF00FF87))),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text('₹${taskCash.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 6),
+                    Text('₹${taskCash.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: hasTaskWithdrawnToday ? null : () => _showTaskWithdrawDialog(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00FF87),
-                          foregroundColor: Colors.black,
-                        ),
+                        onPressed: hasTaskWithdrawnToday ? null : () => _showWithdrawDialog(context, isTaskCash: true),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black),
                         child: Text(
-                          hasTaskWithdrawnToday ? 'WITHDRAWN TODAY (LIMIT 1/DAY)' : 'WITHDRAW TASK CASH TO UPI',
+                          hasTaskWithdrawnToday ? 'WITHDRAWN TODAY' : 'WITHDRAW TASK CASH',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1276,7 +1599,7 @@ class WalletScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // 3. REFERRAL CASH WALLET
+              // 3. Referral Cash Wallet
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1287,33 +1610,23 @@ class WalletScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('👥 Referral Cash Wallet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: const Color(0xFF0B0E14), borderRadius: BorderRadius.circular(6)),
-                          child: Text(
-                            referWithdrawCount == 0 ? '1st Min: ₹5' : 'Next Min: ₹50 (10 Invites)',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF6C63FF)),
-                          ),
-                        )
+                        Text('👥 Referral Cash', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('Min ₹5 (1st) / ₹50', style: TextStyle(fontSize: 11, color: Color(0xFF6C63FF))),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text('₹${referCash.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 6),
+                    Text('₹${referCash.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: hasReferWithdrawnToday ? null : () => _showReferWithdrawDialog(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6C63FF),
-                          foregroundColor: Colors.white,
-                        ),
+                        onPressed: hasReferWithdrawnToday ? null : () => _showWithdrawDialog(context, isTaskCash: false),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C63FF), foregroundColor: Colors.white),
                         child: Text(
-                          hasReferWithdrawnToday ? 'WITHDRAWN TODAY (LIMIT 1/DAY)' : 'WITHDRAW REFERRAL CASH',
+                          hasReferWithdrawnToday ? 'WITHDRAWN TODAY' : 'WITHDRAW REFERRAL CASH',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1323,8 +1636,8 @@ class WalletScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // 4. TRANSACTION PASSBOOK
-              const Text('Transaction History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              // Transaction Tabs
+              const Text('Passbook History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               const TabBar(
                 isScrollable: true,
@@ -1332,13 +1645,13 @@ class WalletScreen extends StatelessWidget {
                 labelColor: Color(0xFF00FF87),
                 unselectedLabelColor: Colors.grey,
                 tabs: [
-                  Tab(text: 'Coins History'),
-                  Tab(text: 'Task Cash Payouts'),
-                  Tab(text: 'Referral History'),
+                  Tab(text: 'Coins'),
+                  Tab(text: 'Task Cash'),
+                  Tab(text: 'Referral'),
                 ],
               ),
               SizedBox(
-                height: 240,
+                height: 200,
                 child: TabBarView(
                   children: [
                     _historyList(coinHistory),
@@ -1355,161 +1668,169 @@ class WalletScreen extends StatelessWidget {
   }
 
   Widget _historyList(List<String> items) {
-    if (items.isEmpty) {
-      return const Center(child: Text('No transactions yet.', style: TextStyle(color: Colors.grey)));
-    }
     return ListView.builder(
       itemCount: items.length,
       itemBuilder: (context, index) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white10)),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white10))),
         child: Row(
           children: [
-            const Icon(Icons.check_circle, size: 16, color: Color(0xFF00FF87)),
-            const SizedBox(width: 10),
-            Expanded(child: Text(items[index], style: const TextStyle(fontSize: 13))),
+            const Icon(Icons.check_circle_outline, size: 14, color: Color(0xFF00FF87)),
+            const SizedBox(width: 8),
+            Expanded(child: Text(items[index], style: const TextStyle(fontSize: 12))),
           ],
         ),
       ),
     );
   }
 
-  void _showConvertDialog(BuildContext context) {
+  // Item 11: Custom Convert Dialog
+  void _showCustomConvertDialog(BuildContext context) {
     final textController = TextEditingController(text: '100');
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (c) => AlertDialog(
         backgroundColor: const Color(0xFF151922),
         title: const Text('Convert Coins to Cash'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Minimum 100 coins (Limit: 1 time per day)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            Text('Available Balance: $coins Coins', style: const TextStyle(fontSize: 13, color: Color(0xFFFFD700), fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('Enter amount of coins to convert (Minimum 100 Coins):', style: TextStyle(fontSize: 12, color: Colors.grey)),
             const SizedBox(height: 12),
             TextField(
               controller: textController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Enter Coins',
+                hintText: 'e.g. 500, 1000',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.monetization_on, color: Color(0xFFFFD700)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              int entered = int.tryParse(textController.text.trim()) ?? 0;
+              if (entered < 100) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Minimum 100 Coins required!')));
+                return;
+              }
+              if (entered > coins) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insufficient Coins!')));
+                return;
+              }
+              Navigator.pop(c);
+              onConvertCoins(entered);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: Colors.black),
+            child: const Text('Convert'),
+          )
+        ],
+      ),
+    );
+  }
+
+  // Item 11: Add / Save UPI Dialog
+  void _showUpiDialog(BuildContext context) {
+    final upiCtrl = TextEditingController(text: savedUpiId ?? '');
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        backgroundColor: const Color(0xFF151922),
+        title: const Text('Save UPI Account'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter your GPay, PhonePe, or Paytm UPI ID:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: upiCtrl,
+              decoration: const InputDecoration(
+                hintText: 'e.g. 9876543210@paytm',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.payment, color: Color(0xFF00FF87)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (upiCtrl.text.trim().isEmpty || !upiCtrl.text.contains('@')) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid UPI ID!')));
+                return;
+              }
+              Navigator.pop(c);
+              onSaveUpi(upiCtrl.text.trim());
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black),
+            child: const Text('Save UPI'),
+          )
+        ],
+      ),
+    );
+  }
+
+  // Item 11: Withdraw Dialog with Saved UPI
+  void _showWithdrawDialog(BuildContext context, {required bool isTaskCash}) {
+    if (savedUpiId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please Add UPI ID first before withdrawing!')));
+      _showUpiDialog(context);
+      return;
+    }
+
+    double currentBalance = isTaskCash ? taskCash : referCash;
+    final amountCtrl = TextEditingController(text: isTaskCash ? '5' : '5');
+
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        backgroundColor: const Color(0xFF151922),
+        title: Text('Withdraw to $savedUpiId'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Current Balance: ₹${currentBalance.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: Color(0xFF00FF87))),
+            const SizedBox(height: 12),
+            TextField(
+              controller: amountCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Enter Amount (₹)',
                 border: OutlineInputBorder(),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              int entered = int.tryParse(textController.text) ?? 0;
-              if (entered < 100) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Minimum 100 coins required!')));
+              double entered = double.tryParse(amountCtrl.text.trim()) ?? 0;
+              if (entered < 5) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Minimum withdrawal is ₹5!')));
                 return;
               }
-              if (entered > coins) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insufficient coins!')));
+              if (entered > currentBalance) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insufficient balance!')));
                 return;
               }
-              Navigator.pop(context);
-              onConvert(entered);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: Colors.black),
-            child: const Text('Convert Now'),
-          )
-        ],
-      ),
-    );
-  }
-
-  void _showTaskWithdrawDialog(BuildContext context) {
-    double minRequired = taskWithdrawCount == 0 ? 5.0 : (taskWithdrawCount == 1 ? 25.0 : 50.0);
-    final upiController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF151922),
-        title: Text('Withdraw ₹${minRequired.toInt()} Task Cash'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Daily limit: 1 time per day\nCurrent Balance: ₹${taskCash.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: upiController,
-              decoration: const InputDecoration(hintText: 'Enter UPI ID (e.g. 98****@paytm)', border: OutlineInputBorder()),
-            )
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              if (taskCash < minRequired) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Insufficient balance! Need ₹$minRequired')));
-                return;
+              Navigator.pop(c);
+              if (isTaskCash) {
+                onWithdrawTaskCash(entered);
+              } else {
+                onWithdrawReferCash(entered);
               }
-              if (upiController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid UPI ID!')));
-                return;
-              }
-              Navigator.pop(context);
-              onTaskWithdraw(minRequired);
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black),
-            child: const Text('Submit Payout'),
-          )
-        ],
-      ),
-    );
-  }
-
-  void _showReferWithdrawDialog(BuildContext context) {
-    double minRequired = referWithdrawCount == 0 ? 5.0 : 50.0;
-    final upiController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF151922),
-        title: Text('Withdraw ₹${minRequired.toInt()} Refer Cash'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (referWithdrawCount > 0 && totalInvited < 10)
-              const Text('⚠️ Requires 10 completed invites to unlock ₹50 payout!', style: TextStyle(color: Colors.orange, fontSize: 12))
-            else
-              Text('Daily limit: 1 time per day\nCurrent Balance: ₹${referCash.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: upiController,
-              decoration: const InputDecoration(hintText: 'Enter UPI ID (e.g. 98****@apl)', border: OutlineInputBorder()),
-            )
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              if (referWithdrawCount > 0 && totalInvited < 10) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invite at least 10 friends to withdraw ₹50!')));
-                return;
-              }
-              if (referCash < minRequired) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Insufficient balance! Need ₹$minRequired')));
-                return;
-              }
-              if (upiController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid UPI ID!')));
-                return;
-              }
-              Navigator.pop(context);
-              onReferWithdraw(minRequired);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C63FF), foregroundColor: Colors.white),
-            child: const Text('Submit Payout'),
+            child: const Text('Confirm Withdraw'),
           )
         ],
       ),
