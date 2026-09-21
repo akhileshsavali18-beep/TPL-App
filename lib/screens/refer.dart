@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:share_plus/share_plus.dart';
+
 
 class ReferScreen extends StatelessWidget {
   final double referCash;
@@ -119,10 +124,9 @@ class ReferScreen extends StatelessWidget {
                     height: 48,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Referral link copied! Share on WhatsApp to get ₹5 per friend.')),
-                        );
+                        shareReferralLink("TPL0821");
                       },
+                      
                       icon: const Icon(Icons.share, color: Colors.white, size: 20),
                       label: const Text(
                         'INVITE FRIENDS (EARN ₹5 EACH)',
@@ -211,6 +215,55 @@ class ReferScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+Future<void> shareReferralLink(String userReferCode) async {
+  try {
+    DocumentSnapshot configSnap = await FirebaseFirestore.instance
+        .collection('app_config')
+        .doc('referral')
+        .get();
+
+    bool isGplinksEnabled = true;
+    String apiKey = "6fbb840dff7b4f2e4239b3200e0d62fce9b5fbab";
+    String appUrl = "https://tplpro.in";
+    String baseMessage = "Earn daily cash by playing games on TPL Pro! Download now:";
+
+    if (configSnap.exists) {
+      final data = configSnap.data() as Map<String, dynamic>;
+      isGplinksEnabled = data['gplinksEnabled'] ?? isGplinksEnabled;
+      apiKey = data['gplinksApiKey'] ?? apiKey;
+      appUrl = data['appDownloadUrl'] ?? appUrl;
+      baseMessage = data['shareMessage'] ?? baseMessage;
+    }
+
+    String finalShareUrl = "$appUrl?ref=$userReferCode";
+
+    if (isGplinksEnabled && apiKey.isNotEmpty) {
+      try {
+        final gplinksApiUrl = Uri.parse(
+          'https://api.gplinks.com/st?api=$apiKey&url=${Uri.encodeComponent(finalShareUrl)}',
+        );
+
+        final response = await http.get(gplinksApiUrl).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          final resData = jsonDecode(response.body);
+          if (resData['status'] == 'success' && resData['shortenedUrl'] != null) {
+            finalShareUrl = resData['shortenedUrl'];
+          }
+        }
+      } catch (e) {
+        // Fallback to direct URL
+      }
+    }
+
+    await Share.share(
+      "$baseMessage\n$finalShareUrl\nUse my Referral Code: $userReferCode",
+      subject: "Download TPL Pro",
+    );
+  } catch (e) {
+    // Error handling
   }
 }
 
