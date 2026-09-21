@@ -1,4 +1,3 @@
-import '../screens/games.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/game_player_screen.dart';
@@ -37,10 +36,13 @@ class MiniGamesSection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00FF87).withValues(alpha: 0.1),
+                      color: const Color(0xFF00FF87).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('No Install', style: TextStyle(color: Color(0xFF00FF87), fontSize: 10, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'No Install',
+                      style: TextStyle(color: Color(0xFF00FF87), fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -79,12 +81,14 @@ class MiniGamesSection extends StatelessWidget {
                     );
                   },
                   child: Container(
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: const Color(0xFF111622),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white.withOpacity(0.07)
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.07),
+                      ),
                     ),
-                    padding: const EdgeInsets.all(10),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -127,4 +131,3 @@ class MiniGamesSection extends StatelessWidget {
     );
   }
 }
-
