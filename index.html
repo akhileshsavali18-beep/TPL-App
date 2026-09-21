@@ -547,6 +547,22 @@
 
   <!-- Cache Buster Added (?v=2.1) -->
   <script src="app.js?v=2.1"></script>
+  <!-- GPLINKS REFERRAL SETTINGS -->
+<div class="dark-card p-5 rounded-2xl border border-white/10 my-4 space-y-3">
+  <h3 class="text-lg font-bold text-white">GPLinks Referral Settings</h3>
+  <div class="flex items-center gap-3">
+    <input type="checkbox" id="gplinksToggle" class="w-5 h-5 accent-green-500 rounded cursor-pointer">
+    <label for="gplinksToggle" class="text-sm text-gray-300 font-medium">Enable GPLinks Shortener for Referrals</label>
+  </div>
+  <div>
+    <label class="text-xs text-gray-400 font-bold uppercase">GPLinks API Key</label>
+    <input type="text" id="gplinksKeyInput" placeholder="Enter API Key" class="w-full mt-1 px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-green-500">
+  </div>
+  <button type="button" onclick="saveGplinksConfig()" class="w-full py-2.5 bg-green-500 hover:bg-green-400 text-black font-bold rounded-xl text-sm transition-all shadow-lg">
+    Save Referral Settings
+  </button>
+</div>
+  
 </body>
 </html>
 
