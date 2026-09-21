@@ -1,0 +1,67 @@
+name: Build TPL Pro APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Auto-Generate Android Scaffolding & Fix Config
+        run: |
+          mkdir -p temp_backup
+          [ -f android/app/src/main/AndroidManifest.xml ] && cp android/app/src/main/AndroidManifest.xml temp_backup/
+          [ -f google-services.json ] && cp google-services.json temp_backup/
+          [ -f android/app/google-services.json ] && cp android/app/google-services.json temp_backup/
+
+          flutter create . --platforms=android --org com.tplpro.app
+
+          if [ -f temp_backup/AndroidManifest.xml ]; then
+            mkdir -p android/app/src/main
+            cp temp_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          fi
+
+          if [ -f temp_backup/google-services.json ]; then
+            cp temp_backup/google-services.json android/app/google-services.json
+          fi
+
+          sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/' android/app/build.gradle || true
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/' android/app/build.gradle || true
+          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/' android/app/build.gradle || true
+          sed -i 's/minSdk [0-9]*/minSdk 21/' android/app/build.gradle || true
+
+          sed -i '/plugins {/a \    id "com.google.gms.google-services" version "4.4.2" apply false' android/settings.gradle || true
+          sed -i '/plugins {/a \    id "com.google.gms.google-services"' android/app/build.gradle || true
+          echo "apply plugin: 'com.google.gms.google-services'" >> android/app/build.gradle
+
+      - name: Install Flutter Dependencies
+        run: flutter pub get
+
+      - name: Build Android Release APK
+        run: flutter build apk --release
+
+      - name: Upload APK to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: TPL-Pro-Release-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          
