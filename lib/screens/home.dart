@@ -1,3 +1,4 @@
+import '../widgets/announcement_banner.dart';
 import '../widgets/home_banner_carousel.dart';
 import 'package:flutter/material.dart';
 
@@ -247,6 +248,10 @@ class _HomeScreenState extends State<HomeScreen> {
                        // 🖼️ Firebase Live Carousel Banners
             const HomeBannerCarousel(),
             const SizedBox(height: 12),
+            // 📢 Admin Live Announcement Notice
+            const AnnouncementBanner(),
+            const SizedBox(height: 10),
+            
             
             // 6-Slide Hero Carousel
             SizedBox(
