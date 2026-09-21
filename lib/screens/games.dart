@@ -1,3 +1,4 @@
+import '../widgets/mini_games_section.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
@@ -288,22 +289,32 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                                   Text(
                                     widget.scratchLeft > 0 ? 'TAP TO WATCH & SCRATCH' : 'TODAY FINISHED',
                                     style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.black87),
-                                  ),
-                                ],
+                                    ),
+                                 ],
                               ),
-                      ),
-                    ),
-                  ),
-                ],
+                           ),
+                        ),
+                     ),
+                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+          ),
 
+          const SizedBox(height: 20),
+
+          // 🎮 Gamezop Mini Games Section (Firebase Live)
+          MiniGamesSection(
+            onRewardEarned: (coins, reason) {
+              widget.onSpinWin(coins);
+            },
+          ),
+          const SizedBox(height: 24),
+
+             ],
+          ),
+       ),
+    );
+ }
+                      
 class WheelPainter extends CustomPainter {
   final List<int> slices;
   WheelPainter(this.slices);
