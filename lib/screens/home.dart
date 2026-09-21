@@ -25,6 +25,28 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final PageController _bannerController = PageController();
   int _currentBannerIndex = 0;
+  bool _hasUnreadNotification = true;
+
+  final List<Map<String, dynamic>> notifications = [
+    {
+      'title': '🎉 Welcome Bonus Credited!',
+      'time': 'Just now',
+      'desc': '50 Coins have been added to your coin bank for joining TPL.',
+      'type': 'bonus',
+    },
+    {
+      'title': '🔥 High Pay Alert: Meesho Task',
+      'time': '2 hours ago',
+      'desc': 'Earn ₹12 instantly by completing the Meesho install offer.',
+      'type': 'task',
+    },
+    {
+      'title': '⚡ Instant UPI Payouts Active',
+      'time': 'Today',
+      'desc': 'Minimum withdrawal is ₹5. Link your UPI ID in the Wallet tab.',
+      'type': 'alert',
+    },
+  ];
 
   final List<Map<String, dynamic>> banners = [
     {
@@ -65,6 +87,77 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
+  void _openNotificationSheet() {
+    setState(() => _hasUnreadNotification = false);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF151922),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.notifications_active, color: Color(0xFF00FF87), size: 20),
+                      SizedBox(width: 8),
+                      Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.white12),
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: notifications.length,
+                  itemBuilder: (context, index) {
+                    final item = notifications[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B0E14),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                              Text(item['time'], style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(item['desc'], style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     double rupees = widget.coins / 100.0;
@@ -91,11 +184,34 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          // Notification Bell Icon with Indicator
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none, color: Colors.white, size: 24),
+                onPressed: _openNotificationSheet,
+              ),
+              if (_hasUnreadNotification)
+                Positioned(
+                  top: 14,
+                  right: 14,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           GestureDetector(
             onTap: widget.onOpenWallet,
             child: Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(right: 14, left: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: const Color(0xFF151922),
                 borderRadius: BorderRadius.circular(20),
@@ -103,18 +219,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 18),
-                  const SizedBox(width: 5),
-                  Text('${widget.coins}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 16),
+                  const SizedBox(width: 4),
+                  Text('${widget.coins}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   Container(
-                    height: 14,
+                    height: 12,
                     width: 1,
                     color: Colors.white24,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
                   ),
                   Text(
                     '₹${rupees.toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00FF87), fontSize: 13),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00FF87), fontSize: 12),
                   ),
                 ],
               ),
@@ -188,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 18),
 
-            // Compact Chillar-style Daily Streak
+            // Compact Daily Streak
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
@@ -355,4 +471,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
