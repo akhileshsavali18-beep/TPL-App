@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "940679131159",
+    "project_id": "tpl-5bd9d",
+    "storage_bucket": "tpl-5bd9d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:940679131159:android:edd514726cb0bf645a2c52",
+        "android_client_info": {
+          "package_name": "com.tpl.rewards"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNUAx_Zhn-8RYKKkv5qAjMWwFWwI5tMI8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
