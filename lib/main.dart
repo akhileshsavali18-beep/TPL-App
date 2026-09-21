@@ -273,31 +273,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       );
     }
       
-        backgroundColor: Color(0xFF080B10),
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.build_circle_outlined, size: 80, color: Colors.amber),
-                SizedBox(height: 16),
-                Text(
-                  'Under Maintenance',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'We are upgrading our servers. Please check back shortly!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
     
     final screens = [
       HomeScreen(
