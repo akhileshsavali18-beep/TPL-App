@@ -22,14 +22,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:share_plus/share_plus.dart';
 
 
-//  ಹೊಸದಾಗಿ ಬದಲಾಯಿಸಬೇಕಾದ ಕೋಡ್:
-    try {
-      await Firebase.initializeApp();
-      // ಅಡ್ಮಿನ್ ಕಂಟ್ರೋಲ್ಸ್ ಲೈವ್ ಲೋಡ್ ಮಾಡುವುದು
-      await RemoteConfigService.instance.init();
-    } catch (e) {
-      debugPrint("Firebase initialization notice: $e");
-    }
+try {
+  await Firebase.initializeApp();
+  ...
+} catch (e) {
+  debugPrint("Firebase initialization notice: $e");
+}
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
