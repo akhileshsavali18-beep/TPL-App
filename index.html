@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TPL Pro Admin Console</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase Compat SDKs -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -17,33 +17,36 @@
 </head>
 <body class="min-h-screen p-4 md:p-8 max-w-6xl mx-auto">
 
-  <!-- 1. LOGIN SCREEN (Locked by default) -->
+  <!-- 1. LOGIN SCREEN -->
   <div id="loginScreen" class="flex flex-col items-center justify-center min-h-[80vh]">
     <div class="bg-gray-900 p-8 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl">
       <div class="text-center mb-6">
         <h1 class="text-2xl font-black text-green-400 tracking-wider">TPL ADMIN LOGIN</h1>
         <p class="text-xs text-gray-400 mt-1">Authorized Access Only</p>
       </div>
-      <form id="loginForm" class="space-y-4" onsubmit="handleLogin(event)">
+
+      <div class="space-y-4">
         <div>
           <label class="text-xs text-gray-400">Admin Email</label>
-          <input type="email" id="adminEmail" required class="w-full mt-1 px-4 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
+          <input type="email" id="adminEmail" placeholder="admin@tpl.com" class="w-full mt-1 px-4 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
         </div>
         <div>
-          <label class="text-xs text-gray-400">Password</label>
-          <input type="password" id="adminPassword" required class="w-full mt-1 px-4 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
+          <label class="text-xs text-gray-400">Password / Master PIN</label>
+          <input type="password" id="adminPassword" placeholder="Enter Password or PIN" class="w-full mt-1 px-4 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
         </div>
+
         <p id="loginError" class="text-red-400 text-xs hidden"></p>
-        <button type="submit" class="w-full py-3 bg-green-400 hover:bg-green-300 text-black font-black text-sm rounded-xl transition shadow-lg shadow-green-500/10">
+
+        <!-- Direct Action Button (No page refresh) -->
+        <button type="button" id="loginBtn" onclick="handleLogin()" class="w-full py-3 bg-green-400 hover:bg-green-300 text-black font-black text-sm rounded-xl transition shadow-lg shadow-green-500/10">
           Unlock Dashboard
         </button>
-      </form>
+      </div>
     </div>
   </div>
 
   <!-- 2. MAIN ADMIN DASHBOARD -->
   <div id="dashboardScreen" class="hidden">
-    <!-- Header -->
     <header class="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-gray-800">
       <div>
         <h1 class="text-2xl font-black tracking-wider text-green-400">TPL CONTROL HUB</h1>
@@ -59,7 +62,6 @@
       </div>
     </header>
 
-    <!-- App Metrics Overview Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <div class="bg-gray-900 p-4 rounded-xl neon-border">
         <div class="text-xs text-gray-400">Total App Installs</div>
@@ -79,7 +81,6 @@
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
     <div class="flex gap-2 mb-6 border-b border-gray-800 pb-2">
       <button onclick="switchTab('payouts')" id="tab-payouts" class="px-4 py-2 rounded-lg text-xs font-semibold tab-active">
         Payout Requests
@@ -89,12 +90,12 @@
       </button>
     </div>
 
-    <!-- TAB 1: PAYOUTS QUEUE -->
+    <!-- TAB 1: PAYOUTS -->
     <div id="view-payouts">
       <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h2 class="text-base font-bold">Withdrawal Queue</h2>
         <div class="flex gap-2">
-          <button onclick="exportCashfreeCSV()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1">
+          <button onclick="exportCashfreeCSV()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow">
             📥 Cashfree Bulk CSV
           </button>
           <button onclick="fetchWithdrawals()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs border border-gray-700">
@@ -107,7 +108,7 @@
       </div>
     </div>
 
-    <!-- TAB 2: USERS DIRECTORY -->
+    <!-- TAB 2: USERS -->
     <div id="view-users" class="hidden">
       <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h2 class="text-base font-bold">Registered Users Directory</h2>
@@ -119,7 +120,7 @@
     </div>
   </div>
 
-  <!-- MODAL: SEND SINGLE USER NOTIFICATION -->
+  <!-- NOTIFICATION MODAL -->
   <div id="notifModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center">
@@ -146,6 +147,8 @@
   <div id="toast" class="fixed bottom-5 right-5 bg-green-400 text-black px-4 py-2 rounded-xl text-xs font-bold shadow-xl hidden"></div>
 
   <script>
+    const MASTER_PIN = "7890"; // Backup Master PIN (Always works)
+
     const firebaseConfig = {
       apiKey: "AIzaSyCMFViBcyJVEawOZASTQ9qr2zDwIqhqKn8",
       authDomain: "tpl-5bd9d.firebaseapp.com",
@@ -163,35 +166,65 @@
     let allUsersData = [];
     let pendingWithdrawalsCache = [];
 
-    // Auth state listener
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('dashboardScreen').classList.remove('hidden');
-        fetchWithdrawals();
-        fetchUsers();
-      } else {
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('dashboardScreen').classList.add('hidden');
-      }
-    });
+    // Check existing session
+    if (sessionStorage.getItem('tpl_admin_logged') === 'true') {
+      openDashboard();
+    }
 
-        async function handleLogin(e) {
-      e.preventDefault();
+    async function handleLogin() {
       const email = document.getElementById('adminEmail').value.trim();
       const pass = document.getElementById('adminPassword').value.trim();
       const errBox = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+
       errBox.classList.add('hidden');
+
+      if (!pass) {
+        alert("Please enter password or Master PIN!");
+        return;
+      }
+
+      // 1. Instant Master PIN Check
+      if (pass === MASTER_PIN) {
+        sessionStorage.setItem('tpl_admin_logged', 'true');
+        openDashboard();
+        return;
+      }
+
+      // 2. Firebase Email/Password Check
+      if (!email) {
+        alert("Enter email for Firebase Login, or use Master PIN: 7890");
+        return;
+      }
+
+      btn.innerText = "Checking...";
+      btn.disabled = true;
 
       try {
         await auth.signInWithEmailAndPassword(email, pass);
+        sessionStorage.setItem('tpl_admin_logged', 'true');
+        openDashboard();
       } catch (err) {
-        alert("Firebase Error Code: " + err.code + "\nMessage: " + err.message);
+        btn.innerText = "Unlock Dashboard";
+        btn.disabled = false;
+        alert("Login Error: " + err.code + "\n" + err.message + "\n\nTip: You can use Master PIN: 7890");
         errBox.innerText = err.message;
         errBox.classList.remove('hidden');
       }
-        }
-    
+    }
+
+    function openDashboard() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('dashboardScreen').classList.remove('hidden');
+      fetchWithdrawals();
+      fetchUsers();
+    }
+
+    function handleLogout() {
+      sessionStorage.removeItem('tpl_admin_logged');
+      auth.signOut();
+      location.reload();
+    }
 
     function switchTab(tab) {
       const pTab = document.getElementById('tab-payouts');
@@ -212,7 +245,6 @@
       }
     }
 
-    // 1. Fetch Withdrawals Queue
     function fetchWithdrawals() {
       db.collection('withdrawals').orderBy('createdAt', 'desc').onSnapshot(snap => {
         const list = document.getElementById('withdrawalsList');
@@ -241,7 +273,6 @@
           const card = document.createElement('div');
           card.className = `p-4 rounded-xl border ${isPending ? 'bg-gray-900 border-gray-800' : 'bg-gray-950 border-gray-900 opacity-60'} flex flex-col sm:flex-row sm:items-center justify-between gap-4`;
 
-          // GPay/PhonePe direct UPI intent link
           const upiPayLink = `upi://pay?pa=${encodeURIComponent(d.upiId || '')}&pn=${encodeURIComponent(d.userName || 'TPL Player')}&am=${d.amount}&cu=INR&tn=TPL_Payout`;
 
           card.innerHTML = `
@@ -285,7 +316,6 @@
       });
     }
 
-    // 2. Fetch All Registered Users
     function fetchUsers() {
       db.collection('users').onSnapshot(snap => {
         allUsersData = [];
@@ -299,7 +329,7 @@
       const list = document.getElementById('usersList');
       list.innerHTML = '';
       if (!users.length) {
-        list.innerHTML = '<div class="p-8 text-center text-gray-500 bg-gray-900 rounded-xl text-xs">No users found.</div>';
+        list.innerHTML = '<div class="p-8 text-center text-gray-500 bg-gray-900 rounded-xl text-xs">No users registered yet.</div>';
         return;
       }
       users.forEach(u => {
@@ -340,7 +370,6 @@
       renderUsers(filtered);
     }
 
-    // Modal Actions
     function openNotifModal(uid, name) {
       document.getElementById('modalUserUid').value = uid;
       document.getElementById('modalUserName').innerText = name;
@@ -377,11 +406,10 @@
       showToast(currentlyBanned ? 'User Unbanned' : 'User Banned');
     }
 
-    // Cashfree Batch CSV Export
     function exportCashfreeCSV() {
       if (!pendingWithdrawalsCache.length) return alert('No pending payouts to export!');
       let csv = "TransferId,Amount,Phone,Email,Name,BeneficiaryId,VPA\n";
-      pendingWithdrawalsCache.forEach((item, idx) => {
+      pendingWithdrawalsCache.forEach((item) => {
         csv += `TPL_${item.id},${item.amount},,,${item.userName || 'Player'},,${item.upiId}\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
@@ -396,7 +424,7 @@
     async function markAsPaid(docId) {
       if (!confirm("Confirm you have completed payment?")) return;
       await db.collection('withdrawals').doc(docId).update({
-        status: 'Completed',
+      status: 'Completed',
         paidAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       showToast('Marked as Completed!');
@@ -409,4 +437,22 @@
       await db.collection('users').doc(uid).update({ [field]: firebase.firestore.FieldValue.increment(amount) });
       await db.collection('withdrawals').doc(docId).update({
         status: 'Rejected',
-        rejectionReason
+        rejectionReason: reason,
+        rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showToast('Rejected & Refunded to user!');
+    }
+
+    function copyText(txt) {
+      navigator.clipboard.writeText(txt).then(() => showToast('Copied!'));
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 2200);
+    }
+  </script>
+</body>
+</html> 
