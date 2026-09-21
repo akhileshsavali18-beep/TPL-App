@@ -1,3 +1,4 @@
+import '../screens/games.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/game_player_screen.dart';
@@ -81,7 +82,7 @@ class MiniGamesSection extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFF111622),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+                      border: Border.all(color: Colors.white.withOpacity(0.07)
                     ),
                     padding: const EdgeInsets.all(10),
                     child: Column(
