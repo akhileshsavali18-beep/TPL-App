@@ -25,37 +25,27 @@ class TPLApp extends StatelessWidget {
   }
 }
 
-// SplashScreen build method olage center content:
-Center(
-  child: Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      const Spacer(),
-      // Real TPL Logo Image
-      Image.asset(
-        'assets/images/logo.png',
-        width: 240,
-        height: 240,
-      ),
-      const Spacer(),
-      const Text(
-        'Powered by',
-        style: TextStyle(fontSize: 12, color: Colors.grey),
-      ),
-      const SizedBox(height: 4),
-      const Text(
-        'A28 TECHNOLOGIES',
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.5,
-          color: Colors.white,
-        ),
-      ),
-      const SizedBox(height: 30),
-    ],
-  ),
-)
+// 1. SPLASH SCREEN (A28 Technologies Branding)
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 24),
 
-            // Withdraw Button
+            // Instant Withdraw Button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -258,4 +248,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
