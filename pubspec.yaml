@@ -1,5 +1,5 @@
 name: tpl
-description: "Task Premier League - Powered by A28 Technologies"
+description: "Task Premier League Rewards App"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -14,17 +14,15 @@ dependencies:
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.4
   google_sign_in: ^6.2.1
+  unity_ads_plugin: ^0.3.14
 
 dev_dependencies:
-  flutter_launcher_icons: ^0.13.1
-
-flutter_launcher_icons:
-  android: true
-  ios: false
-  image_path: "assets/images/logo.png"
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/logo.png
+    - assets/images/
     
