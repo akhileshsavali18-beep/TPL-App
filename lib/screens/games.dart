@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 
 class GamesScreen extends StatefulWidget {
   final int spinsLeft;
@@ -20,6 +21,8 @@ class GamesScreen extends StatefulWidget {
 }
 
 class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStateMixin {
+  static const String _rewardedPlacementId = 'BP_Rewarded_Android';
+
   late AnimationController _spinController;
   late Animation<double> _spinAnimation;
   double _currentAngle = 0;
@@ -43,9 +46,30 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
-  void _spinWheel() {
+  // 1. Show Rewarded Ad before Spinning
+  void _watchAdAndSpin() {
     if (widget.spinsLeft <= 0 || _isSpinning) return;
 
+    UnityAds.showVideoAd(
+      placementId: _rewardedPlacementId,
+      onComplete: (placementId) {
+        _spinWheel();
+      },
+      onFailed: (placementId, error, message) {
+        debugPrint('Ad failed to load: $error $message. Continuing spin for testing.');
+        _spinWheel();
+      },
+      onSkipped: (placementId) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Watch the full video ad to unlock your spin!')),
+          );
+        }
+      },
+    );
+  }
+
+  void _spinWheel() {
     setState(() => _isSpinning = true);
     final random = math.Random();
     int chosenIndex = random.nextInt(sliceRewards.length);
@@ -88,6 +112,31 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     });
   }
 
+  // 2. Show Rewarded Ad before Scratching
+  void _watchAdAndScratch() {
+    if (widget.scratchLeft <= 0 || _scratchRevealed) return;
+
+    UnityAds.showVideoAd(
+      placementId: _rewardedPlacementId,
+      onComplete: (placementId) {
+        setState(() => _scratchRevealed = true);
+        widget.onScratchWin(45);
+      },
+      onFailed: (placementId, error, message) {
+        debugPrint('Ad failed to load: $error $message. Continuing scratch.');
+        setState(() => _scratchRevealed = true);
+        widget.onScratchWin(45);
+      },
+      onSkipped: (placementId) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Watch full video to reveal scratch reward!')),
+          );
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,7 +150,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Daily Chances Status Bar
+            // Chances status indicators
             Row(
               children: [
                 Expanded(
@@ -157,7 +206,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 children: [
                   const Text('Lucky Spin Wheel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  const Text('Spin daily to win up to 200 free coins', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text('Watch a short video & win up to 200 free coins', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 20),
                   Stack(
                     alignment: Alignment.topCenter,
@@ -177,18 +226,19 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
-                    width: 160,
+                    width: 180,
                     height: 44,
-                    child: ElevatedButton(
-                      onPressed: (_isSpinning || widget.spinsLeft <= 0) ? null : _spinWheel,
+                    child: ElevatedButton.icon(
+                      onPressed: (_isSpinning || widget.spinsLeft <= 0) ? null : _watchAdAndSpin,
+                      icon: const Icon(Icons.play_circle_fill, size: 20),
+                      label: Text(
+                        _isSpinning ? 'SPINNING...' : (widget.spinsLeft > 0 ? 'SPIN NOW' : 'DAILY OVER'),
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF00FF87),
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text(
-                        _isSpinning ? 'SPINNING...' : (widget.spinsLeft > 0 ? 'SPIN NOW' : 'DAILY OVER'),
-                        style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                     ),
                   ),
@@ -210,15 +260,10 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 children: [
                   const Text('Golden Scratch Card', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 4),
-                  const Text('Tap or scratch to reveal mystery rewards', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text('Watch video to reveal guaranteed coins', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 14),
                   GestureDetector(
-                    onTap: () {
-                      if (widget.scratchLeft > 0 && !_scratchRevealed) {
-                        setState(() => _scratchRevealed = true);
-                        widget.onScratchWin(45);
-                      }
-                    },
+                    onTap: _watchAdAndScratch,
                     child: Container(
                       height: 90,
                       width: double.infinity,
@@ -235,9 +280,16 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                                 '+45 COINS REVEALED!',
                                 style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00FF87), fontSize: 16),
                               )
-                            : Text(
-                                widget.scratchLeft > 0 ? 'TAP TO SCRATCH' : 'TODAY FINISHED',
-                                style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.black87),
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.play_circle_outline, color: Colors.black87),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    widget.scratchLeft > 0 ? 'TAP TO WATCH & SCRATCH' : 'TODAY FINISHED',
+                                    style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.black87),
+                                  ),
+                                ],
                               ),
                       ),
                     ),
@@ -281,4 +333,3 @@ class WheelPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
-
