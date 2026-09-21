@@ -1,0 +1,21 @@
+name: tpl
+description: "Task Premier League - Powered by A28 Technologies"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^2.30.0
+  firebase_auth: ^4.19.0
+  cloud_firestore: ^4.17.0
+  google_sign_in: ^6.2.1
+  shared_preferences: ^2.2.2
+  http: ^1.2.0
+
+flutter:
+  uses-material-design: true
+  
