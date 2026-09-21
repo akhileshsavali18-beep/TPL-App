@@ -15,22 +15,21 @@ dependencies:
   cloud_firestore: ^5.4.4
   google_sign_in: ^6.2.1
   unity_ads_plugin: ^0.3.14
-    http: ^1.2.0
+  http: ^1.2.0
   share_plus: ^9.0.0
-  
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.13.1
-  
+
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/images/logo.png"
   min_sdk_android: 21
-  
+
 flutter:
   uses-material-design: true
   assets:
