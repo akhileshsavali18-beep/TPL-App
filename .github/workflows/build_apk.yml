@@ -34,7 +34,7 @@ jobs:
           [ -f google-services.json ] && cp google-services.json temp_backup/
           [ -f android/app/google-services.json ] && cp android/app/google-services.json temp_backup/
 
-          flutter create . --platforms=android --org com.tplpro.app
+          flutter create . --project-name tpl_app --platforms=android --org com.tplpro.app
 
           if [ -f temp_backup/AndroidManifest.xml ]; then
             mkdir -p android/app/src/main
