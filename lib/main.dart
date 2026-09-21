@@ -12,15 +12,18 @@ import 'screens/tasks.dart';
 import 'screens/games.dart';
 import 'screens/refer.dart';
 import 'screens/wallet.dart';
+import 'services/remote_config_service.dart';
 import 'widgets/profile_drawer.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint("Firebase initialization notice: $e");
-  }
+//  ಹೊಸದಾಗಿ ಬದಲಾಯಿಸಬೇಕಾದ ಕೋಡ್:
+    try {
+      await Firebase.initializeApp();
+      // ಅಡ್ಮಿನ್ ಕಂಟ್ರೋಲ್ಸ್ ಲೈವ್ ಲೋಡ್ ಮಾಡುವುದು
+      await RemoteConfigService.instance.init();
+    } catch (e) {
+      debugPrint("Firebase initialization notice: $e");
+    }
+
 
   // Initialize Unity Ads
   UnityAds.init(
@@ -217,6 +220,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+       // 🔒 ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ Maintenance Mode ಆನ್ ಇದ್ದರೆ ಆ್ಯಪ್ ಬ್ಲಾಕ್ ಆಗುತ್ತದೆ
+    if (RemoteConfigService.instance.maintenanceMode) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF080B10),
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.build_circle_outlined, size: 80, color: Colors.amber),
+                SizedBox(height: 16),
+                Text(
+                  'Under Maintenance',
+                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'We are upgrading our servers. Please check back shortly!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
     final screens = [
       HomeScreen(
         coins: coins,
