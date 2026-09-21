@@ -1,3 +1,4 @@
+import '../widgets/home_banner_carousel.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -243,6 +244,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+                       // 🖼️ Firebase Live Carousel Banners
+            const HomeBannerCarousel(),
+            const SizedBox(height: 12),
+            
             // 6-Slide Hero Carousel
             SizedBox(
               height: 140,
