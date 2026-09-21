@@ -662,3 +662,38 @@ function showToast(msg) {
   t.classList.remove('hidden');
   setTimeout(function() { t.classList.add('hidden'); }, 2200);
     }
+// GPLinks Settings Load Function
+async function loadGplinksConfig() {
+  try {
+    const docSnap = await firebase.firestore().collection("app_config").doc("referral").get();
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      const toggle = document.getElementById("gplinksToggle");
+      const keyInput = document.getElementById("gplinksKeyInput");
+      if (toggle) toggle.checked = data.gplinksEnabled || false;
+      if (keyInput) keyInput.value = data.gplinksApiKey || "";
+    }
+  } catch (err) {
+    console.error("GPLinks Load Error:", err);
+  }
+}
+
+// GPLinks Settings Save Function
+async function saveGplinksConfig() {
+  try {
+    const isEnabled = document.getElementById("gplinksToggle").checked;
+    const apiKey = document.getElementById("gplinksKeyInput").value.trim();
+
+    await firebase.firestore().collection("app_config").doc("referral").set({
+      gplinksEnabled: isEnabled,
+      gplinksApiKey: apiKey
+    }, { merge: true });
+
+    alert("GPLinks settings saved successfully!");
+  } catch (err) {
+    alert("Save Error: " + err.message);
+  }
+}
+
+// Auto Load
+loadGplinksConfig();
