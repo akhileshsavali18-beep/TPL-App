@@ -2,457 +2,384 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TPL Pro Admin Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TPL Admin Console</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <style>
-    body { background-color: #0B0E14; color: #FFFFFF; font-family: system-ui, sans-serif; }
-    .neon-border { border: 1px solid rgba(0, 255, 135, 0.25); }
-    .tab-active { background-color: #00FF87; color: #000000; font-weight: bold; }
+    body {
+      background-color: #080B10;
+      color: #F3F4F6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dark-card {
+      background: #111622;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .neon-text { color: #00FF87; }
+    .neon-bg { background-color: #00FF87; color: #000000; }
+    .bottom-bar {
+      backdrop-filter: blur(16px);
+      background-color: rgba(13, 17, 26, 0.94);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .active-nav {
+      color: #00FF87;
+    }
+    .active-nav svg {
+      stroke: #00FF87;
+      filter: drop-shadow(0 0 6px rgba(0, 255, 135, 0.5));
+    }
   </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 max-w-6xl mx-auto">
+<body class="min-h-screen pb-24 select-none">
 
-  <!-- 1. LOGIN SCREEN -->
-  <div id="loginScreen" class="flex flex-col items-center justify-center min-h-[80vh]">
-    <div class="bg-gray-900 p-8 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl">
-      <div class="text-center mb-6">
-        <h1 class="text-2xl font-black text-green-400 tracking-wider">TPL ADMIN LOGIN</h1>
-        <p class="text-xs text-gray-400 mt-1">Authorized Access Only</p>
+  <!-- ================= 1. LOGIN SCREEN ================= -->
+  <div id="loginScreen" class="flex flex-col items-center justify-center min-h-screen px-6">
+    <div class="dark-card p-7 rounded-3xl w-full max-w-sm space-y-6 shadow-2xl">
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 bg-green-500/10 border border-green-500/30 rounded-2xl mx-auto flex items-center justify-center">
+          <svg class="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        </div>
+        <h1 class="text-xl font-black tracking-wider text-white">TPL ADMIN CONSOLE</h1>
+        <p class="text-xs text-gray-400">Sign in to control 90% app engine</p>
       </div>
 
       <div class="space-y-4">
         <div>
-          <label class="text-xs text-gray-400">Admin Email</label>
-          <input type="email" id="adminEmail" placeholder="admin@tpl.com" class="w-full mt-1 px-4 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email (Optional)</label>
+          <input type="email" id="adminEmail" placeholder="admin@tpl.com" class="w-full mt-1 px-4 py-3 bg-black/50 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
         </div>
         <div>
-          <label class="text-xs text-gray-400">Password / Master PIN</label>
-          <input type="password" id="adminPassword" placeholder="Enter Password or PIN" class="w-full mt-1 px-4 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Master PIN / Password</label>
+          <input type="password" id="adminPassword" placeholder="Default PIN: 7890" class="w-full mt-1 px-4 py-3 bg-black/50 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
         </div>
-
-        <p id="loginError" class="text-red-400 text-xs hidden"></p>
-
-        <!-- Direct Action Button (No page refresh) -->
-        <button type="button" id="loginBtn" onclick="handleLogin()" class="w-full py-3 bg-green-400 hover:bg-green-300 text-black font-black text-sm rounded-xl transition shadow-lg shadow-green-500/10">
-          Unlock Dashboard
+        <button type="button" id="loginBtn" onclick="handleLogin()" class="w-full py-3.5 bg-green-400 hover:bg-green-300 text-black font-black text-sm rounded-xl transition shadow-lg shadow-green-500/20 active:scale-95">
+          Unlock Console
         </button>
       </div>
     </div>
   </div>
 
-  <!-- 2. MAIN ADMIN DASHBOARD -->
+  <!-- ================= 2. MAIN ADMIN SHELL ================= -->
   <div id="dashboardScreen" class="hidden">
-    <header class="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-gray-800">
-      <div>
-        <h1 class="text-2xl font-black tracking-wider text-green-400">TPL CONTROL HUB</h1>
-        <p class="text-xs text-gray-400">App Installs, Real-time Payouts & User Management</p>
+    
+    <!-- Top Sticky Header -->
+    <header class="sticky top-0 z-40 bg-[#080B10]/95 backdrop-blur-md px-5 py-3 border-b border-white/5 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-green-500 to-emerald-300 flex items-center justify-center font-black text-black text-xs shadow-md">
+          TPL
+        </div>
+        <div>
+          <h1 class="text-sm font-black tracking-wider text-white leading-tight">CONTROL HUB</h1>
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+            <span class="text-[10px] text-gray-400 font-medium">Remote Engine Active</span>
+          </div>
+        </div>
       </div>
-      <div class="flex items-center gap-3">
-        <span class="px-3 py-1 text-xs rounded-full bg-green-950 text-green-400 border border-green-700 font-semibold">
-          ⚡ Live Sync Active
-        </span>
-        <button onclick="handleLogout()" class="px-3 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-400 text-xs rounded-lg">
-          Logout
+      <div class="flex items-center gap-2">
+        <button onclick="fetchAllData()" class="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:text-white active:scale-95" title="Refresh">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+        <button onclick="handleLogout()" class="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 active:scale-95" title="Logout">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         </button>
       </div>
     </header>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-gray-900 p-4 rounded-xl neon-border">
-        <div class="text-xs text-gray-400">Total App Installs</div>
-        <div id="totalUsersCount" class="text-2xl font-black text-blue-400 mt-1">0</div>
+    <!-- ================= TAB 1: DASHBOARD ================= -->
+    <main id="tabContent-dashboard" class="p-4 space-y-4 max-w-xl mx-auto">
+      <div>
+        <h2 class="text-xl font-black text-white">App Overview</h2>
+        <p class="text-xs text-gray-400">Live app performance & economy status</p>
       </div>
-      <div class="bg-gray-900 p-4 rounded-xl neon-border">
-        <div class="text-xs text-gray-400">Pending Withdrawals</div>
-        <div id="pendingCount" class="text-2xl font-black text-amber-400 mt-1">0</div>
-      </div>
-      <div class="bg-gray-900 p-4 rounded-xl neon-border">
-        <div class="text-xs text-gray-400">Pending Total Amount</div>
-        <div id="pendingAmount" class="text-2xl font-black text-green-400 mt-1">₹0.00</div>
-      </div>
-      <div class="bg-gray-900 p-4 rounded-xl neon-border">
-        <div class="text-xs text-gray-400">Paid Out Total</div>
-        <div id="completedAmount" class="text-2xl font-black text-purple-400 mt-1">₹0.00</div>
-      </div>
-    </div>
 
-    <div class="flex gap-2 mb-6 border-b border-gray-800 pb-2">
-      <button onclick="switchTab('payouts')" id="tab-payouts" class="px-4 py-2 rounded-lg text-xs font-semibold tab-active">
-        Payout Requests
-      </button>
-      <button onclick="switchTab('users')" id="tab-users" class="px-4 py-2 rounded-lg text-xs font-semibold bg-gray-900 text-gray-400 hover:text-white">
-        Users & Installs
-      </button>
-    </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="dark-card p-4 rounded-2xl">
+          <div class="text-[11px] text-gray-400 font-medium">Total Installs</div>
+          <div id="statTotalUsers" class="text-2xl font-black text-blue-400 mt-1">0</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Registered accounts</div>
+        </div>
+        <div class="dark-card p-4 rounded-2xl">
+          <div class="text-[11px] text-gray-400 font-medium">Pending Requests</div>
+          <div id="statPendingCount" class="text-2xl font-black text-amber-400 mt-1">0</div>
+          <div class="text-[10px] text-amber-500/80 mt-0.5">In payout queue</div>
+        </div>
+        <div class="dark-card p-4 rounded-2xl">
+          <div class="text-[11px] text-gray-400 font-medium">Pending Total</div>
+          <div id="statPendingAmount" class="text-2xl font-black text-green-400 mt-1">₹0.00</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Amount to pay</div>
+        </div>
+        <div class="dark-card p-4 rounded-2xl">
+          <div class="text-[11px] text-gray-400 font-medium">Total Paid Out</div>
+          <div id="statPaidAmount" class="text-2xl font-black text-purple-400 mt-1">₹0.00</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Cleared via UPI/Cashfree</div>
+        </div>
+      </div>
 
-    <!-- TAB 1: PAYOUTS -->
-    <div id="view-payouts">
-      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-        <h2 class="text-base font-bold">Withdrawal Queue</h2>
-        <div class="flex gap-2">
-          <button onclick="exportCashfreeCSV()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow">
-            📥 Cashfree Bulk CSV
+      <div class="dark-card p-4 rounded-2xl space-y-3">
+        <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Quick Actions</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="switchTab('payouts')" class="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-left border border-white/5 active:scale-95 transition">
+            <div class="text-green-400 font-bold text-xs">Process Payouts →</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">UPI Pay & Bulk CSV</div>
           </button>
-          <button onclick="fetchWithdrawals()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs border border-gray-700">
-            🔄 Refresh
+          <button onclick="switchTab('tasks')" class="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-left border border-white/5 active:scale-95 transition">
+            <div class="text-sky-400 font-bold text-xs">Manage Tasks →</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">Add YouTube / Apps</div>
           </button>
         </div>
       </div>
-      <div id="withdrawalsList" class="space-y-3">
-        <div class="text-center py-10 text-gray-500 text-sm">Loading queue...</div>
-      </div>
-    </div>
+    </main>
 
-    <!-- TAB 2: USERS -->
-    <div id="view-users" class="hidden">
-      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-        <h2 class="text-base font-bold">Registered Users Directory</h2>
-        <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search by name, email or UPI..." class="px-3 py-1.5 bg-gray-950 border border-gray-800 rounded-xl text-xs w-64 text-white focus:outline-none focus:border-green-400">
+    <!-- ================= TAB 2: PAYOUTS ================= -->
+    <main id="tabContent-payouts" class="hidden p-4 space-y-4 max-w-xl mx-auto">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-black text-white">Payout Requests</h2>
+          <p class="text-[11px] text-gray-400">Instant UPI payments & Cashfree batch files</p>
+        </div>
+        <button onclick="exportCashfreeCSV()" class="px-3 py-1.5 bg-blue-600 active:bg-blue-500 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
+          📥 Cashfree CSV
+        </button>
       </div>
+
+      <div id="withdrawalsList" class="space-y-3">
+        <div class="text-center py-10 text-gray-500 text-xs">Loading queue...</div>
+      </div>
+    </main>
+
+    <!-- ================= TAB 3: USERS ================= -->
+    <main id="tabContent-users" class="hidden p-4 space-y-4 max-w-xl mx-auto">
+      <div>
+        <h2 class="text-xl font-black text-white">Users Directory</h2>
+        <p class="text-[11px] text-gray-400">Search users, send alerts, adjust coins, ban bots</p>
+      </div>
+
+      <div class="relative">
+        <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search by name, email, or UPI ID..." class="w-full px-4 py-3 pl-10 bg-black/50 border border-white/10 rounded-2xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-green-400">
+        <svg class="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+
       <div id="usersList" class="space-y-3">
-        <div class="text-center py-10 text-gray-500 text-sm">Loading users...</div>
+        <div class="text-center py-10 text-gray-500 text-xs">Loading registered users...</div>
       </div>
-    </div>
+    </main>
+
+    <!-- ================= TAB 4: TASKS (Dynamic Task Manager) ================= -->
+    <main id="tabContent-tasks" class="hidden p-4 space-y-4 max-w-xl mx-auto">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-black text-white">Tasks Manager</h2>
+          <p class="text-[11px] text-gray-400">Add or edit in-app tasks remotely</p>
+        </div>
+        <button onclick="openAddTaskModal()" class="px-3 py-1.5 bg-green-400 hover:bg-green-300 text-black font-black rounded-xl text-xs shadow flex items-center gap-1">
+          + Add Task
+        </button>
+      </div>
+
+      <div id="tasksList" class="space-y-3">
+        <div class="text-center py-10 text-gray-500 text-xs">Loading app tasks...</div>
+      </div>
+    </main>
+
+    <!-- ================= TAB 5: SETTINGS (P1, P2, P3 Controls) ================= -->
+    <main id="tabContent-settings" class="hidden p-4 space-y-4 max-w-xl mx-auto">
+      <div>
+        <h2 class="text-xl font-black text-white">App Controls & Settings</h2>
+        <p class="text-[11px] text-gray-400">Real-time control over economy, games & security</p>
+      </div>
+
+      <!-- P1: Core Controls -->
+      <div class="dark-card p-4 rounded-2xl space-y-3">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+          <h3 class="text-xs font-black text-green-400 uppercase tracking-wider">P1 • Core Economy & App</h3>
+          <span class="text-[10px] text-gray-400 font-bold">Instant Sync</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Coin Rate (Coins = ₹1)</label>
+            <input type="number" id="p1-coinRate" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Referral Bonus (₹)</label>
+            <input type="number" id="p1-referBonus" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Min Task Cash (₹)</label>
+            <input type="number" id="p1-minTask" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Min Refer Cash (₹)</label>
+            <input type="number" id="p1-minRefer" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400 font-bold uppercase">Announcement Banner Text</label>
+          <input type="text" id="p1-announcement" placeholder="e.g. Daily payouts sent at 8 PM" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+        <div class="flex items-center justify-between pt-1">
+          <span class="text-xs text-gray-300">Show Announcement Banner</span>
+          <input type="checkbox" id="p1-announcementToggle" class="w-4 h-4 accent-green-400">
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-300">Maintenance Mode (Block App)</span>
+          <input type="checkbox" id="p1-maintenanceToggle" class="w-4 h-4 accent-red-500">
+        </div>
+        <button onclick="saveP1Config()" class="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-green-400 font-bold text-xs rounded-xl">
+          Save Core Controls
+        </button>
+      </div>
+
+      <!-- P2: Game Controls -->
+      <div class="dark-card p-4 rounded-2xl space-y-3">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+          <h3 class="text-xs font-black text-amber-400 uppercase tracking-wider">P2 • Game & Reward Limits</h3>
+          <span class="text-[10px] text-gray-400 font-bold">Spin & Scratch</span>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400 font-bold uppercase">Wheel Numbers (Comma separated)</label>
+          <input type="text" id="p2-wheelSlices" placeholder="10, 50, 25, 100, 15, 200" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Daily Spin Limit</label>
+            <input type="number" id="p2-spinLimit" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Daily Scratch Limit</label>
+            <input type="number" id="p2-scratchLimit" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+        </div>
+        <button onclick="saveP2Config()" class="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-amber-400 font-bold text-xs rounded-xl">
+          Save Game Controls
+        </button>
+      </div>
+
+      <!-- P3: Security Shield -->
+      <div class="dark-card p-4 rounded-2xl space-y-3">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+          <h3 class="text-xs font-black text-red-400 uppercase tracking-wider">P3 • Anti-Cheat & Shield</h3>
+          <span class="text-[10px] text-gray-400 font-bold">Bot Protection</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-300">Block VPN & Proxy</span>
+          <input type="checkbox" id="p3-blockVPN" class="w-4 h-4 accent-red-500">
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-300">Block Rooted Devices</span>
+          <input type="checkbox" id="p3-blockRooted" class="w-4 h-4 accent-red-500">
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-300">One Device - One Account Rule</span>
+          <input type="checkbox" id="p3-oneDevice" class="w-4 h-4 accent-red-500">
+        </div>
+        <button onclick="saveP3Config()" class="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-red-400 font-bold text-xs rounded-xl">
+          Save Security Settings
+        </button>
+      </div>
+    </main>
+
+    <!-- ================= FIXED BOTTOM NAV BAR ================= -->
+    <nav class="bottom-bar fixed bottom-0 left-0 right-0 z-50 px-2 py-2">
+      <div class="max-w-md mx-auto flex items-center justify-around">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center gap-1 active-nav transition py-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          <span class="text-[9px] font-bold">Home</span>
+        </button>
+        <button onclick="switchTab('payouts')" id="nav-payouts" class="flex flex-col items-center gap-1 text-gray-400 transition py-1">
+          <div class="relative">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <span id="navBadge" class="hidden absolute -top-1 -right-2 bg-amber-400 text-black text-[9px] font-black px-1.5 rounded-full">0</span>
+          </div>
+          <span class="text-[9px] font-bold">Payouts</span>
+        </button>
+        <button onclick="switchTab('users')" id="nav-users" class="flex flex-col items-center gap-1 text-gray-400 transition py-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <span class="text-[9px] font-bold">Users</span>
+        </button>
+        <button onclick="switchTab('tasks')" id="nav-tasks" class="flex flex-col items-center gap-1 text-gray-400 transition py-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <span class="text-[9px] font-bold">Tasks</span>
+        </button>
+        <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 text-gray-400 transition py-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span class="text-[9px] font-bold">Settings</span>
+        </button>
+      </div>
+    </nav>
   </div>
 
-  <!-- NOTIFICATION MODAL -->
-  <div id="notifModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-sm text-white">Send Direct User Alert</h3>
-        <button onclick="closeNotifModal()" class="text-gray-400 hover:text-white">&times;</button>
+  <!-- MODAL: SINGLE USER NOTICE -->
+  <div id="notifModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
+    <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex justify-between item items-center pb-2 border-b border-white/5">
+        <div>
+          <h3 class="font-black text-sm text-white">Send In-App Notice</h3>
+          <p class="text-[10px] text-gray-400">Target: <span id="modalUserName" class="text-green-400 font-bold"></span></p>
+        </div>
+        <button onclick="closeNotifModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
       </div>
-      <p class="text-xs text-gray-400">Target User: <span id="modalUserName" class="text-green-400 font-semibold"></span></p>
       <input type="hidden" id="modalUserUid">
       <div>
-        <label class="text-xs text-gray-400">Alert Title</label>
-        <input type="text" id="notifTitle" placeholder="e.g. UPI Verification Notice" class="w-full mt-1 px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs text-white">
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Alert Title</label>
+        <input type="text" id="notifTitle" placeholder="e.g. UPI ID Update Required" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
       </div>
       <div>
-        <label class="text-xs text-gray-400">Message</label>
-        <textarea id="notifBody" rows="3" placeholder="Type direct alert message for this user..." class="w-full mt-1 px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs text-white"></textarea>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Message</label>
+        <textarea id="notifBody" rows="3" placeholder="Enter custom message to show user..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></textarea>
       </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeNotifModal()" class="px-3 py-1.5 bg-gray-800 text-gray-300 rounded-lg text-xs">Cancel</button>
-        <button onclick="submitUserNotification()" class="px-4 py-1.5 bg-green-400 text-black font-bold rounded-lg text-xs">Send Alert</button>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeNotifModal()" class="flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="submitUserNotification()" class="flex-1 py-2 bg-green-400 text-black font-black rounded-xl text-xs">Send Alert</button>
       </div>
     </div>
   </div>
 
-  <div id="toast" class="fixed bottom-5 right-5 bg-green-400 text-black px-4 py-2 rounded-xl text-xs font-bold shadow-xl hidden"></div>
+  <!-- MODAL: ADD DYNAMIC TASK -->
+  <div id="taskModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
+    <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-white/5">
+        <h3 class="font-black text-sm text-white">Create New App Task</h3>
+        <button onclick="closeTaskModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Task Title</label>
+        <input type="text" id="taskTitle" placeholder="e.g. Subscribe to YouTube" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase">Reward Coins</label>
+          <input type="number" id="taskCoins" placeholder="100" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase">Category</label>
+          <select id="taskCategory" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <option value="Social">Social</option>
+            <option value="Install">App Install</option>
+            <option value="Special">Special Offer</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Target Action Link</label>
+        <input type="url" id="taskUrl" placeholder="https://..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeTaskModal()" class="flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="saveNewTask()" class="flex-1 py-2 bg-green-400 text-black font-black rounded-xl text-xs">Save Task</button>
+      </div>
+    </div>
+  </div>
 
-  <script>
-    const MASTER_PIN = "7890"; // Backup Master PIN (Always works)
+  <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-green-400 text-black px-4 py-2 rounded-2xl text-xs font-black shadow-xl hidden z-50"></div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCMFViBcyJVEawOZASTQ9qr2zDwIqhqKn8",
-      authDomain: "tpl-5bd9d.firebaseapp.com",
-      projectId: "tpl-5bd9d",
-      storageBucket: "tpl-5bd9d.firebasestorage.app",
-      messagingSenderId: "940679131159",
-      appId: "1:940679131159:web:8b3de2fbf61b57615a2c52",
-      measurementId: "G-KRP2LPFGQ4"
-    };
-
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    let allUsersData = [];
-    let pendingWithdrawalsCache = [];
-
-    // Check existing session
-    if (sessionStorage.getItem('tpl_admin_logged') === 'true') {
-      openDashboard();
-    }
-
-    async function handleLogin() {
-      const email = document.getElementById('adminEmail').value.trim();
-      const pass = document.getElementById('adminPassword').value.trim();
-      const errBox = document.getElementById('loginError');
-      const btn = document.getElementById('loginBtn');
-
-      errBox.classList.add('hidden');
-
-      if (!pass) {
-        alert("Please enter password or Master PIN!");
-        return;
-      }
-
-      // 1. Instant Master PIN Check
-      if (pass === MASTER_PIN) {
-        sessionStorage.setItem('tpl_admin_logged', 'true');
-        openDashboard();
-        return;
-      }
-
-      // 2. Firebase Email/Password Check
-      if (!email) {
-        alert("Enter email for Firebase Login, or use Master PIN: 7890");
-        return;
-      }
-
-      btn.innerText = "Checking...";
-      btn.disabled = true;
-
-      try {
-        await auth.signInWithEmailAndPassword(email, pass);
-        sessionStorage.setItem('tpl_admin_logged', 'true');
-        openDashboard();
-      } catch (err) {
-        btn.innerText = "Unlock Dashboard";
-        btn.disabled = false;
-        alert("Login Error: " + err.code + "\n" + err.message + "\n\nTip: You can use Master PIN: 7890");
-        errBox.innerText = err.message;
-        errBox.classList.remove('hidden');
-      }
-    }
-
-    function openDashboard() {
-      document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('dashboardScreen').classList.remove('hidden');
-      fetchWithdrawals();
-      fetchUsers();
-    }
-
-    function handleLogout() {
-      sessionStorage.removeItem('tpl_admin_logged');
-      auth.signOut();
-      location.reload();
-    }
-
-    function switchTab(tab) {
-      const pTab = document.getElementById('tab-payouts');
-      const uTab = document.getElementById('tab-users');
-      const pView = document.getElementById('view-payouts');
-      const uView = document.getElementById('view-users');
-
-      if (tab === 'payouts') {
-        pTab.className = "px-4 py-2 rounded-lg text-xs font-semibold tab-active";
-        uTab.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-gray-900 text-gray-400 hover:text-white";
-        pView.classList.remove('hidden');
-        uView.classList.add('hidden');
-      } else {
-        uTab.className = "px-4 py-2 rounded-lg text-xs font-semibold tab-active";
-        pTab.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-gray-900 text-gray-400 hover:text-white";
-        uView.classList.remove('hidden');
-        pView.classList.add('hidden');
-      }
-    }
-
-    function fetchWithdrawals() {
-      db.collection('withdrawals').orderBy('createdAt', 'desc').onSnapshot(snap => {
-        const list = document.getElementById('withdrawalsList');
-        list.innerHTML = '';
-        let pCount = 0, pAmt = 0, cAmt = 0;
-        pendingWithdrawalsCache = [];
-
-        if (snap.empty) {
-          list.innerHTML = '<div class="p-8 text-center text-gray-500 bg-gray-900 rounded-xl border border-gray-800 text-xs">No withdrawal requests found.</div>';
-          return;
-        }
-
-        snap.forEach(doc => {
-          const d = doc.data();
-          const id = doc.id;
-          const isPending = d.status === 'Pending';
-
-          if (isPending) {
-            pCount++;
-            pAmt += (d.amount || 0);
-            pendingWithdrawalsCache.push({ id, ...d });
-          } else if (d.status === 'Completed') {
-            cAmt += (d.amount || 0);
-          }
-
-          const card = document.createElement('div');
-          card.className = `p-4 rounded-xl border ${isPending ? 'bg-gray-900 border-gray-800' : 'bg-gray-950 border-gray-900 opacity-60'} flex flex-col sm:flex-row sm:items-center justify-between gap-4`;
-
-          const upiPayLink = `upi://pay?pa=${encodeURIComponent(d.upiId || '')}&pn=${encodeURIComponent(d.userName || 'TPL Player')}&am=${d.amount}&cu=INR&tn=TPL_Payout`;
-
-          card.innerHTML = `
-            <div class="space-y-1">
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-sm text-white">${d.userName || 'Player'}</span>
-                <span class="text-[10px] px-2 py-0.5 rounded ${isPending ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-green-950 text-green-400'}">${d.status}</span>
-                <span class="text-xs text-gray-500">• ${d.type}</span>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-gray-300">
-                <span>UPI: <b class="text-white">${d.upiId}</b></span>
-                <button onclick="copyText('${d.upiId}')" class="bg-gray-800 hover:bg-gray-700 px-2 py-0.5 rounded text-green-400 text-[10px] border border-gray-700">Copy</button>
-              </div>
-              <div class="text-[11px] text-gray-500">${d.userEmail || ''}</div>
-            </div>
-            <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800">
-              <div class="text-right">
-                <div class="text-lg font-black text-green-400">₹${(d.amount || 0).toFixed(2)}</div>
-              </div>
-              ${isPending ? `
-                <div class="flex gap-1.5">
-                  <a href="${upiPayLink}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition inline-flex items-center">
-                    Pay UPI App
-                  </a>
-                  <button onclick="markAsPaid('${id}')" class="px-3 py-1.5 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-lg transition">
-                    Mark Paid
-                  </button>
-                  <button onclick="rejectRequest('${id}', '${d.uid}', ${d.amount}, '${d.type}')" class="px-2.5 py-1.5 bg-red-950 hover:bg-red-900 text-red-400 text-xs rounded-lg border border-red-800">
-                    Reject
-                  </button>
-                </div>
-              ` : '<span class="text-xs text-gray-500 font-semibold">Resolved</span>'}
-            </div>
-          `;
-          list.appendChild(card);
-        });
-
-        document.getElementById('pendingCount').innerText = pCount;
-        document.getElementById('pendingAmount').innerText = '₹' + pAmt.toFixed(2);
-        document.getElementById('completedAmount').innerText = '₹' + cAmt.toFixed(2);
-      });
-    }
-
-    function fetchUsers() {
-      db.collection('users').onSnapshot(snap => {
-        allUsersData = [];
-        snap.forEach(doc => allUsersData.push({ uid: doc.id, ...doc.data() }));
-        document.getElementById('totalUsersCount').innerText = allUsersData.length;
-        renderUsers(allUsersData);
-      });
-    }
-
-    function renderUsers(users) {
-      const list = document.getElementById('usersList');
-      list.innerHTML = '';
-      if (!users.length) {
-        list.innerHTML = '<div class="p-8 text-center text-gray-500 bg-gray-900 rounded-xl text-xs">No users registered yet.</div>';
-        return;
-      }
-      users.forEach(u => {
-        const isBanned = u.isBanned === true;
-        const card = document.createElement('div');
-        card.className = `p-4 rounded-xl border ${isBanned ? 'bg-red-950/20 border-red-900' : 'bg-gray-900 border-gray-800'} flex flex-col sm:flex-row sm:items-center justify-between gap-4`;
-
-        card.innerHTML = `
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-sm text-white">${u.displayName || 'Player'}</span>
-              ${isBanned ? '<span class="text-[10px] bg-red-900 text-red-300 px-2 py-0.5 rounded">BANNED</span>' : ''}
-              <span class="text-xs text-gray-500">• Coins: <b class="text-yellow-400">${u.coins || 0}</b></span>
-            </div>
-            <div class="text-xs text-gray-400">Email: ${u.email || 'N/A'} | UPI: <b class="text-white">${u.upiId || 'Not Saved'}</b></div>
-            <div class="text-[11px] text-gray-500">Wallet: ₹${(u.taskCash || 0).toFixed(2)} (Task) | ₹${(u.referCash || 0).toFixed(2)} (Refer)</div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="openNotifModal('${u.uid}', '${(u.displayName || 'Player').replace(/'/g, "")}')" class="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-green-400 border border-gray-700 rounded-lg text-xs font-semibold">
-              🔔 Send Alert
-            </button>
-            <button onclick="toggleBanUser('${u.uid}', ${isBanned})" class="px-2.5 py-1.5 ${isBanned ? 'bg-green-950 text-green-400 border-green-800' : 'bg-red-950 text-red-400 border-red-800'} border rounded-lg text-xs font-semibold">
-              ${isBanned ? 'Unban' : 'Ban User'}
-            </button>
-          </div>
-        `;
-        list.appendChild(card);
-      });
-    }
-
-    function filterUsers() {
-      const q = document.getElementById('userSearchInput').value.toLowerCase();
-      const filtered = allUsersData.filter(u => 
-        (u.displayName || '').toLowerCase().includes(q) ||
-        (u.email || '').toLowerCase().includes(q) ||
-        (u.upiId || '').toLowerCase().includes(q)
-      );
-      renderUsers(filtered);
-    }
-
-    function openNotifModal(uid, name) {
-      document.getElementById('modalUserUid').value = uid;
-      document.getElementById('modalUserName').innerText = name;
-      document.getElementById('notifTitle').value = '';
-      document.getElementById('notifBody').value = '';
-      document.getElementById('notifModal').classList.remove('hidden');
-    }
-    function closeNotifModal() {
-      document.getElementById('notifModal').classList.add('hidden');
-    }
-    async function submitUserNotification() {
-      const uid = document.getElementById('modalUserUid').value;
-      const title = document.getElementById('notifTitle').value.trim();
-      const body = document.getElementById('notifBody').value.trim();
-      if (!title || !body) return alert('Title & Message required!');
-
-      try {
-        await db.collection('users').doc(uid).collection('notifications').add({
-          title,
-          body,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          isRead: false
-        });
-        closeNotifModal();
-        showToast('Notification sent to user!');
-      } catch (e) {
-        alert('Error: ' + e.message);
-      }
-    }
-
-    async function toggleBanUser(uid, currentlyBanned) {
-      if (!confirm(`Are you sure you want to ${currentlyBanned ? 'Unban' : 'Ban'} this user?`)) return;
-      await db.collection('users').doc(uid).update({ isBanned: !currentlyBanned });
-      showToast(currentlyBanned ? 'User Unbanned' : 'User Banned');
-    }
-
-    function exportCashfreeCSV() {
-      if (!pendingWithdrawalsCache.length) return alert('No pending payouts to export!');
-      let csv = "TransferId,Amount,Phone,Email,Name,BeneficiaryId,VPA\n";
-      pendingWithdrawalsCache.forEach((item) => {
-        csv += `TPL_${item.id},${item.amount},,,${item.userName || 'Player'},,${item.upiId}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.setAttribute('href', url);
-      a.setAttribute('download', `Cashfree_Payouts_${new Date().toISOString().slice(0,10)}.csv`);
-      a.click();
-      showToast('Cashfree CSV Downloaded!');
-    }
-
-    async function markAsPaid(docId) {
-      if (!confirm("Confirm you have completed payment?")) return;
-      await db.collection('withdrawals').doc(docId).update({
-      status: 'Completed',
-        paidAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      showToast('Marked as Completed!');
-    }
-
-    async function rejectRequest(docId, uid, amount, type) {
-      const reason = prompt("Enter rejection reason (e.g. Invalid UPI ID):");
-      if (reason === null) return;
-      const field = type === 'Task Cash' ? 'taskCash' : 'referCash';
-      await db.collection('users').doc(uid).update({ [field]: firebase.firestore.FieldValue.increment(amount) });
-      await db.collection('withdrawals').doc(docId).update({
-        status: 'Rejected',
-        rejectionReason: reason,
-        rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      showToast('Rejected & Refunded to user!');
-    }
-
-    function copyText(txt) {
-      navigator.clipboard.writeText(txt).then(() => showToast('Copied!'));
-    }
-
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.innerText = msg;
-      t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 2200);
-    }
-  </script>
+  <!-- Connect Logic File -->
+  <script src="app.js"></script>
 </body>
-</html> 
+</html>
