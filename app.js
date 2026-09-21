@@ -2,10 +2,10 @@
 // TPL PRO ADMIN CONSOLE - AIRTIGHT SECURE ENGINE
 // ==========================================
 
-// ⚠️ ನಿಮ್ಮ Firebase Authentication Users ಟ್ಯಾಬ್‌ನಲ್ಲಿರುವ UID ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ:
-const AUTHORIZED_ADMIN_UID = "VsGSj7MPsoXIwLbBKPey4rV4Oxg1";
+// 🔒 ನಿಮ್ಮ Firebase Admin UID
+var AUTHORIZED_ADMIN_UID = "VsGSj7MPsoXIwLbBKPey4rV4Oxg1";
 
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyCMFViBcyJVEawOZASTQ9qr2zDwIqhqKn8",
   authDomain: "tpl-5bd9d.firebaseapp.com",
   projectId: "tpl-5bd9d",
@@ -15,15 +15,16 @@ const firebaseConfig = {
   measurementId: "G-KRP2LPFGQ4"
 };
 
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
+// 1. Initialize Firebase App
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
-let allUsersData = [];
-let pendingWithdrawalsCache = [];
+var allUsersData = [];
+var pendingWithdrawalsCache = [];
 
-// Listen for official Firebase Auth State
-auth.onAuthStateChanged(user => {
+// 2. Auth State Listener (Security Check)
+firebase.auth().onAuthStateChanged(function(user) {
   if (user) {
     if (user.uid === AUTHORIZED_ADMIN_UID) {
       // 100% Verified Admin
@@ -31,9 +32,8 @@ auth.onAuthStateChanged(user => {
       document.getElementById('dashboardScreen').classList.remove('hidden');
       fetchAllData();
     } else {
-      // Intruder or unauthorized user logged in
-      alert("🚨 Access Denied! You are not authorized to view the admin console.");
-      auth.signOut();
+      alert("🚨 Access Denied! ಈ ಖಾತೆಗೆ ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ ಪ್ರವೇಶಿಸಲು ಅನುಮತಿ ಇಲ್ಲ.");
+      firebase.auth().signOut();
     }
   } else {
     document.getElementById('loginScreen').classList.remove('hidden');
@@ -45,12 +45,12 @@ auth.onAuthStateChanged(user => {
 // 1. SECURE AUTHENTICATION LOGIN
 // ------------------------------------------
 async function handleLogin() {
-  const email = document.getElementById('adminEmail').value.trim();
-  const pass = document.getElementById('adminPassword').value.trim();
-  const btn = document.getElementById('loginBtn');
+  var email = document.getElementById('adminEmail').value.trim();
+  var pass = document.getElementById('adminPassword').value.trim();
+  var btn = document.getElementById('loginBtn');
 
   if (!email || !pass) {
-    alert("Please enter both Admin Email and Password!");
+    alert("Admin Email ಮತ್ತು Password ಎರಡನ್ನೂ ಹಾಕಿ!");
     return;
   }
 
@@ -58,10 +58,10 @@ async function handleLogin() {
   btn.disabled = true;
 
   try {
-    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    var cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
     if (cred.user.uid !== AUTHORIZED_ADMIN_UID) {
-      alert("🚨 Access Denied: Unrecognized Admin UID.");
-      await auth.signOut();
+      alert("🚨 Access Denied: Authorized Admin UID ಮ್ಯಾಚ್ ಆಗಿಲ್ಲ.");
+      await firebase.auth().signOut();
       btn.innerText = "Unlock Console";
       btn.disabled = false;
     }
@@ -73,7 +73,7 @@ async function handleLogin() {
 }
 
 function handleLogout() {
-  auth.signOut();
+  firebase.auth().signOut();
   location.reload();
 }
 
@@ -81,10 +81,10 @@ function handleLogout() {
 // 2. BOTTOM NAVIGATION SWITCHER
 // ------------------------------------------
 function switchTab(tab) {
-  const tabs = ['dashboard', 'payouts', 'users', 'tasks', 'settings'];
-  tabs.forEach(t => {
-    const content = document.getElementById(`tabContent-${t}`);
-    const navBtn = document.getElementById(`nav-${t}`);
+  var tabs = ['dashboard', 'payouts', 'users', 'tasks', 'settings'];
+  tabs.forEach(function(t) {
+    var content = document.getElementById('tabContent-' + t);
+    var navBtn = document.getElementById('nav-' + t);
     if (t === tab) {
       content.classList.remove('hidden');
       navBtn.className = "flex flex-col items-center gap-1 active-nav transition py-1";
@@ -107,33 +107,33 @@ function fetchAllData() {
 // 3. TAB 2: PAYOUTS QUEUE
 // ------------------------------------------
 function fetchWithdrawals() {
-  db.collection('withdrawals').orderBy('createdAt', 'desc').onSnapshot(snap => {
-    const list = document.getElementById('withdrawalsList');
+  firebase.firestore().collection('withdrawals').orderBy('createdAt', 'desc').onSnapshot(function(snap) {
+    var list = document.getElementById('withdrawalsList');
     list.innerHTML = '';
-    let pCount = 0, pAmt = 0, cAmt = 0;
+    var pCount = 0, pAmt = 0, cAmt = 0;
     pendingWithdrawalsCache = [];
 
     if (snap.empty) {
       list.innerHTML = '<div class="p-8 text-center text-gray-500 dark-card rounded-2xl text-xs">No withdrawal requests found.</div>';
     }
 
-    snap.forEach(doc => {
-      const d = doc.data();
-      const id = doc.id;
-      const isPending = d.status === 'Pending';
+    snap.forEach(function(doc) {
+      var d = doc.data();
+      var id = doc.id;
+      var isPending = d.status === 'Pending';
 
       if (isPending) {
         pCount++;
         pAmt += (d.amount || 0);
-        pendingWithdrawalsCache.push({ id, ...d });
+        pendingWithdrawalsCache.push(Object.assign({ id: id }, d));
       } else if (d.status === 'Completed') {
         cAmt += (d.amount || 0);
       }
 
-      const card = document.createElement('div');
-      card.className = `dark-card p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${!isPending ? 'opacity-40' : ''}`;
+      var card = document.createElement('div');
+      card.className = "dark-card p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 " + (!isPending ? 'opacity-40' : '');
 
-      const upiPayLink = `upi://pay?pa=${encodeURIComponent(d.upiId || '')}&pn=${encodeURIComponent(d.userName || 'TPL Player')}&am=${d.amount}&cu=INR&tn=TPL_Payout`;
+      var upiPayLink = "upi://pay?pa=" + encodeURIComponent(d.upiId || '') + "&pn=" + encodeURIComponent(d.userName || 'TPL Player') + "&am=" + d.amount + "&cu=INR&tn=TPL_Payout";
 
       card.innerHTML = `
         <div class="space-y-1">
@@ -175,7 +175,7 @@ function fetchWithdrawals() {
     document.getElementById('statPendingAmount').innerText = '₹' + pAmt.toFixed(2);
     document.getElementById('statPaidAmount').innerText = '₹' + cAmt.toFixed(2);
 
-    const badge = document.getElementById('navBadge');
+    var badge = document.getElementById('navBadge');
     if (pCount > 0) {
       badge.innerText = pCount;
       badge.classList.remove('hidden');
@@ -187,22 +187,22 @@ function fetchWithdrawals() {
 
 function exportCashfreeCSV() {
   if (!pendingWithdrawalsCache.length) return alert('No pending payouts to export!');
-  let csv = "TransferId,Amount,Phone,Email,Name,BeneficiaryId,VPA\n";
-  pendingWithdrawalsCache.forEach((item) => {
-    csv += `TPL_${item.id},${item.amount},,,${item.userName || 'Player'},,${item.upiId}\n`;
+  var csv = "TransferId,Amount,Phone,Email,Name,BeneficiaryId,VPA\n";
+  pendingWithdrawalsCache.forEach(function(item) {
+    csv += "TPL_" + item.id + "," + item.amount + ",,," + (item.userName || 'Player') + ",," + item.upiId + "\n";
   });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = window.URL.createObjectURL(blob);
+  var a = document.createElement('a');
   a.setAttribute('href', url);
-  a.setAttribute('download', `Cashfree_Batch_${new Date().toISOString().slice(0,10)}.csv`);
+  a.setAttribute('download', "Cashfree_Batch_" + new Date().toISOString().slice(0,10) + ".csv");
   a.click();
   showToast('Cashfree CSV Exported!');
 }
 
 async function markAsPaid(docId) {
   if (!confirm("Confirm payment sent to user?")) return;
-  await db.collection('withdrawals').doc(docId).update({
+  await firebase.firestore().collection('withdrawals').doc(docId).update({
     status: 'Completed',
     paidAt: firebase.firestore.FieldValue.serverTimestamp()
   });
@@ -210,11 +210,13 @@ async function markAsPaid(docId) {
 }
 
 async function rejectRequest(docId, uid, amount, type) {
-  const reason = prompt("Enter rejection reason (e.g., Invalid UPI ID):");
+  var reason = prompt("Enter rejection reason (e.g., Invalid UPI ID):");
   if (reason === null) return;
-  const field = type === 'Task Cash' ? 'taskCash' : 'referCash';
-  await db.collection('users').doc(uid).update({ [field]: firebase.firestore.FieldValue.increment(amount) });
-  await db.collection('withdrawals').doc(docId).update({
+  var field = type === 'Task Cash' ? 'taskCash' : 'referCash';
+  var updateData = {};
+  updateData[field] = firebase.firestore.FieldValue.increment(amount);
+  await firebase.firestore().collection('users').doc(uid).update(updateData);
+  await firebase.firestore().collection('withdrawals').doc(docId).update({
     status: 'Rejected',
     rejectionReason: reason,
     rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -226,26 +228,28 @@ async function rejectRequest(docId, uid, amount, type) {
 // 4. TAB 3: USERS & ALERTS
 // ------------------------------------------
 function fetchUsers() {
-  db.collection('users').onSnapshot(snap => {
+  firebase.firestore().collection('users').onSnapshot(function(snap) {
     allUsersData = [];
-    snap.forEach(doc => allUsersData.push({ uid: doc.id, ...doc.data() }));
+    snap.forEach(function(doc) {
+      allUsersData.push(Object.assign({ uid: doc.id }, doc.data()));
+    });
     document.getElementById('statTotalUsers').innerText = allUsersData.length;
     renderUsers(allUsersData);
   });
 }
 
 function renderUsers(users) {
-  const list = document.getElementById('usersList');
+  var list = document.getElementById('usersList');
   list.innerHTML = '';
   if (!users.length) {
     list.innerHTML = '<div class="p-8 text-center text-gray-500 dark-card rounded-2xl text-xs">No users found.</div>';
     return;
   }
 
-  users.forEach(u => {
-    const isBanned = u.isBanned === true;
-    const card = document.createElement('div');
-    card.className = `dark-card p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isBanned ? 'border-red-500/30 bg-red-950/10' : ''}`;
+  users.forEach(function(u) {
+    var isBanned = u.isBanned === true;
+    var card = document.createElement('div');
+    card.className = "dark-card p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 " + (isBanned ? 'border-red-500/30 bg-red-950/10' : '');
 
     card.innerHTML = `
       <div class="space-y-1">
@@ -271,12 +275,12 @@ function renderUsers(users) {
 }
 
 function filterUsers() {
-  const q = document.getElementById('userSearchInput').value.toLowerCase();
-  const filtered = allUsersData.filter(u => 
-    (u.displayName || '').toLowerCase().includes(q) ||
-    (u.email || '').toLowerCase().includes(q) ||
-    (u.upiId || '').toLowerCase().includes(q)
-  );
+  var q = document.getElementById('userSearchInput').value.toLowerCase();
+  var filtered = allUsersData.filter(function(u) {
+    return (u.displayName || '').toLowerCase().includes(q) ||
+           (u.email || '').toLowerCase().includes(q) ||
+           (u.upiId || '').toLowerCase().includes(q);
+  });
   renderUsers(filtered);
 }
 
@@ -293,15 +297,15 @@ function closeNotifModal() {
 }
 
 async function submitUserNotification() {
-  const uid = document.getElementById('modalUserUid').value;
-  const title = document.getElementById('notifTitle').value.trim();
-  const body = document.getElementById('notifBody').value.trim();
+  var uid = document.getElementById('modalUserUid').value;
+  var title = document.getElementById('notifTitle').value.trim();
+  var body = document.getElementById('notifBody').value.trim();
   if (!title || !body) return alert('Title ಮತ್ತು Message ಖಾಲಿ ಇರಬಾರದು!');
 
   try {
-    await db.collection('users').doc(uid).collection('notifications').add({
-      title,
-      body,
+    await firebase.firestore().collection('users').doc(uid).collection('notifications').add({
+      title: title,
+      body: body,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       isRead: false
     });
@@ -313,8 +317,8 @@ async function submitUserNotification() {
 }
 
 async function toggleBanUser(uid, currentlyBanned) {
-  if (!confirm(`Are you sure you want to ${currentlyBanned ? 'Unban' : 'Ban'} this user?`)) return;
-  await db.collection('users').doc(uid).update({ isBanned: !currentlyBanned });
+  if (!confirm("Are you sure you want to " + (currentlyBanned ? 'Unban' : 'Ban') + " this user?")) return;
+  await firebase.firestore().collection('users').doc(uid).update({ isBanned: !currentlyBanned });
   showToast(currentlyBanned ? 'User Unbanned' : 'User Banned');
 }
 
@@ -322,8 +326,8 @@ async function toggleBanUser(uid, currentlyBanned) {
 // 5. TAB 4: DYNAMIC TASK MANAGER
 // ------------------------------------------
 function fetchTasks() {
-  db.collection('tasks').onSnapshot(snap => {
-    const list = document.getElementById('tasksList');
+  firebase.firestore().collection('tasks').onSnapshot(function(snap) {
+    var list = document.getElementById('tasksList');
     list.innerHTML = '';
 
     if (snap.empty) {
@@ -331,13 +335,13 @@ function fetchTasks() {
       return;
     }
 
-    snap.forEach(doc => {
-      const t = doc.data();
-      const id = doc.id;
-      const isActive = t.isActive !== false;
+    snap.forEach(function(doc) {
+      var t = doc.data();
+      var id = doc.id;
+      var isActive = t.isActive !== false;
 
-      const card = document.createElement('div');
-      card.className = `dark-card p-4 rounded-2xl flex items-center justify-between gap-3 ${!isActive ? 'opacity-40' : ''}`;
+      var card = document.createElement('div');
+      card.className = "dark-card p-4 rounded-2xl flex items-center justify-between gap-3 " + (!isActive ? 'opacity-40' : '');
 
       card.innerHTML = `
         <div class="space-y-0.5">
@@ -373,19 +377,19 @@ function closeTaskModal() {
 }
 
 async function saveNewTask() {
-  const title = document.getElementById('taskTitle').value.trim();
-  const coins = parseInt(document.getElementById('taskCoins').value) || 0;
-  const category = document.getElementById('taskCategory').value;
-  const url = document.getElementById('taskUrl').value.trim();
+  var title = document.getElementById('taskTitle').value.trim();
+  var coins = parseInt(document.getElementById('taskCoins').value) || 0;
+  var category = document.getElementById('taskCategory').value;
+  var url = document.getElementById('taskUrl').value.trim();
 
   if (!title || !coins || !url) return alert('Fill all fields correctly!');
 
   try {
-    await db.collection('tasks').add({
-      title,
-      coins,
-      category,
-      url,
+    await firebase.firestore().collection('tasks').add({
+      title: title,
+      coins: coins,
+      category: category,
+      url: url,
       isActive: true,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -397,13 +401,13 @@ async function saveNewTask() {
 }
 
 async function toggleTaskStatus(id, currentlyActive) {
-  await db.collection('tasks').doc(id).update({ isActive: !currentlyActive });
+  await firebase.firestore().collection('tasks').doc(id).update({ isActive: !currentlyActive });
   showToast(currentlyActive ? 'Task Paused' : 'Task Activated');
 }
 
 async function deleteTask(id) {
   if (!confirm('Are you sure you want to delete this task?')) return;
-  await db.collection('tasks').doc(id).delete();
+  await firebase.firestore().collection('tasks').doc(id).delete();
   showToast('Task Deleted');
 }
 
@@ -412,9 +416,9 @@ async function deleteTask(id) {
 // ------------------------------------------
 async function fetchConfigs() {
   try {
-    const p1Snap = await db.collection('app_config').doc('core').get();
+    var p1Snap = await firebase.firestore().collection('app_config').doc('core').get();
     if (p1Snap.exists) {
-      const c = p1Snap.data();
+      var c = p1Snap.data();
       document.getElementById('p1-coinRate').value = c.coinRate || 100;
       document.getElementById('p1-referBonus').value = c.referBonus || 5;
       document.getElementById('p1-minTask').value = c.minTask || 10;
@@ -424,17 +428,17 @@ async function fetchConfigs() {
       document.getElementById('p1-maintenanceToggle').checked = c.maintenanceMode === true;
     }
 
-    const p2Snap = await db.collection('app_config').doc('game').get();
+    var p2Snap = await firebase.firestore().collection('app_config').doc('game').get();
     if (p2Snap.exists) {
-      const g = p2Snap.data();
+      var g = p2Snap.data();
       document.getElementById('p2-wheelSlices').value = (g.wheelSlices || [10, 50, 25, 100, 15, 200]).join(', ');
       document.getElementById('p2-spinLimit').value = g.spinLimit || 3;
       document.getElementById('p2-scratchLimit').value = g.scratchLimit || 2;
     }
 
-    const p3Snap = await db.collection('app_config').doc('security').get();
+    var p3Snap = await firebase.firestore().collection('app_config').doc('security').get();
     if (p3Snap.exists) {
-      const s = p3Snap.data();
+      var s = p3Snap.data();
       document.getElementById('p3-blockVPN').checked = s.blockVPN === true;
       document.getElementById('p3-blockRooted').checked = s.blockRooted === true;
       document.getElementById('p3-oneDevice').checked = s.oneDevice === true;
@@ -445,17 +449,23 @@ async function fetchConfigs() {
 }
 
 async function saveP1Config() {
-  const coinRate = parseInt(document.getElementById('p1-coinRate').value) || 100;
-  const referBonus = parseInt(document.getElementById('p1-referBonus').value) || 5;
-  const minTask = parseInt(document.getElementById('p1-minTask').value) || 10;
-  const minRefer = parseInt(document.getElementById('p1-minRefer').value) || 50;
-  const announcement = document.getElementById('p1-announcement').value.trim();
-  const showAnnouncement = document.getElementById('p1-announcementToggle').checked;
-  const maintenanceMode = document.getElementById('p1-maintenanceToggle').checked;
+  var coinRate = parseInt(document.getElementById('p1-coinRate').value) || 100;
+  var referBonus = parseInt(document.getElementById('p1-referBonus').value) || 5;
+  var minTask = parseInt(document.getElementById('p1-minTask').value) || 10;
+  var minRefer = parseInt(document.getElementById('p1-minRefer').value) || 50;
+  var announcement = document.getElementById('p1-announcement').value.trim();
+  var showAnnouncement = document.getElementById('p1-announcementToggle').checked;
+  var maintenanceMode = document.getElementById('p1-maintenanceToggle').checked;
 
   try {
-    await db.collection('app_config').doc('core').set({
-      coinRate, referBonus, minTask, minRefer, announcement, showAnnouncement, maintenanceMode,
+    await firebase.firestore().collection('app_config').doc('core').set({
+      coinRate: coinRate,
+      referBonus: referBonus,
+      minTask: minTask,
+      minRefer: minRefer,
+      announcement: announcement,
+      showAnnouncement: showAnnouncement,
+      maintenanceMode: maintenanceMode,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('P1 Core Config Saved!');
@@ -465,14 +475,16 @@ async function saveP1Config() {
 }
 
 async function saveP2Config() {
-  const slicesRaw = document.getElementById('p2-wheelSlices').value;
-  const wheelSlices = slicesRaw.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
-  const spinLimit = parseInt(document.getElementById('p2-spinLimit').value) || 3;
-  const scratchLimit = parseInt(document.getElementById('p2-scratchLimit').value) || 2;
+  var slicesRaw = document.getElementById('p2-wheelSlices').value;
+  var wheelSlices = slicesRaw.split(',').map(function(n) { return parseInt(n.trim()); }).filter(function(n) { return !isNaN(n); });
+  var spinLimit = parseInt(document.getElementById('p2-spinLimit').value) || 3;
+  var scratchLimit = parseInt(document.getElementById('p2-scratchLimit').value) || 2;
 
   try {
-    await db.collection('app_config').doc('game').set({
-      wheelSlices, spinLimit, scratchLimit,
+    await firebase.firestore().collection('app_config').doc('game').set({
+      wheelSlices: wheelSlices,
+      spinLimit: spinLimit,
+      scratchLimit: scratchLimit,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('P2 Game Config Saved!');
@@ -482,13 +494,15 @@ async function saveP2Config() {
 }
 
 async function saveP3Config() {
-  const blockVPN = document.getElementById('p3-blockVPN').checked;
-  const blockRooted = document.getElementById('p3-blockRooted').checked;
-  const oneDevice = document.getElementById('p3-oneDevice').checked;
+  var blockVPN = document.getElementById('p3-blockVPN').checked;
+  var blockRooted = document.getElementById('p3-blockRooted').checked;
+  var oneDevice = document.getElementById('p3-oneDevice').checked;
 
   try {
-    await db.collection('app_config').doc('security').set({
-      blockVPN, blockRooted, oneDevice,
+    await firebase.firestore().collection('app_config').doc('security').set({
+      blockVPN: blockVPN,
+      blockRooted: blockRooted,
+      oneDevice: oneDevice,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('P3 Security Shield Saved!');
@@ -497,13 +511,20 @@ async function saveP3Config() {
   }
 }
 
+// ------------------------------------------
+// 7. UTILITIES
+// ------------------------------------------
 function copyText(txt) {
-  navigator.clipboard.writeText(txt).then(() => showToast('Copied to Clipboard!'));
+  navigator.clipboard.writeText(txt).then(function() {
+    showToast('Copied to Clipboard!');
+  });
 }
 
 function showToast(msg) {
-  const t = document.getElementById('toast');
+  var t = document.getElementById('toast');
   t.innerText = msg;
   t.classList.remove('hidden');
-  setTimeout(() => t.classList.add('hidden'), 2200);
+  setTimeout(function() {
+    t.classList.add('hidden');
+  }, 2200);
 }
