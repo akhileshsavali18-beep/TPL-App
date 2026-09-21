@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TPL Admin Console</title>
+  <title>TPL Super Admin Console</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -20,25 +20,26 @@
       background: #111622;
       border: 1px solid rgba(255, 255, 255, 0.07);
     }
-    .neon-text { color: #00FF87; }
-    .neon-bg { background-color: #00FF87; color: #000000; }
     .bottom-bar {
       backdrop-filter: blur(16px);
       background-color: rgba(13, 17, 26, 0.94);
       border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .active-nav {
-      color: #00FF87;
-    }
+    .active-nav { color: #00FF87; }
     .active-nav svg {
       stroke: #00FF87;
       filter: drop-shadow(0 0 6px rgba(0, 255, 135, 0.5));
+    }
+    .subtab-active {
+      background-color: #00FF87;
+      color: #000000;
+      font-weight: 800;
     }
   </style>
 </head>
 <body class="min-h-screen pb-24 select-none">
 
-  <!-- ================= 1. LOGIN SCREEN ================= -->
+  <!-- ================= 1. SECURE LOGIN ================= -->
   <div id="loginScreen" class="flex flex-col items-center justify-center min-h-screen px-6">
     <div class="dark-card p-7 rounded-3xl w-full max-w-sm space-y-6 shadow-2xl">
       <div class="text-center space-y-2">
@@ -46,17 +47,17 @@
           <svg class="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
         </div>
         <h1 class="text-xl font-black tracking-wider text-white">TPL ADMIN CONSOLE</h1>
-        <p class="text-xs text-gray-400">Sign in to control 90% app engine</p>
+        <p class="text-xs text-gray-400">100% Remote App Control Center</p>
       </div>
 
       <div class="space-y-4">
         <div>
-          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email (Optional)</label>
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Admin Email</label>
           <input type="email" id="adminEmail" placeholder="admin@tpl.com" class="w-full mt-1 px-4 py-3 bg-black/50 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
         </div>
         <div>
-          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Master PIN / Password</label>
-          <input type="password" id="adminPassword" placeholder="Default PIN: 7890" class="w-full mt-1 px-4 py-3 bg-black/50 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Password</label>
+          <input type="password" id="adminPassword" placeholder="Enter Admin Password" class="w-full mt-1 px-4 py-3 bg-black/50 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
         </div>
         <button type="button" id="loginBtn" onclick="handleLogin()" class="w-full py-3.5 bg-green-400 hover:bg-green-300 text-black font-black text-sm rounded-xl transition shadow-lg shadow-green-500/20 active:scale-95">
           Unlock Console
@@ -65,10 +66,10 @@
     </div>
   </div>
 
-  <!-- ================= 2. MAIN ADMIN SHELL ================= -->
+  <!-- ================= 2. DASHBOARD SHELL ================= -->
   <div id="dashboardScreen" class="hidden">
     
-    <!-- Top Sticky Header -->
+    <!-- Top Header -->
     <header class="sticky top-0 z-40 bg-[#080B10]/95 backdrop-blur-md px-5 py-3 border-b border-white/5 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
         <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-green-500 to-emerald-300 flex items-center justify-center font-black text-black text-xs shadow-md">
@@ -78,7 +79,7 @@
           <h1 class="text-sm font-black tracking-wider text-white leading-tight">CONTROL HUB</h1>
           <div class="flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-            <span class="text-[10px] text-gray-400 font-medium">Remote Engine Active</span>
+            <span class="text-[10px] text-gray-400 font-medium">Remote Engine Synced</span>
           </div>
         </div>
       </div>
@@ -92,26 +93,26 @@
       </div>
     </header>
 
-    <!-- ================= TAB 1: DASHBOARD ================= -->
+    <!-- TAB 1: OVERVIEW -->
     <main id="tabContent-dashboard" class="p-4 space-y-4 max-w-xl mx-auto">
       <div>
         <h2 class="text-xl font-black text-white">App Overview</h2>
-        <p class="text-xs text-gray-400">Live app performance & economy status</p>
+        <p class="text-xs text-gray-400">Live app performance & financial metrics</p>
       </div>
 
       <div class="grid grid-cols-2 gap-3">
         <div class="dark-card p-4 rounded-2xl">
           <div class="text-[11px] text-gray-400 font-medium">Total Installs</div>
           <div id="statTotalUsers" class="text-2xl font-black text-blue-400 mt-1">0</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">Registered accounts</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Active profiles</div>
         </div>
         <div class="dark-card p-4 rounded-2xl">
-          <div class="text-[11px] text-gray-400 font-medium">Pending Requests</div>
+          <div class="text-[11px] text-gray-400 font-medium">Pending Payouts</div>
           <div id="statPendingCount" class="text-2xl font-black text-amber-400 mt-1">0</div>
           <div class="text-[10px] text-amber-500/80 mt-0.5">In payout queue</div>
         </div>
         <div class="dark-card p-4 rounded-2xl">
-          <div class="text-[11px] text-gray-400 font-medium">Pending Total</div>
+          <div class="text-[11px] text-gray-400 font-medium">Pending Amount</div>
           <div id="statPendingAmount" class="text-2xl font-black text-green-400 mt-1">₹0.00</div>
           <div class="text-[10px] text-gray-500 mt-0.5">Amount to pay</div>
         </div>
@@ -121,44 +122,29 @@
           <div class="text-[10px] text-gray-500 mt-0.5">Cleared via UPI/Cashfree</div>
         </div>
       </div>
-
-      <div class="dark-card p-4 rounded-2xl space-y-3">
-        <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Quick Actions</h3>
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="switchTab('payouts')" class="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-left border border-white/5 active:scale-95 transition">
-            <div class="text-green-400 font-bold text-xs">Process Payouts →</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">UPI Pay & Bulk CSV</div>
-          </button>
-          <button onclick="switchTab('tasks')" class="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-left border border-white/5 active:scale-95 transition">
-            <div class="text-sky-400 font-bold text-xs">Manage Tasks →</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">Add YouTube / Apps</div>
-          </button>
-        </div>
-      </div>
     </main>
 
-    <!-- ================= TAB 2: PAYOUTS ================= -->
+    <!-- TAB 2: PAYOUTS (ONLY PAYOUTS & CASHFREE CSV) -->
     <main id="tabContent-payouts" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-black text-white">Payout Requests</h2>
-          <p class="text-[11px] text-gray-400">Instant UPI payments & Cashfree batch files</p>
+          <h2 class="text-xl font-black text-white">Withdrawal Queue</h2>
+          <p class="text-[11px] text-gray-400">One-Tap UPI & Cashfree Batch Export</p>
         </div>
         <button onclick="exportCashfreeCSV()" class="px-3 py-1.5 bg-blue-600 active:bg-blue-500 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
           📥 Cashfree CSV
         </button>
       </div>
-
       <div id="withdrawalsList" class="space-y-3">
         <div class="text-center py-10 text-gray-500 text-xs">Loading queue...</div>
       </div>
     </main>
 
-    <!-- ================= TAB 3: USERS ================= -->
+    <!-- TAB 3: USERS DIRECTORY -->
     <main id="tabContent-users" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div>
         <h2 class="text-xl font-black text-white">Users Directory</h2>
-        <p class="text-[11px] text-gray-400">Search users, send alerts, adjust coins, ban bots</p>
+        <p class="text-[11px] text-gray-400">Manage user profiles, send in-app alerts & ban cheaters</p>
       </div>
 
       <div class="relative">
@@ -171,34 +157,139 @@
       </div>
     </main>
 
-    <!-- ================= TAB 4: TASKS (Dynamic Task Manager) ================= -->
+    <!-- TAB 4: TASKS HUB (Social Tasks, Home Banners, Gamezop, Offerwalls) -->
     <main id="tabContent-tasks" class="hidden p-4 space-y-4 max-w-xl mx-auto">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-xl font-black text-white">Tasks Manager</h2>
-          <p class="text-[11px] text-gray-400">Add or edit in-app tasks remotely</p>
-        </div>
-        <button onclick="openAddTaskModal()" class="px-3 py-1.5 bg-green-400 hover:bg-green-300 text-black font-black rounded-xl text-xs shadow flex items-center gap-1">
-          + Add Task
-        </button>
+      <div>
+        <h2 class="text-xl font-black text-white">Content & Tasks Hub</h2>
+        <p class="text-[11px] text-gray-400">Manage all app earning activities remotely</p>
       </div>
 
-      <div id="tasksList" class="space-y-3">
-        <div class="text-center py-10 text-gray-500 text-xs">Loading app tasks...</div>
+      <!-- Sub-Tabs Selector -->
+      <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs">
+        <button onclick="switchTaskSubTab('social')" id="subtab-social" class="px-3 py-1.5 rounded-xl subtab-active whitespace-nowrap">Social Tasks</button>
+        <button onclick="switchTaskSubTab('banners')" id="subtab-banners" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">🖼️ Home Banners</button>
+        <button onclick="switchTaskSubTab('games')" id="subtab-games" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">🎮 Gamezop Games</button>
+        <button onclick="switchTaskSubTab('offerwalls')" id="subtab-offerwalls" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">💼 Offerwalls</button>
+      </div>
+
+      <!-- SUBTAB 1: SOCIAL TASKS -->
+      <div id="view-task-social" class="space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400 font-bold">Social Media & App Tasks</span>
+          <button onclick="openAddTaskModal()" class="px-3 py-1 bg-green-400 text-black font-black text-xs rounded-xl">+ Add Task</button>
+        </div>
+        <div id="tasksList" class="space-y-3">
+          <div class="text-center py-6 text-gray-500 text-xs">Loading tasks...</div>
+        </div>
+      </div>
+
+      <!-- SUBTAB 2: HOME TOP BANNERS (4-5 CAROUSEL) -->
+      <div id="view-task-banners" class="hidden space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400 font-bold">Top 4-5 Carousel Banners</span>
+          <button onclick="openAddBannerModal()" class="px-3 py-1 bg-green-400 text-black font-black text-xs rounded-xl">+ Add Banner</button>
+        </div>
+        <div id="bannersList" class="space-y-3">
+          <div class="text-center py-6 text-gray-500 text-xs">Loading banners...</div>
+        </div>
+      </div>
+
+      <!-- SUBTAB 3: GAMEZOP MINI GAMES -->
+      <div id="view-task-games" class="hidden space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400 font-bold">WinZO Style HTML5 Games</span>
+          <button onclick="openAddGameModal()" class="px-3 py-1 bg-green-400 text-black font-black text-xs rounded-xl">+ Add Game</button>
+        </div>
+        <div id="gamesList" class="space-y-3">
+          <div class="text-center py-6 text-gray-500 text-xs">Loading games...</div>
+        </div>
+      </div>
+
+      <!-- SUBTAB 4: OFFERWALLS (Notik & EarnKaro) -->
+      <div id="view-task-offerwalls" class="hidden space-y-4">
+        <!-- Notik Offerwall -->
+        <div class="dark-card p-4 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black text-sky-400 uppercase">Notik Offerwall</h3>
+            <label class="flex items-center gap-2 text-xs">
+              <span>Enable</span>
+              <input type="checkbox" id="notikEnabled" class="w-4 h-4 accent-green-400">
+            </label>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Notik App URL / Offerwall Link</label>
+            <input type="text" id="notikUrl" placeholder="https://notik.me/coins/..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+        </div>
+
+        <!-- EarnKaro Deals -->
+        <div class="dark-card p-4 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black text-amber-400 uppercase">EarnKaro Deals & Store</h3>
+            <label class="flex items-center gap-2 text-xs">
+              <span>Enable</span>
+              <input type="checkbox" id="earnkaroEnabled" class="w-4 h-4 accent-green-400">
+            </label>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">EarnKaro Affiliate URL</label>
+            <input type="text" id="earnkaroUrl" placeholder="https://earnkaro.com/..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+        </div>
+
+        <button onclick="saveOfferwallsConfig()" class="w-full py-2.5 bg-green-400 text-black font-black text-xs rounded-xl shadow">
+          Save Offerwalls Configuration
+        </button>
       </div>
     </main>
 
-    <!-- ================= TAB 5: SETTINGS (P1, P2, P3 Controls) ================= -->
+    <!-- TAB 5: SETTINGS (UNITY ADS + P1, P2, P3 CONTROLS) -->
     <main id="tabContent-settings" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div>
-        <h2 class="text-xl font-black text-white">App Controls & Settings</h2>
-        <p class="text-[11px] text-gray-400">Real-time control over economy, games & security</p>
+        <h2 class="text-xl font-black text-white">Settings & Controls</h2>
+        <p class="text-[11px] text-gray-400">Manage Unity Ads, Economy, Game limits & Security</p>
       </div>
 
-      <!-- P1: Core Controls -->
+      <!-- 1. UNITY ADS REMOTE CONTROLLER (SETTINGS NALLIDE) -->
+      <div class="dark-card p-4 rounded-2xl space-y-3 border border-indigo-500/30">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+          <h3 class="text-xs font-black text-indigo-400 uppercase tracking-wider">📺 Unity Ads Remote Switcher</h3>
+          <label class="flex items-center gap-2 text-xs text-green-400 font-bold">
+            <span>Ads Active</span>
+            <input type="checkbox" id="ads-enabledToggle" class="w-4 h-4 accent-green-400">
+          </label>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Unity Game ID (Android)</label>
+            <input type="text" id="ads-gameId" placeholder="e.g. 5868205" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Ad Cooldown (Seconds)</label>
+            <input type="number" id="ads-cooldown" placeholder="60" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Rewarded Ad Unit ID</label>
+            <input type="text" id="ads-rewardedId" placeholder="Rewarded_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Interstitial Ad Unit ID</label>
+            <input type="text" id="ads-interstitialId" placeholder="Interstitial_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-1">
+          <span class="text-xs text-gray-300">Test Mode (Keep OFF for real earning)</span>
+          <input type="checkbox" id="ads-testMode" class="w-4 h-4 accent-yellow-400">
+        </div>
+        <button onclick="saveUnityAdsConfig()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl">
+          Save Unity Ads Settings
+        </button>
+      </div>
+
+      <!-- 2. P1: Core Economy -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
         <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-green-400 uppercase tracking-wider">P1 • Core Economy & App</h3>
+          <h3 class="text-xs font-black text-green-400 uppercase tracking-wider">P1 • Core Economy</h3>
           <span class="text-[10px] text-gray-400 font-bold">Instant Sync</span>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -223,7 +314,7 @@
           <label class="text-[10px] text-gray-400 font-bold uppercase">Announcement Banner Text</label>
           <input type="text" id="p1-announcement" placeholder="e.g. Daily payouts sent at 8 PM" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
         </div>
-        <div class="flex items-center justify-between pt-1">
+        <div class="flex items-center justify-between">
           <span class="text-xs text-gray-300">Show Announcement Banner</span>
           <input type="checkbox" id="p1-announcementToggle" class="w-4 h-4 accent-green-400">
         </div>
@@ -236,7 +327,7 @@
         </button>
       </div>
 
-      <!-- P2: Game Controls -->
+      <!-- 3. P2: Game Controls -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
         <div class="flex items-center justify-between border-b border-white/5 pb-2">
           <h3 class="text-xs font-black text-amber-400 uppercase tracking-wider">P2 • Game & Reward Limits</h3>
@@ -261,10 +352,10 @@
         </button>
       </div>
 
-      <!-- P3: Security Shield -->
+      <!-- 4. P3: Security Shield -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
         <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-red-400 uppercase tracking-wider">P3 • Anti-Cheat & Shield</h3>
+          <h3 class="text-xs font-black text-red-400 uppercase tracking-wider">P3 • Anti-Cheat Shield</h3>
           <span class="text-[10px] text-gray-400 font-bold">Bot Protection</span>
         </div>
         <div class="flex items-center justify-between">
@@ -285,7 +376,7 @@
       </div>
     </main>
 
-    <!-- ================= FIXED BOTTOM NAV BAR ================= -->
+    <!-- ================= BOTTOM NAVIGATION ================= -->
     <nav class="bottom-bar fixed bottom-0 left-0 right-0 z-50 px-2 py-2">
       <div class="max-w-md mx-auto flex items-center justify-around">
         <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center gap-1 active-nav transition py-1">
@@ -305,34 +396,32 @@
         </button>
         <button onclick="switchTab('tasks')" id="nav-tasks" class="flex flex-col items-center gap-1 text-gray-400 transition py-1">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          <span class="text-[9px] font-bold">Tasks</span>
+          <span class="text-[9px] font-bold">Tasks Hub</span>
         </button>
         <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 text-gray-400 transition py-1">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           <span class="text-[9px] font-bold">Settings</span>
         </button>
       </div>
     </nav>
   </div>
 
-  <!-- MODAL: SINGLE USER NOTICE -->
+  <!-- MODALS -->
+  <!-- 1. Single User Alert Modal -->
   <div id="notifModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
     <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4">
-      <div class="flex justify-between item items-center pb-2 border-b border-white/5">
-        <div>
-          <h3 class="font-black text-sm text-white">Send In-App Notice</h3>
-          <p class="text-[10px] text-gray-400">Target: <span id="modalUserName" class="text-green-400 font-bold"></span></p>
-        </div>
+      <div class="flex justify-between items-center pb-2 border-b border-white/5">
+        <h3 class="font-black text-sm text-white">Send In-App Notice</h3>
         <button onclick="closeNotifModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
       </div>
       <input type="hidden" id="modalUserUid">
       <div>
         <label class="text-[10px] font-bold text-gray-400 uppercase">Alert Title</label>
-        <input type="text" id="notifTitle" placeholder="e.g. UPI ID Update Required" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <input type="text" id="notifTitle" placeholder="e.g. UPI Verification Notice" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
       </div>
       <div>
         <label class="text-[10px] font-bold text-gray-400 uppercase">Message</label>
-        <textarea id="notifBody" rows="3" placeholder="Enter custom message to show user..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></textarea>
+        <textarea id="notifBody" rows="3" placeholder="Enter message for this user..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></textarea>
       </div>
       <div class="flex gap-2 pt-2">
         <button onclick="closeNotifModal()" class="flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-bold">Cancel</button>
@@ -341,16 +430,16 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD DYNAMIC TASK -->
+  <!-- 2. Add Social Task Modal -->
   <div id="taskModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
     <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4">
       <div class="flex justify-between items-center pb-2 border-b border-white/5">
-        <h3 class="font-black text-sm text-white">Create New App Task</h3>
+        <h3 class="font-black text-sm text-white">Create Social Task</h3>
         <button onclick="closeTaskModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
       </div>
       <div>
         <label class="text-[10px] font-bold text-gray-400 uppercase">Task Title</label>
-        <input type="text" id="taskTitle" placeholder="e.g. Subscribe to YouTube" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <input type="text" id="taskTitle" placeholder="e.g. Subscribe to Official YouTube" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
       </div>
       <div class="grid grid-cols-2 gap-2">
         <div>
@@ -362,13 +451,12 @@
           <select id="taskCategory" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
             <option value="Social">Social</option>
             <option value="Install">App Install</option>
-            <option value="Special">Special Offer</option>
           </select>
         </div>
       </div>
       <div>
-        <label class="text-[10px] font-bold text-gray-400 uppercase">Target Action Link</label>
-        <input type="url" id="taskUrl" placeholder="https://..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Action URL</label>
+        <input type="url" id="taskUrl" placeholder="https://youtube.com/..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
       </div>
       <div class="flex gap-2 pt-2">
         <button onclick="closeTaskModal()" class="flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-bold">Cancel</button>
@@ -377,9 +465,67 @@
     </div>
   </div>
 
+  <!-- 3. Add Banner Modal -->
+  <div id="bannerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
+    <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-white/5">
+        <h3 class="font-black text-sm text-white">Add Carousel Banner (Top 4-5)</h3>
+        <button onclick="closeAddBannerModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Banner Title</label>
+        <input type="text" id="bannerTitle" placeholder="e.g. Spin & Win Big" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Image URL</label>
+        <input type="url" id="bannerImageUrl" placeholder="https://imgur.com/... or image link" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Target Action Link</label>
+        <input type="url" id="bannerTargetUrl" placeholder="https://..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeAddBannerModal()" class="flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="saveNewBanner()" class="flex-1 py-2 bg-green-400 text-black font-black rounded-xl text-xs">Save Banner</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Add Gamezop Game Modal -->
+  <div id="gameModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
+    <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-white/5">
+        <h3 class="font-black text-sm text-white">Add Gamezop / Web Game</h3>
+        <button onclick="closeAddGameModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Game Title</label>
+        <input type="text" id="gameTitle" placeholder="e.g. Fruit Samurai" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase">Play Coins</label>
+          <input type="number" id="gameCoins" placeholder="20" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase">Icon URL</label>
+          <input type="url" id="gameIconUrl" placeholder="Icon link" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Gamezop Play Link</label>
+        <input type="url" id="gameUrl" placeholder="https://gamezop.com/g/..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeAddGameModal()" class="flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="saveNewGame()" class="flex-1 py-2 bg-green-400 text-black font-black rounded-xl text-xs">Save Game</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-green-400 text-black px-4 py-2 rounded-2xl text-xs font-black shadow-xl hidden z-50"></div>
 
-  <!-- Connect Logic File -->
+  <!-- Connect Logic Script -->
   <script src="app.js"></script>
 </body>
-</html>
+        </html>
