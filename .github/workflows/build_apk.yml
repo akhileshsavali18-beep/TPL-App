@@ -23,6 +23,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.22.2'
           channel: 'stable'
           cache: true
 
@@ -51,7 +52,7 @@ jobs:
 
           sed -i '/plugins {/a \    id "com.google.gms.google-services" version "4.4.2" apply false' android/settings.gradle || true
           sed -i '/plugins {/a \    id "com.google.gms.google-services"' android/app/build.gradle || true
-          echo "apply plugin: 'com.google.gms.google-services'" >> android/app/build.gradle
+          echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
 
       - name: Install Flutter Dependencies
         run: flutter pub get
