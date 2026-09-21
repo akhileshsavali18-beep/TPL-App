@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Screens import
 import 'screens/splash_login.dart';
@@ -55,11 +58,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentIndex = 0;
 
-  // Central app state
-  int coins = 12450;
-  double taskCash = 100.00;
-  double referCash = 15.00;
-  String? savedUpiId = "user@upi";
+  // Firebase state
+  StreamSubscription<DocumentSnapshot>? _userSub;
+  String? currentUid;
+
+  int coins = 0;
+  double taskCash = 0.00;
+  double referCash = 0.00;
+  String? savedUpiId;
 
   bool hasConvertedToday = false;
   bool hasTaskWithdrawnToday = false;
@@ -68,20 +74,136 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int scratchLeft = 2;
   bool streakClaimedToday = false;
 
-  final List<String> coinHistory = [
-    '+50 Coins - Welcome Bonus',
-    '+20 Coins - Daily Streak Day 1',
-  ];
-  final List<String> cashHistory = [
-    '+₹10.00 - Converted from Coins',
-  ];
-  final List<String> referHistory = [
-    '+₹5.00 - Friend Suresh Joined',
-  ];
-  final List<Map<String, String>> invitedFriends = [
-    {'name': 'Suresh K', 'id': 'TPL#4102', 'reward': '₹5.00', 'status': 'Completed'},
-    {'name': 'Ramesh P', 'id': 'TPL#8891', 'reward': '₹5.00', 'status': 'Completed'},
-  ];
+  final List<String> coinHistory = [];
+  final List<String> cashHistory = [];
+  final List<String> referHistory = [];
+  final List<Map<String, String>> invitedFriends = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _listenToUserData();
+  }
+
+  @override
+  void dispose() {
+    _userSub?.cancel();
+    super.dispose();
+  }
+
+  void _listenToUserData() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    currentUid = user.uid;
+
+    _userSub = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .listen((doc) {
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        setState(() {
+          coins = data['coins'] ?? 50;
+          taskCash = (data['taskCash'] ?? 0.0).toDouble();
+          referCash = (data['referCash'] ?? 0.0).toDouble();
+          savedUpiId = data['upiId'];
+          spinsLeft = data['spinsLeft'] ?? 3;
+          scratchLeft = data['scratchLeft'] ?? 2;
+          streakClaimedToday = data['streakClaimedToday'] ?? false;
+          hasConvertedToday = data['hasConvertedToday'] ?? false;
+          hasTaskWithdrawnToday = data['hasTaskWithdrawnToday'] ?? false;
+          hasReferWithdrawnToday = data['hasReferWithdrawnToday'] ?? false;
+        });
+      }
+    });
+  }
+
+  // --- FIRESTORE DATABASE MUTATIONS ---
+
+  Future<void> _updateCoinsInFirebase(int addCoins, String reason) async {
+    if (currentUid == null) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+        'coins': FieldValue.increment(addCoins),
+      });
+      setState(() {
+        coinHistory.insert(0, '+$addCoins Coins - $reason');
+      });
+    } catch (e) {
+      debugPrint("Error updating coins: $e");
+    }
+  }
+
+  Future<void> _saveUpiToFirebase(String newUpi) async {
+    if (currentUid == null) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+        'upiId': newUpi,
+      });
+      setState(() => savedUpiId = newUpi);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('UPI ID successfully saved!')),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error saving UPI: $e");
+    }
+  }
+
+  Future<void> _convertCoinsInFirebase(int coinsEntered) async {
+    if (currentUid == null) return;
+    double rupeesToAdd = coinsEntered / 100.0;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+        'coins': FieldValue.increment(-coinsEntered),
+        'taskCash': FieldValue.increment(rupeesToAdd),
+        'hasConvertedToday': true,
+      });
+      setState(() {
+        coinHistory.insert(0, '-$coinsEntered Coins - Converted to ₹${rupeesToAdd.toStringAsFixed(2)}');
+        cashHistory.insert(0, '+₹${rupeesToAdd.toStringAsFixed(2)} - Converted from Coins');
+      });
+    } catch (e) {
+      debugPrint("Error converting coins: $e");
+    }
+  }
+
+  Future<void> _submitWithdrawalRequest(double amount, {required bool isTask}) async {
+    if (currentUid == null || savedUpiId == null) return;
+    User? user = FirebaseAuth.instance.currentUser;
+
+    try {
+      // 1. Deduct balance from user
+      await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+        isTask ? 'taskCash' : 'referCash': FieldValue.increment(-amount),
+        isTask ? 'hasTaskWithdrawnToday' : 'hasReferWithdrawnToday': true,
+      });
+
+      // 2. Add request to Admin collection
+      await FirebaseFirestore.instance.collection('withdrawals').add({
+        'uid': currentUid,
+        'userName': user?.displayName ?? 'TPL Player',
+        'userEmail': user?.email ?? '',
+        'upiId': savedUpiId,
+        'amount': amount,
+        'type': isTask ? 'Task Cash' : 'Referral Cash',
+        'status': 'Pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      setState(() {
+        if (isTask) {
+          cashHistory.insert(0, '-₹${amount.toStringAsFixed(2)} - UPI Pending');
+        } else {
+          referHistory.insert(0, '-₹${amount.toStringAsFixed(2)} - UPI Pending');
+        }
+      });
+    } catch (e) {
+      debugPrint("Error creating withdrawal: $e");
+    }
+  }
 
   void switchTab(int index) {
     setState(() => _currentIndex = index);
@@ -96,38 +218,38 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onOpenWallet: () => switchTab(4),
         streakClaimed: streakClaimedToday,
         onClaimStreak: () {
-          setState(() {
-            coins += 20;
-            streakClaimedToday = true;
-            coinHistory.insert(0, '+20 Coins - Daily Streak');
-          });
+          if (!streakClaimedToday && currentUid != null) {
+            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+              'streakClaimedToday': true,
+            });
+            _updateCoinsInFirebase(20, 'Daily Streak Day 1');
+          }
         },
         onTaskClick: (name, reward) => switchTab(1),
       ),
       TasksTabScreen(
         onCompleteTask: (name, reward) {
-          setState(() {
-            coins += reward;
-            coinHistory.insert(0, '+$reward Coins - Completed $name');
-          });
+          _updateCoinsInFirebase(reward, 'Completed $name');
         },
       ),
       GamesScreen(
         spinsLeft: spinsLeft,
         scratchLeft: scratchLeft,
         onSpinWin: (winCoins) {
-          setState(() {
-            spinsLeft--;
-            coins += winCoins;
-            coinHistory.insert(0, '+$winCoins Coins - Spin Win');
-          });
+          if (currentUid != null) {
+            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+              'spinsLeft': FieldValue.increment(-1),
+            });
+            _updateCoinsInFirebase(winCoins, 'Lucky Spin');
+          }
         },
         onScratchWin: (winCoins) {
-          setState(() {
-            scratchLeft--;
-            coins += winCoins;
-            coinHistory.insert(0, '+$winCoins Coins - Scratch Card');
-          });
+          if (currentUid != null) {
+            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+              'scratchLeft': FieldValue.increment(-1),
+            });
+            _updateCoinsInFirebase(winCoins, 'Golden Scratch');
+          }
         },
       ),
       ReferScreen(
@@ -146,31 +268,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         coinHistory: coinHistory,
         cashHistory: cashHistory,
         referHistory: referHistory,
-        onSaveUpi: (newUpi) => setState(() => savedUpiId = newUpi),
-        onConvertCoins: (entered) {
-          double inRupees = entered / 100.0;
-          setState(() {
-            coins -= entered;
-            taskCash += inRupees;
-            hasConvertedToday = true;
-            coinHistory.insert(0, '-$entered Coins - Converted to ₹${inRupees.toStringAsFixed(2)}');
-            cashHistory.insert(0, '+₹${inRupees.toStringAsFixed(2)} - Converted from Coins');
-          });
-        },
-        onWithdrawTaskCash: (amt) {
-          setState(() {
-            taskCash -= amt;
-            hasTaskWithdrawnToday = true;
-            cashHistory.insert(0, '-₹${amt.toStringAsFixed(2)} - UPI Paid');
-          });
-        },
-        onWithdrawReferCash: (amt) {
-          setState(() {
-            referCash -= amt;
-            hasReferWithdrawnToday = true;
-            referHistory.insert(0, '-₹${amt.toStringAsFixed(2)} - UPI Paid');
-          });
-        },
+        onSaveUpi: _saveUpiToFirebase,
+        onConvertCoins: _convertCoinsInFirebase,
+        onWithdrawTaskCash: (amt) => _submitWithdrawalRequest(amt, isTask: true),
+        onWithdrawReferCash: (amt) => _submitWithdrawalRequest(amt, isTask: false),
       ),
     ];
 
