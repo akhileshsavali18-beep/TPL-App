@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
-class TasksTabScreen extends StatelessWidget {
-  final Function(String, int) onCompleteTask;
+class TasksTabScreen extends StatefulWidget {
+  final Function(String taskName, int reward) onCompleteTask;
 
   const TasksTabScreen({
     super.key,
@@ -9,251 +11,254 @@ class TasksTabScreen extends StatelessWidget {
   });
 
   @override
+  State<TasksTabScreen> createState() => _TasksTabScreenState();
+}
+
+class _TasksTabScreenState extends State<TasksTabScreen> {
+  // Offerwalls configuration state
+  bool _notikEnabled = false;
+  String _notikUrl = '';
+  bool _earnkaroEnabled = false;
+  String _earnkaroUrl = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchOfferwallConfig();
+  }
+
+  // Firebase app_config/offerwalls inda settings load maaduvudhu
+  void _fetchOfferwallConfig() {
+    FirebaseFirestore.instance
+        .collection('app_config')
+        .doc('offerwalls')
+        .snapshots()
+        .listen((snap) {
+      if (snap.exists && snap.data() != null) {
+        final d = snap.data()!;
+        if (mounted) {
+          setState(() {
+            _notikEnabled = d['notikEnabled'] ?? false;
+            _notikUrl = d['notikUrl'] ?? '';
+            _earnkaroEnabled = d['earnkaroEnabled'] ?? false;
+            _earnkaroUrl = d['earnkaroUrl'] ?? '';
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _openExternalLink(String url) async {
+    if (url.isEmpty) return;
+    try {
+      if (await canLaunchUrlString(url)) {
+        await launchUrlString(url, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint("Error opening URL: $e");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0B0E14),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF0B0E14),
-          elevation: 0,
-          title: const Text(
-            'Task Central',
-            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
-          ),
-          bottom: const TabBar(
-            indicatorColor: Color(0xFF00FF87),
-            indicatorWeight: 3,
-            labelColor: Color(0xFF00FF87),
-            unselectedLabelColor: Colors.grey,
-            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            tabs: [
-              Tab(text: 'Ongoing'),
-              Tab(text: 'Completed'),
-              Tab(text: 'Expired'),
-            ],
-          ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF080B10),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Tasks & Offerwalls',
+          style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 18),
         ),
-        body: TabBarView(
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Ongoing Tasks Tab
-            ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _ongoingItem(
-                  context,
-                  title: 'Install Meesho & Place Order',
-                  partner: 'EarnKaro Hub',
-                  reward: '+1200 Coins (₹12.00)',
-                  coins: 1200,
-                  icon: Icons.shopping_bag,
-                  accentColor: const Color(0xFFFF6584),
-                ),
-                _ongoingItem(
-                  context,
-                  title: 'Play Lords Mobile (Level 5)',
-                  partner: 'Notik Offerwall',
-                  reward: '+450 Coins (₹4.50)',
-                  coins: 450,
-                  icon: Icons.sports_esports,
-                  accentColor: const Color(0xFF6C63FF),
-                ),
-                _ongoingItem(
-                  context,
-                  title: 'Kotak 811 Zero Balance Account',
-                  partner: 'EarnKaro Finance',
-                  reward: '+3500 Coins (₹35.00)',
-                  coins: 3500,
-                  icon: Icons.account_balance,
-                  accentColor: const Color(0xFF00FF87),
-                ),
-                _ongoingItem(
-                  context,
-                  title: 'Register on Tata Neu App',
-                  partner: 'EarnKaro Hub',
-                  reward: '+800 Coins (₹8.00)',
-                  coins: 800,
-                  icon: Icons.flash_on,
-                  accentColor: const Color(0xFFFFD700),
-                ),
-              ],
-            ),
+            // ================= 1. OFFERWALLS SECTION =================
+            if (_notikEnabled || _earnkaroEnabled) ...[
+              const Text(
+                '💼 Premium Offerwalls',
+                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  // Notik Offerwall Button
+                  if (_notikEnabled)
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _openExternalLink(_notikUrl),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF111622),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.lightBlueAccent.withOpacity(0.3)),
+                          ),
+                          child: const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.layers_rounded, color: Colors.lightBlueAccent, size: 24),
+                              SizedBox(height: 8),
+                              Text('Notik Offers', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text('High Coins', style: TextStyle(color: Colors.lightBlueAccent, fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (_notikEnabled && _earnkaroEnabled) const SizedBox(width: 12),
+                  // EarnKaro Deals Button
+                  if (_earnkaroEnabled)
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _openExternalLink(_earnkaroUrl),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF111622),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                          ),
+                          child: const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.shopping_bag_rounded, color: Colors.amber, size: 24),
+                              SizedBox(height: 8),
+                              Text('EarnKaro Deals', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text('Shop & Earn', style: TextStyle(color: Colors.amber, fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
 
-            // 2. Completed Tasks Tab
-            ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _completedItem(
-                  title: 'Join Official Telegram Channel',
-                  reward: '+100 Coins (₹1.00)',
-                  status: 'Verified & Paid',
-                ),
-                _completedItem(
-                  title: 'First Login Welcome Bonus',
-                  reward: '+50 Coins (₹0.50)',
-                  status: 'Auto Credited',
-                ),
-              ],
+            // ================= 2. SOCIAL TASKS SECTION =================
+            const Text(
+              '🎯 Social & Daily Tasks',
+              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 10),
 
-            // 3. Expired Tasks Tab
-            ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _expiredItem(
-                  title: 'Special Weekend Cricket Survey',
-                  reason: 'Campaign Limit Reached',
-                ),
-                _expiredItem(
-                  title: 'Flipkart Big Billion App Task',
-                  reason: 'Offer Period Ended',
-                ),
-              ],
+            // Live Firestore Tasks Stream
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('tasks')
+                  .where('isActive', isEqualTo: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(color: Color(0xFF00FF87)),
+                    ),
+                  );
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111622),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'No tasks available right now. Check back soon!',
+                        style: TextStyle(color: Colors.white54, fontSize: 13),
+                      ),
+                    ),
+                  );
+                }
+
+                final tasks = snapshot.data!.docs;
+
+                return ListView.separated(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: tasks.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final data = tasks[index].data() as Map<String, dynamic>;
+                    final title = data['title'] ?? 'Task';
+                    final coins = data['coins'] ?? 50;
+                    final category = data['category'] ?? 'Social';
+                    final taskUrl = data['url'] ?? '';
+
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF111622),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withOpacity(0.06)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00FF87).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.star_rounded, color: Color(0xFF00FF87), size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  category,
+                                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF00FF87),
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: () async {
+                              await _openExternalLink(taskUrl);
+                              widget.onCompleteTask(title, coins);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('+$coins Coins added for completing $title!'),
+                                    backgroundColor: const Color(0xFF111622),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Text(
+                              '+$coins',
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _ongoingItem(
-    BuildContext context, {
-    required String title,
-    required String partner,
-    required String reward,
-    required int coins,
-    required IconData icon,
-    required Color accentColor,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF151922),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: accentColor.withOpacity(0.15),
-            radius: 22,
-            child: Icon(icon, color: accentColor, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  partner,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  reward,
-                  style: const TextStyle(
-                    color: Color(0xFF00FF87),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              onCompleteTask(title, coins);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Task Submitted: $reward credited!')),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00FF87),
-              foregroundColor: Colors.black,
-              minimumSize: Size.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Start', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _completedItem({
-    required String title,
-    required String reward,
-    required String status,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF151922),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, color: Color(0xFF00FF87), size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 2),
-                Text(reward, style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00FF87).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              status,
-              style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _expiredItem({required String title, required String reason}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF151922),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.history_toggle_off, color: Colors.grey, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: Colors.white60, fontSize: 13)),
-                const SizedBox(height: 2),
-                Text(reason, style: const TextStyle(color: Colors.redAccent, fontSize: 11)),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
