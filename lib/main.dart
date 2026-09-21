@@ -1,4 +1,3 @@
-import 'services/ad_service.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -15,6 +14,7 @@ import 'screens/refer.dart';
 import 'screens/wallet.dart';
 import 'services/remote_config_service.dart';
 import 'widgets/profile_drawer.dart';
+import 'services/ad_service.dart';
 
 //  ಹೊಸದಾಗಿ ಬದಲಾಯಿಸಬೇಕಾದ ಕೋಡ್:
     try {
@@ -25,17 +25,23 @@ import 'widgets/profile_drawer.dart';
       debugPrint("Firebase initialization notice: $e");
     }
 
-
-  // Initialize Unity Ads
-  UnityAds.init(
-    gameId: '600377042', // Nimma Unity Game ID
-    testMode: true,      // Testing complete aada mele false madabahudu
-    onComplete: () => debugPrint('Unity Ads Initialization Complete'),
-    onFailed: (error, message) => debugPrint('Unity Ads Init Failed: $error $message'),
-  );
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await Firebase.initializeApp();
+    await RemoteConfigService.instance.init();
+    
+    // ಅಡ್ಮಿನ್ ಕಂಟ್ರೋಲ್ ಪ್ರಕಾರ ಆಡ್ಸ್ ಇನಿಶಿಯಲೈಸ್ ಮಾಡುವುದು
+    await AdService.instance.init();
+  } catch (e) {
+    debugPrint("Init notice: $e");
+  }
 
   runApp(const TPLApp());
 }
+
+  
 
 class TPLApp extends StatelessWidget {
   const TPLApp({super.key});
