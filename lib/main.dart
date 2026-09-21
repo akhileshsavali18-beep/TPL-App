@@ -25,7 +25,7 @@ class TPLApp extends StatelessWidget {
   }
 }
 
-// 1. SPLASH SCREEN (A28 Technologies Branding)
+// 1. SPLASH SCREEN (Custom Gold Logo & A28 Branding)
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -55,22 +55,15 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6C63FF).withOpacity(0.2),
-                shape: BoxShape.circle,
+            // Real TPL Gold Logo
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 180,
+                height: 180,
+                fit: BoxFit.contain,
               ),
-              child: const Icon(Icons.bolt, size: 80, color: Color(0xFF00FF87)),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'TPL',
-              style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold, letterSpacing: 2),
-            ),
-            const Text(
-              'TASK PREMIER LEAGUE',
-              style: TextStyle(fontSize: 14, color: Colors.grey, letterSpacing: 3),
             ),
             const Spacer(),
             const Text(
@@ -80,7 +73,12 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 4),
             const Text(
               'A28 TECHNOLOGIES',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: Colors.white),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 30),
           ],
@@ -133,7 +131,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Daily Bonus Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -167,14 +164,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text('Premier Tasks', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
 
-            // Task List
             _buildTaskTile('Install Meesho & Register', '+ 1200 Coins (₹12)', Icons.shopping_bag),
             _buildTaskTile('Play Ludo Tournament', '+ 2500 Coins (₹25)', Icons.sports_esports),
             _buildTaskTile('Join Telegram Channel', '+ 100 Coins (₹1)', Icons.send),
 
             const SizedBox(height: 24),
 
-            // Instant Withdraw Button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -248,4 +243,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
