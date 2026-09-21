@@ -6,20 +6,11 @@ version: 1.0.0+1
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
-dev_dependencies:
-  flutter_launcher_icons: ^0.13.1
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/images/logo.png"
-  adaptive_icon_background: "#0F111A"
-  adaptive_icon_foreground: "assets/images/logo.png"
-  
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/logo.png
-    
   
