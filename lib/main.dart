@@ -1,0 +1,251 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const TPLApp());
+}
+
+class TPLApp extends StatelessWidget {
+  const TPLApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'TPL - Task Premier League',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6C63FF),
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF0F111A),
+        useMaterial3: true,
+      ),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+// 1. SPLASH SCREEN (A28 Technologies Branding)
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6C63FF).withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.bolt, size: 80, color: Color(0xFF00FF87)),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'TPL',
+              style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold, letterSpacing: 2),
+            ),
+            const Text(
+              'TASK PREMIER LEAGUE',
+              style: TextStyle(fontSize: 14, color: Colors.grey, letterSpacing: 3),
+            ),
+            const Spacer(),
+            const Text(
+              'Powered by',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'A28 TECHNOLOGIES',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: Colors.white),
+            ),
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 2. HOME SCREEN (Tasks, Wallet & Daily Bonus)
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int coins = 500; // 100 coins = ₹1
+
+  @override
+  Widget build(BuildContext context) {
+    double balanceInRupees = coins / 100;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: const Text('TPL Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E2235),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF00FF87)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.monetization_on, color: Color(0xFF00FF87), size: 18),
+                const SizedBox(width: 6),
+                Text('₹${balanceInRupees.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Daily Bonus Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF6C63FF), Color(0xFF3F3D56)]),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Daily Login Bonus', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('Claim 50 Coins every 24h', style: TextStyle(color: Colors.white70)),
+                    ],
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => coins += 50);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('50 Coins Added!')),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87)),
+                    child: const Text('Claim', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text('Premier Tasks', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+
+            // Task List
+            _buildTaskTile('Install Meesho & Register', '+ 1200 Coins (₹12)', Icons.shopping_bag),
+            _buildTaskTile('Play Ludo Tournament', '+ 2500 Coins (₹25)', Icons.sports_esports),
+            _buildTaskTile('Join Telegram Channel', '+ 100 Coins (₹1)', Icons.send),
+
+            const SizedBox(height: 24),
+
+            // Instant Withdraw Button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.account_balance_wallet, color: Colors.black),
+                label: const Text('INSTANT UPI WITHDRAW', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87)),
+                onPressed: () {
+                  _showWithdrawDialog(context, balanceInRupees);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskTile(String title, String reward, IconData icon) {
+    return Card(
+      color: const Color(0xFF1E2235),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFF6C63FF),
+          child: Icon(icon, color: Colors.white),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(reward, style: const TextStyle(color: Color(0xFF00FF87))),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        onTap: () {},
+      ),
+    );
+  }
+
+  void _showWithdrawDialog(BuildContext context, double balance) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E2235),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Instant UPI Withdrawal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Text('Current Balance: ₹${balance.toStringAsFixed(2)}', style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 16),
+            const TextField(
+              decoration: InputDecoration(
+                hintText: 'Enter UPI ID (e.g. 9876543210@paytm)',
+                filled: true,
+                fillColor: Color(0xFF0F111A),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87)),
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Withdraw ₹5 (First Payout)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
