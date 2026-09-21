@@ -1,8 +1,9 @@
 // ==========================================
-// TPL PRO ADMIN CONSOLE ENGINE (app.js)
+// TPL PRO ADMIN CONSOLE - AIRTIGHT SECURE ENGINE
 // ==========================================
 
-const MASTER_PIN = "7890"; // Instant Master Access PIN
+// ⚠️ ನಿಮ್ಮ Firebase Authentication Users ಟ್ಯಾಬ್‌ನಲ್ಲಿರುವ UID ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ:
+const AUTHORIZED_ADMIN_UID = VsGSj7MPsoXIwLbBKPey4rV4Oxg1
 
 const firebaseConfig = {
   apiKey: "AIzaSyCMFViBcyJVEawOZASTQ9qr2zDwIqhqKn8",
@@ -21,46 +22,57 @@ const auth = firebase.auth();
 let allUsersData = [];
 let pendingWithdrawalsCache = [];
 
-// Auto-login session restore
-if (sessionStorage.getItem('tpl_admin_logged') === 'true') {
-  openDashboard();
-}
+// Listen for official Firebase Auth State
+auth.onAuthStateChanged(user => {
+  if (user) {
+    if (user.uid === AUTHORIZED_ADMIN_UID) {
+      // 100% Verified Admin
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('dashboardScreen').classList.remove('hidden');
+      fetchAllData();
+    } else {
+      // Intruder or unauthorized user logged in
+      alert("🚨 Access Denied! You are not authorized to view the admin console.");
+      auth.signOut();
+    }
+  } else {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('dashboardScreen').classList.add('hidden');
+  }
+});
 
 // ------------------------------------------
-// 1. AUTHENTICATION & LOGIN
+// 1. SECURE AUTHENTICATION LOGIN
 // ------------------------------------------
 async function handleLogin() {
   const email = document.getElementById('adminEmail').value.trim();
   const pass = document.getElementById('adminPassword').value.trim();
+  const btn = document.getElementById('loginBtn');
 
-  if (!pass) return alert("ದಯವಿಟ್ಟು Password ಅಥವಾ Master PIN (7890) ಹಾಕಿ!");
-
-  // Instant Master PIN Check
-  if (pass === MASTER_PIN) {
-    sessionStorage.setItem('tpl_admin_logged', 'true');
-    openDashboard();
+  if (!email || !pass) {
+    alert("Please enter both Admin Email and Password!");
     return;
   }
 
-  if (!email) return alert("Firebase Login ಗಾಗಿ Email ನೀಡಿ ಅಥವಾ Master PIN (7890) ಬಳಸಿ.");
+  btn.innerText = "Verifying Credentials...";
+  btn.disabled = true;
 
   try {
-    await auth.signInWithEmailAndPassword(email, pass);
-    sessionStorage.setItem('tpl_admin_logged', 'true');
-    openDashboard();
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    if (cred.user.uid !== AUTHORIZED_ADMIN_UID) {
+      alert("🚨 Access Denied: Unrecognized Admin UID.");
+      await auth.signOut();
+      btn.innerText = "Unlock Console";
+      btn.disabled = false;
+    }
   } catch (err) {
-    alert("Login Error: " + err.message + "\n\nTip: Master PIN 7890 ಬಳಸಿ ತಕ್ಷಣ ಲಾಗಿನ್ ಆಗಬಹುದು.");
+    btn.innerText = "Unlock Console";
+    btn.disabled = false;
+    alert("Authentication Failed: " + err.message);
   }
 }
 
-function openDashboard() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('dashboardScreen').classList.remove('hidden');
-  fetchAllData();
-}
-
 function handleLogout() {
-  sessionStorage.removeItem('tpl_admin_logged');
   auth.signOut();
   location.reload();
 }
@@ -92,7 +104,7 @@ function fetchAllData() {
 }
 
 // ------------------------------------------
-// 3. TAB 2: PAYOUTS & CASHFREE QUEUE
+// 3. TAB 2: PAYOUTS QUEUE
 // ------------------------------------------
 function fetchWithdrawals() {
   db.collection('withdrawals').orderBy('createdAt', 'desc').onSnapshot(snap => {
@@ -159,7 +171,6 @@ function fetchWithdrawals() {
       list.appendChild(card);
     });
 
-    // Update Overview stats
     document.getElementById('statPendingCount').innerText = pCount;
     document.getElementById('statPendingAmount').innerText = '₹' + pAmt.toFixed(2);
     document.getElementById('statPaidAmount').innerText = '₹' + cAmt.toFixed(2);
@@ -212,7 +223,7 @@ async function rejectRequest(docId, uid, amount, type) {
 }
 
 // ------------------------------------------
-// 4. TAB 3: USERS DIRECTORY & ALERTS
+// 4. TAB 3: USERS & ALERTS
 // ------------------------------------------
 function fetchUsers() {
   db.collection('users').onSnapshot(snap => {
@@ -367,7 +378,7 @@ async function saveNewTask() {
   const category = document.getElementById('taskCategory').value;
   const url = document.getElementById('taskUrl').value.trim();
 
-  if (!title || !coins || !url) return alert('ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಸರಿಯಾಗಿ ತುಂಬಿರಿ!');
+  if (!title || !coins || !url) return alert('Fill all fields correctly!');
 
   try {
     await db.collection('tasks').add({
@@ -397,11 +408,10 @@ async function deleteTask(id) {
 }
 
 // ------------------------------------------
-// 6. TAB 5: SETTINGS (P1, P2, P3 CONTROLS)
+// 6. TAB 5: P1, P2, P3 CONFIG CONTROLS
 // ------------------------------------------
 async function fetchConfigs() {
   try {
-    // P1 Core
     const p1Snap = await db.collection('app_config').doc('core').get();
     if (p1Snap.exists) {
       const c = p1Snap.data();
@@ -414,7 +424,6 @@ async function fetchConfigs() {
       document.getElementById('p1-maintenanceToggle').checked = c.maintenanceMode === true;
     }
 
-    // P2 Game
     const p2Snap = await db.collection('app_config').doc('game').get();
     if (p2Snap.exists) {
       const g = p2Snap.data();
@@ -423,7 +432,6 @@ async function fetchConfigs() {
       document.getElementById('p2-scratchLimit').value = g.scratchLimit || 2;
     }
 
-    // P3 Security
     const p3Snap = await db.collection('app_config').doc('security').get();
     if (p3Snap.exists) {
       const s = p3Snap.data();
@@ -432,7 +440,7 @@ async function fetchConfigs() {
       document.getElementById('p3-oneDevice').checked = s.oneDevice === true;
     }
   } catch (e) {
-    console.log("Config load note: Default config will be written on save.");
+    console.log("Config load status: Ready.");
   }
 }
 
@@ -489,9 +497,6 @@ async function saveP3Config() {
   }
 }
 
-// ------------------------------------------
-// 7. UTILITIES
-// ------------------------------------------
 function copyText(txt) {
   navigator.clipboard.writeText(txt).then(() => showToast('Copied to Clipboard!'));
 }
@@ -501,5 +506,4 @@ function showToast(msg) {
   t.innerText = msg;
   t.classList.remove('hidden');
   setTimeout(() => t.classList.add('hidden'), 2200);
-      }
-                 
+}
