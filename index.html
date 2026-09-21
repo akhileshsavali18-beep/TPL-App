@@ -3,69 +3,149 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TPL Admin Payouts Dashboard</title>
+  <title>TPL Pro Admin Console</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase Compat SDKs for single-file browser support -->
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <style>
     body { background-color: #0B0E14; color: #FFFFFF; font-family: system-ui, sans-serif; }
     .neon-border { border: 1px solid rgba(0, 255, 135, 0.25); }
+    .tab-active { background-color: #00FF87; color: #000000; font-weight: bold; }
   </style>
 </head>
-<body class="p-4 md:p-8 max-w-4xl mx-auto min-h-screen">
+<body class="min-h-screen p-4 md:p-8 max-w-6xl mx-auto">
 
-  <!-- Header -->
-  <header class="flex justify-between items-center mb-6 pb-4 border-b border-gray-800">
-    <div>
-      <h1 class="text-2xl font-black tracking-wider text-green-400">TPL ADMIN CONSOLE</h1>
-      <p class="text-xs text-gray-400">Manage Real-time UPI Withdrawals & Users</p>
-    </div>
-    <span class="px-3 py-1 text-xs rounded-full bg-green-950 text-green-400 border border-green-700 font-semibold">
-      ⚡ Live Sync Active
-    </span>
-  </header>
-
-  <!-- Metric Cards -->
-  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-    <div class="bg-gray-900 p-4 rounded-xl neon-border">
-      <div class="text-xs text-gray-400">Pending Requests</div>
-      <div id="pendingCount" class="text-2xl font-black text-amber-400 mt-1">0</div>
-    </div>
-    <div class="bg-gray-900 p-4 rounded-xl neon-border">
-      <div class="text-xs text-gray-400">Pending Payout Total</div>
-      <div id="pendingAmount" class="text-2xl font-black text-green-400 mt-1">₹0.00</div>
-    </div>
-    <div class="bg-gray-900 p-4 rounded-xl neon-border col-span-2 sm:col-span-1">
-      <div class="text-xs text-gray-400">Processed Today</div>
-      <div id="completedCount" class="text-2xl font-black text-blue-400 mt-1">0</div>
+  <!-- 1. LOGIN SCREEN (Locked by default) -->
+  <div id="loginScreen" class="flex flex-col items-center justify-center min-h-[80vh]">
+    <div class="bg-gray-900 p-8 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl">
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-black text-green-400 tracking-wider">TPL ADMIN LOGIN</h1>
+        <p class="text-xs text-gray-400 mt-1">Authorized Access Only</p>
+      </div>
+      <form id="loginForm" class="space-y-4" onsubmit="handleLogin(event)">
+        <div>
+          <label class="text-xs text-gray-400">Admin Email</label>
+          <input type="email" id="adminEmail" required class="w-full mt-1 px-4 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">Password</label>
+          <input type="password" id="adminPassword" required class="w-full mt-1 px-4 py-2.5 bg-gray-950 border border-gray-800 rounded-xl text-white text-sm focus:border-green-400 focus:outline-none">
+        </div>
+        <p id="loginError" class="text-red-400 text-xs hidden"></p>
+        <button type="submit" class="w-full py-3 bg-green-400 hover:bg-green-300 text-black font-black text-sm rounded-xl transition shadow-lg shadow-green-500/10">
+          Unlock Dashboard
+        </button>
+      </form>
     </div>
   </div>
 
-  <!-- Withdrawal Queue Section -->
-  <section>
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-bold tracking-wide">Payout Requests Queue</h2>
-      <button onclick="fetchWithdrawals()" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-700 text-gray-300">
-        🔄 Refresh
+  <!-- 2. MAIN ADMIN DASHBOARD -->
+  <div id="dashboardScreen" class="hidden">
+    <!-- Header -->
+    <header class="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-gray-800">
+      <div>
+        <h1 class="text-2xl font-black tracking-wider text-green-400">TPL CONTROL HUB</h1>
+        <p class="text-xs text-gray-400">App Installs, Real-time Payouts & User Management</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 text-xs rounded-full bg-green-950 text-green-400 border border-green-700 font-semibold">
+          ⚡ Live Sync Active
+        </span>
+        <button onclick="handleLogout()" class="px-3 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-400 text-xs rounded-lg">
+          Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- App Metrics Overview Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-gray-900 p-4 rounded-xl neon-border">
+        <div class="text-xs text-gray-400">Total App Installs</div>
+        <div id="totalUsersCount" class="text-2xl font-black text-blue-400 mt-1">0</div>
+      </div>
+      <div class="bg-gray-900 p-4 rounded-xl neon-border">
+        <div class="text-xs text-gray-400">Pending Withdrawals</div>
+        <div id="pendingCount" class="text-2xl font-black text-amber-400 mt-1">0</div>
+      </div>
+      <div class="bg-gray-900 p-4 rounded-xl neon-border">
+        <div class="text-xs text-gray-400">Pending Total Amount</div>
+        <div id="pendingAmount" class="text-2xl font-black text-green-400 mt-1">₹0.00</div>
+      </div>
+      <div class="bg-gray-900 p-4 rounded-xl neon-border">
+        <div class="text-xs text-gray-400">Paid Out Total</div>
+        <div id="completedAmount" class="text-2xl font-black text-purple-400 mt-1">₹0.00</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex gap-2 mb-6 border-b border-gray-800 pb-2">
+      <button onclick="switchTab('payouts')" id="tab-payouts" class="px-4 py-2 rounded-lg text-xs font-semibold tab-active">
+        Payout Requests
+      </button>
+      <button onclick="switchTab('users')" id="tab-users" class="px-4 py-2 rounded-lg text-xs font-semibold bg-gray-900 text-gray-400 hover:text-white">
+        Users & Installs
       </button>
     </div>
 
-    <!-- Request Cards Container -->
-    <div id="withdrawalsList" class="space-y-3">
-      <div class="text-center py-10 text-gray-500 text-sm">Connecting to Firebase...</div>
+    <!-- TAB 1: PAYOUTS QUEUE -->
+    <div id="view-payouts">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <h2 class="text-base font-bold">Withdrawal Queue</h2>
+        <div class="flex gap-2">
+          <button onclick="exportCashfreeCSV()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1">
+            📥 Cashfree Bulk CSV
+          </button>
+          <button onclick="fetchWithdrawals()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs border border-gray-700">
+            🔄 Refresh
+          </button>
+        </div>
+      </div>
+      <div id="withdrawalsList" class="space-y-3">
+        <div class="text-center py-10 text-gray-500 text-sm">Loading queue...</div>
+      </div>
     </div>
-  </section>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-5 right-5 bg-green-500 text-black px-4 py-2 rounded-lg text-sm font-bold shadow-lg hidden">
-    Copied to clipboard!
+    <!-- TAB 2: USERS DIRECTORY -->
+    <div id="view-users" class="hidden">
+      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <h2 class="text-base font-bold">Registered Users Directory</h2>
+        <input type="text" id="userSearchInput" oninput="filterUsers()" placeholder="Search by name, email or UPI..." class="px-3 py-1.5 bg-gray-950 border border-gray-800 rounded-xl text-xs w-64 text-white focus:outline-none focus:border-green-400">
+      </div>
+      <div id="usersList" class="space-y-3">
+        <div class="text-center py-10 text-gray-500 text-sm">Loading users...</div>
+      </div>
+    </div>
   </div>
 
+  <!-- MODAL: SEND SINGLE USER NOTIFICATION -->
+  <div id="notifModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-sm text-white">Send Direct User Alert</h3>
+        <button onclick="closeNotifModal()" class="text-gray-400 hover:text-white">&times;</button>
+      </div>
+      <p class="text-xs text-gray-400">Target User: <span id="modalUserName" class="text-green-400 font-semibold"></span></p>
+      <input type="hidden" id="modalUserUid">
+      <div>
+        <label class="text-xs text-gray-400">Alert Title</label>
+        <input type="text" id="notifTitle" placeholder="e.g. UPI Verification Notice" class="w-full mt-1 px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs text-white">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400">Message</label>
+        <textarea id="notifBody" rows="3" placeholder="Type direct alert message for this user..." class="w-full mt-1 px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs text-white"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeNotifModal()" class="px-3 py-1.5 bg-gray-800 text-gray-300 rounded-lg text-xs">Cancel</button>
+        <button onclick="submitUserNotification()" class="px-4 py-1.5 bg-green-400 text-black font-bold rounded-lg text-xs">Send Alert</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 right-5 bg-green-400 text-black px-4 py-2 rounded-xl text-xs font-bold shadow-xl hidden"></div>
+
   <script>
-    // -----------------------------------------------------------
-    // 1. YOUR REAL FIREBASE CONFIGURATION
-    // -----------------------------------------------------------
     const firebaseConfig = {
       apiKey: "AIzaSyCMFViBcyJVEawOZASTQ9qr2zDwIqhqKn8",
       authDomain: "tpl-5bd9d.firebaseapp.com",
@@ -76,151 +156,259 @@
       measurementId: "G-KRP2LPFGQ4"
     };
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
-    // -----------------------------------------------------------
-    // 2. REAL-TIME DATA LISTENER
-    // -----------------------------------------------------------
+    let allUsersData = [];
+    let pendingWithdrawalsCache = [];
+
+    // Auth state listener
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('dashboardScreen').classList.remove('hidden');
+        fetchWithdrawals();
+        fetchUsers();
+      } else {
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('dashboardScreen').classList.add('hidden');
+      }
+    });
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('adminEmail').value;
+      const pass = document.getElementById('adminPassword').value;
+      const errBox = document.getElementById('loginError');
+      errBox.classList.add('hidden');
+
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+      } catch (err) {
+        errBox.innerText = err.message;
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    function handleLogout() {
+      auth.signOut();
+    }
+
+    function switchTab(tab) {
+      const pTab = document.getElementById('tab-payouts');
+      const uTab = document.getElementById('tab-users');
+      const pView = document.getElementById('view-payouts');
+      const uView = document.getElementById('view-users');
+
+      if (tab === 'payouts') {
+        pTab.className = "px-4 py-2 rounded-lg text-xs font-semibold tab-active";
+        uTab.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-gray-900 text-gray-400 hover:text-white";
+        pView.classList.remove('hidden');
+        uView.classList.add('hidden');
+      } else {
+        uTab.className = "px-4 py-2 rounded-lg text-xs font-semibold tab-active";
+        pTab.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-gray-900 text-gray-400 hover:text-white";
+        uView.classList.remove('hidden');
+        pView.classList.add('hidden');
+      }
+    }
+
+    // 1. Fetch Withdrawals Queue
     function fetchWithdrawals() {
-      db.collection('withdrawals')
-        .orderBy('createdAt', 'desc')
-        .onSnapshot((snapshot) => {
-          const list = document.getElementById('withdrawalsList');
-          list.innerHTML = '';
+      db.collection('withdrawals').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = document.getElementById('withdrawalsList');
+        list.innerHTML = '';
+        let pCount = 0, pAmt = 0, cAmt = 0;
+        pendingWithdrawalsCache = [];
 
-          let pCount = 0;
-          let pAmt = 0;
-          let cCount = 0;
+        if (snap.empty) {
+          list.innerHTML = '<div class="p-8 text-center text-gray-500 bg-gray-900 rounded-xl border border-gray-800 text-xs">No withdrawal requests found.</div>';
+          return;
+        }
 
-          if (snapshot.empty) {
-            list.innerHTML = `<div class="p-8 text-center text-gray-500 bg-gray-900 rounded-xl border border-gray-800 text-sm">
-              No withdrawal requests in queue yet.
-            </div>`;
-            document.getElementById('pendingCount').innerText = "0";
-            document.getElementById('pendingAmount').innerText = "₹0.00";
-            document.getElementById('completedCount').innerText = "0";
-            return;
+        snap.forEach(doc => {
+          const d = doc.data();
+          const id = doc.id;
+          const isPending = d.status === 'Pending';
+
+          if (isPending) {
+            pCount++;
+            pAmt += (d.amount || 0);
+            pendingWithdrawalsCache.push({ id, ...d });
+          } else if (d.status === 'Completed') {
+            cAmt += (d.amount || 0);
           }
 
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            const id = doc.id;
-            const isPending = data.status === 'Pending';
+          const card = document.createElement('div');
+          card.className = `p-4 rounded-xl border ${isPending ? 'bg-gray-900 border-gray-800' : 'bg-gray-950 border-gray-900 opacity-60'} flex flex-col sm:flex-row sm:items-center justify-between gap-4`;
 
-            if (isPending) {
-              pCount++;
-              pAmt += (data.amount || 0);
-            } else if (data.status === 'Completed') {
-              cCount++;
-            }
+          // GPay/PhonePe direct UPI intent link
+          const upiPayLink = `upi://pay?pa=${encodeURIComponent(d.upiId || '')}&pn=${encodeURIComponent(d.userName || 'TPL Player')}&am=${d.amount}&cu=INR&tn=TPL_Payout`;
 
-            const card = document.createElement('div');
-            card.className = `p-4 rounded-xl border ${isPending ? 'bg-gray-900 border-gray-800' : 'bg-gray-950 border-gray-900 opacity-70'} flex flex-col sm:flex-row sm:items-center justify-between gap-4`;
-
-            card.innerHTML = `
-              <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-base text-white">${data.userName || 'Player'}</span>
-                  <span class="text-xs px-2 py-0.5 rounded ${isPending ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-green-950 text-green-400'}">${data.status}</span>
-                  <span class="text-xs text-gray-500">• ${data.type}</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm text-gray-300">
-                  <span>UPI: <b class="text-white">${data.upiId}</b></span>
-                  <button onclick="copyUpi('${data.upiId}')" class="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-0.5 rounded text-green-400 border border-gray-700">
-                    📋 Copy
+          card.innerHTML = `
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-white">${d.userName || 'Player'}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded ${isPending ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-green-950 text-green-400'}">${d.status}</span>
+                <span class="text-xs text-gray-500">• ${d.type}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-300">
+                <span>UPI: <b class="text-white">${d.upiId}</b></span>
+                <button onclick="copyText('${d.upiId}')" class="bg-gray-800 hover:bg-gray-700 px-2 py-0.5 rounded text-green-400 text-[10px] border border-gray-700">Copy</button>
+              </div>
+              <div class="text-[11px] text-gray-500">${d.userEmail || ''}</div>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800">
+              <div class="text-right">
+                <div class="text-lg font-black text-green-400">₹${(d.amount || 0).toFixed(2)}</div>
+              </div>
+              ${isPending ? `
+                <div class="flex gap-1.5">
+                  <a href="${upiPayLink}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition inline-flex items-center">
+                    Pay UPI App
+                  </a>
+                  <button onclick="markAsPaid('${id}')" class="px-3 py-1.5 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-lg transition">
+                    Mark Paid
+                  </button>
+                  <button onclick="rejectRequest('${id}', '${d.uid}', ${d.amount}, '${d.type}')" class="px-2.5 py-1.5 bg-red-950 hover:bg-red-900 text-red-400 text-xs rounded-lg border border-red-800">
+                    Reject
                   </button>
                 </div>
-                <div class="text-xs text-gray-500">${data.userEmail || ''}</div>
-              </div>
-
-              <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800">
-                <div class="text-right">
-                  <div class="text-xl font-black text-green-400">₹${(data.amount || 0).toFixed(2)}</div>
-                </div>
-
-                ${isPending ? `
-                  <div class="flex gap-2">
-                    <button onclick="markAsPaid('${id}')" class="px-3 py-1.5 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-lg transition">
-                      Mark Paid
-                    </button>
-                    <button onclick="rejectRequest('${id}', '${data.uid}', ${data.amount}, '${data.type}')" class="px-3 py-1.5 bg-red-950 hover:bg-red-900 text-red-400 text-xs rounded-lg border border-red-800">
-                      Reject & Refund
-                    </button>
-                  </div>
-                ` : `
-                  <span class="text-xs text-gray-500 font-semibold">Resolved</span>
-                `}
-              </div>
-            `;
-            list.appendChild(card);
-          });
-
-          document.getElementById('pendingCount').innerText = pCount;
-          document.getElementById('pendingAmount').innerText = '₹' + pAmt.toFixed(2);
-          document.getElementById('completedCount').innerText = cCount;
-        }, (error) => {
-          document.getElementById('withdrawalsList').innerHTML = `
-            <div class="p-6 bg-red-950 text-red-300 rounded-xl text-xs">
-              <b>Firestore connection error:</b> ${error.message}
-            </div>`;
+              ` : '<span class="text-xs text-gray-500 font-semibold">Resolved</span>'}
+            </div>
+          `;
+          list.appendChild(card);
         });
+
+        document.getElementById('pendingCount').innerText = pCount;
+        document.getElementById('pendingAmount').innerText = '₹' + pAmt.toFixed(2);
+        document.getElementById('completedAmount').innerText = '₹' + cAmt.toFixed(2);
+      });
     }
 
-    // -----------------------------------------------------------
-    // 3. ADMIN ACTIONS
-    // -----------------------------------------------------------
-    async function markAsPaid(docId) {
-      if (!confirm("Are you sure you have paid via UPI and want to mark this completed?")) return;
-      try {
-        await db.collection('withdrawals').doc(docId).update({
-          status: 'Completed',
-          paidAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        showToast("Marked as Completed!");
-      } catch (err) {
-        alert("Error: " + err.message);
+    // 2. Fetch All Registered Users
+    function fetchUsers() {
+      db.collection('users').onSnapshot(snap => {
+        allUsersData = [];
+        snap.forEach(doc => allUsersData.push({ uid: doc.id, ...doc.data() }));
+        document.getElementById('totalUsersCount').innerText = allUsersData.length;
+        renderUsers(allUsersData);
+      });
+    }
+
+    function renderUsers(users) {
+      const list = document.getElementById('usersList');
+      list.innerHTML = '';
+      if (!users.length) {
+        list.innerHTML = '<div class="p-8 text-center text-gray-500 bg-gray-900 rounded-xl text-xs">No users found.</div>';
+        return;
       }
+      users.forEach(u => {
+        const isBanned = u.isBanned === true;
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl border ${isBanned ? 'bg-red-950/20 border-red-900' : 'bg-gray-900 border-gray-800'} flex flex-col sm:flex-row sm:items-center justify-between gap-4`;
+
+        card.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-white">${u.displayName || 'Player'}</span>
+              ${isBanned ? '<span class="text-[10px] bg-red-900 text-red-300 px-2 py-0.5 rounded">BANNED</span>' : ''}
+              <span class="text-xs text-gray-500">• Coins: <b class="text-yellow-400">${u.coins || 0}</b></span>
+            </div>
+            <div class="text-xs text-gray-400">Email: ${u.email || 'N/A'} | UPI: <b class="text-white">${u.upiId || 'Not Saved'}</b></div>
+            <div class="text-[11px] text-gray-500">Wallet: ₹${(u.taskCash || 0).toFixed(2)} (Task) | ₹${(u.referCash || 0).toFixed(2)} (Refer)</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openNotifModal('${u.uid}', '${(u.displayName || 'Player').replace(/'/g, "")}')" class="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-green-400 border border-gray-700 rounded-lg text-xs font-semibold">
+              🔔 Send Alert
+            </button>
+            <button onclick="toggleBanUser('${u.uid}', ${isBanned})" class="px-2.5 py-1.5 ${isBanned ? 'bg-green-950 text-green-400 border-green-800' : 'bg-red-950 text-red-400 border-red-800'} border rounded-lg text-xs font-semibold">
+              ${isBanned ? 'Unban' : 'Ban User'}
+            </button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function filterUsers() {
+      const q = document.getElementById('userSearchInput').value.toLowerCase();
+      const filtered = allUsersData.filter(u => 
+        (u.displayName || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.upiId || '').toLowerCase().includes(q)
+      );
+      renderUsers(filtered);
+    }
+
+    // Modal Actions
+    function openNotifModal(uid, name) {
+      document.getElementById('modalUserUid').value = uid;
+      document.getElementById('modalUserName').innerText = name;
+      document.getElementById('notifTitle').value = '';
+      document.getElementById('notifBody').value = '';
+      document.getElementById('notifModal').classList.remove('hidden');
+    }
+    function closeNotifModal() {
+      document.getElementById('notifModal').classList.add('hidden');
+    }
+    async function submitUserNotification() {
+      const uid = document.getElementById('modalUserUid').value;
+      const title = document.getElementById('notifTitle').value.trim();
+      const body = document.getElementById('notifBody').value.trim();
+      if (!title || !body) return alert('Title & Message required!');
+
+      try {
+        await db.collection('users').doc(uid).collection('notifications').add({
+          title,
+          body,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          isRead: false
+        });
+        closeNotifModal();
+        showToast('Notification sent to user!');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function toggleBanUser(uid, currentlyBanned) {
+      if (!confirm(`Are you sure you want to ${currentlyBanned ? 'Unban' : 'Ban'} this user?`)) return;
+      await db.collection('users').doc(uid).update({ isBanned: !currentlyBanned });
+      showToast(currentlyBanned ? 'User Unbanned' : 'User Banned');
+    }
+
+    // Cashfree Batch CSV Export
+    function exportCashfreeCSV() {
+      if (!pendingWithdrawalsCache.length) return alert('No pending payouts to export!');
+      let csv = "TransferId,Amount,Phone,Email,Name,BeneficiaryId,VPA\n";
+      pendingWithdrawalsCache.forEach((item, idx) => {
+        csv += `TPL_${item.id},${item.amount},,,${item.userName || 'Player'},,${item.upiId}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `Cashfree_Payouts_${new Date().toISOString().slice(0,10)}.csv`);
+      a.click();
+      showToast('Cashfree CSV Downloaded!');
+    }
+
+    async function markAsPaid(docId) {
+      if (!confirm("Confirm you have completed payment?")) return;
+      await db.collection('withdrawals').doc(docId).update({
+        status: 'Completed',
+        paidAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showToast('Marked as Completed!');
     }
 
     async function rejectRequest(docId, uid, amount, type) {
-      const reason = prompt("Enter reason for rejection (e.g. Invalid UPI ID):");
+      const reason = prompt("Enter rejection reason (e.g. Invalid UPI ID):");
       if (reason === null) return;
-
-      try {
-        const fieldToRefund = type === 'Task Cash' ? 'taskCash' : 'referCash';
-        await db.collection('users').doc(uid).update({
-          [fieldToRefund]: firebase.firestore.FieldValue.increment(amount)
-        });
-
-        await db.collection('withdrawals').doc(docId).update({
-          status: 'Rejected',
-          rejectionReason: reason,
-          rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        showToast("Request rejected & funds refunded!");
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    }
-
-    function copyUpi(upi) {
-      navigator.clipboard.writeText(upi).then(() => showToast("UPI ID Copied!"));
-    }
-
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.innerText = msg;
-      t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 2200);
-    }
-
-    // Initialize on load
-    window.onload = fetchWithdrawals;
-  </script>
-</body>
-    </html>
-
+      const field = type === 'Task Cash' ? 'taskCash' : 'referCash';
+      await db.collection('users').doc(uid).update({ [field]: firebase.firestore.FieldValue.increment(amount) });
+      await db.collection('withdrawals').doc(docId).update({
+        status: 'Rejected',
+        rejectionReason
