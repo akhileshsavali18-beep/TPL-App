@@ -17,6 +17,7 @@ dependencies:
   unity_ads_plugin: ^0.3.14
   http: ^1.2.0
   share_plus: ^10.0.2
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
