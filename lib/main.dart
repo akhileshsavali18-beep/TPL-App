@@ -1,34 +1,22 @@
-import 'services/security_service.dart';
-import 'services/ad_service.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 
-// Screens import
+// Services
+import 'services/security_service.dart';
+import 'services/ad_service.dart';
+import 'services/remote_config_service.dart';
+
+// Screens
 import 'screens/splash_login.dart';
 import 'screens/home.dart';
 import 'screens/tasks.dart';
 import 'screens/games.dart';
 import 'screens/refer.dart';
 import 'screens/wallet.dart';
-import 'services/remote_config_service.dart';
 import 'widgets/profile_drawer.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:share_plus/share_plus.dart';
-
-
-try {
-  await Firebase.initializeApp();
-  ...
-} catch (e) {
-  debugPrint("Firebase initialization notice: $e");
-}
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,8 +33,6 @@ void main() async {
 
   runApp(const TPLApp());
 }
-
-  
 
 class TPLApp extends StatelessWidget {
   const TPLApp({super.key});
@@ -104,7 +90,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<String> referHistory = [];
   final List<Map<String, String>> invitedFriends = [];
 
-    bool _isVpnDetected = false;
+  bool _isVpnDetected = false;
 
   @override
   void initState() {
@@ -119,7 +105,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       setState(() => _isVpnDetected = true);
     }
   }
-    
 
   @override
   void dispose() {
@@ -243,11 +228,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
-       // 🔒 ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ Maintenance Mode ಆನ್ ಇದ್ದರೆ ಆ್ಯಪ್ ಬ್ಲಾಕ್ ಆಗುತ್ತದೆ
+    // 🔒 ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ Maintenance Mode ಆನ್ ಇದ್ದರೆ ಆ್ಯಪ್ ಬ್ಲಾಕ್ ಆಗುತ್ತದೆ
     if (RemoteConfigService.instance.maintenanceMode) {
-      return const Scaffold(...);
-   }  
-          // 🛡️ Anti-Cheat: VPN ಆನ್ ಇದ್ದರೆ ಆ್ಯಪ್ ಲಾಕ್ ಆಗುತ್ತದೆ
+      return const Scaffold(
+        backgroundColor: Color(0xFF080B10),
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.build_rounded, size: 80, color: Colors.amber),
+                SizedBox(height: 16),
+                Text(
+                  'Under Maintenance',
+                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'The app is currently undergoing scheduled maintenance. Please check back later.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 🛡️ Anti-Cheat: VPN ಆನ್ ಇದ್ದರೆ ಆ್ಯಪ್ ಲಾಕ್ ಆಗುತ್ತದೆ
     if (_isVpnDetected) {
       return const Scaffold(
         backgroundColor: Color(0xFF080B10),
@@ -275,8 +285,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
       );
     }
-      
-    
+
     final screens = [
       HomeScreen(
         coins: coins,
@@ -327,7 +336,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         coins: coins,
         taskCash: taskCash,
         referCash: referCash,
-        savedUpiId: savedUpiId,
         hasConvertedToday: hasConvertedToday,
         hasTaskWithdrawnToday: hasTaskWithdrawnToday,
         hasReferWithdrawnToday: hasReferWithdrawnToday,
@@ -366,3 +374,4 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 }
+
