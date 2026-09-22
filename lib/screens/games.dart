@@ -1,8 +1,7 @@
-import '../services/ad_service.dart';
-import '../widgets/mini_games_section.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
+import '../widgets/mini_games_section.dart';
 
 class GamesScreen extends StatefulWidget {
   final int spinsLeft;
@@ -115,18 +114,8 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   }
 
   // 2. Show Rewarded Ad before Scratching
-    void _watchAdAndScratch() {
-    if (scratchLeft <= 0 || _scratchRevealed) return;
-
-    AdService.instance.showRewardedAd(
-      context: context,
-      onReward: () {
-        setState(() => _scratchRevealed = true);
-        widget.onScratchWin(45);
-      },
-    );
-    }
-  
+  void _watchAdAndScratch() {
+    if (widget.scratchLeft <= 0 || _scratchRevealed) return;
 
     UnityAds.showVideoAd(
       placementId: _rewardedPlacementId,
@@ -197,7 +186,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                       children: [
                         const Icon(Icons.card_giftcard, color: Color(0xFFFFD700), size: 18),
                         const SizedBox(width: 6),
-                        Text('Cards: ${scratchLeft} / 2', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('Cards: ${widget.scratchLeft} / 2', style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -300,32 +289,32 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                                   Text(
                                     widget.scratchLeft > 0 ? 'TAP TO WATCH & SCRATCH' : 'TODAY FINISHED',
                                     style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.black87),
-                                    ),
-                                 ],
+                                  ),
+                                ],
                               ),
-                           ),
-                        ),
-                     ),
-                 ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-          ),
+            ),
 
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // 🎮 Gamezop Mini Games Section (Firebase Live)
-          MiniGamesSection(
-            onRewardEarned: (coins, reason) {
-              onSpinWin(coins);
-            },
-          ),
-          const SizedBox(height: 24),
-
-             ],
-          ),
-       ),
+            // 🎮 Gamezop Mini Games Section (Firebase Live)
+            MiniGamesSection(
+              onRewardEarned: (coins, reason) {
+                widget.onSpinWin(coins);
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
     );
- }
-                      
+  }
+}
+
 class WheelPainter extends CustomPainter {
   final List<int> slices;
   WheelPainter(this.slices);
@@ -355,3 +344,4 @@ class WheelPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+
