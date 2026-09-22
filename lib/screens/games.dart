@@ -116,7 +116,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   // 2. Show Rewarded Ad before Scratching
     void _watchAdAndScratch() {
-    if (widget.scratchLeft <= 0 || _scratchRevealed) return;
+    if (scratchLeft <= 0 || _scratchRevealed) return;
 
     AdService.instance.showRewardedAd(
       context: context,
