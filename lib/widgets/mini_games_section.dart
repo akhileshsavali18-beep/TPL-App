@@ -36,7 +36,7 @@ class MiniGamesSection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00FF87).withValues(alpha: 0.1),
+                      color: const Color(0xFF00FF87).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
@@ -82,7 +82,7 @@ class MiniGamesSection extends StatelessWidget {
                       color: const Color(0xFF111622),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.07),
+                        color: Colors.white.withOpacity(0.07),
                       ),
                     ),
                     child: Column(
