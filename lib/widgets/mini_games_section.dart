@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../screens/game_player_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MiniGamesSection extends StatelessWidget {
   final Function(int coins, String reason) onRewardEarned;
@@ -36,7 +36,7 @@ class MiniGamesSection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00FF87).withOpacity(0.1),
+                      color: const Color(0xFF00FF87).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
@@ -67,18 +67,14 @@ class MiniGamesSection extends StatelessWidget {
 
                 return InkWell(
                   borderRadius: BorderRadius.circular(18),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => GamePlayerScreen(
-                          gameTitle: title,
-                          gameUrl: gameUrl,
-                          rewardCoins: coins,
-                          onRewardEarned: onRewardEarned,
-                        ),
-                      ),
-                    );
+                  onTap: () async {
+                    if (gameUrl.isNotEmpty) {
+                      final uri = Uri.parse(gameUrl);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        onRewardEarned(coins, "Played $title");
+                      }
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.all(10),
@@ -86,7 +82,7 @@ class MiniGamesSection extends StatelessWidget {
                       color: const Color(0xFF111622),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.07),
+                        color: Colors.white.withValues(alpha: 0.07),
                       ),
                     ),
                     child: Column(
