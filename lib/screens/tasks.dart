@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class TasksTabScreen extends StatefulWidget {
@@ -59,6 +60,14 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
     }
   }
 
+  // CPAlead Offerwall Function with Firebase UID
+  Future<void> _openCpaOfferwall() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid ?? 'guest';
+    final url = 'https://www.qckclk.com/wall/asCl?subid=$uid';
+    await _openExternalLink(url);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,10 +85,70 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ================= 1. OFFERWALLS SECTION =================
+            // ================= 1. CPALEAD MAIN OFFERWALL =================
+            const Text(
+              '🔥 High Reward Offerwall',
+              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: _openCpaOfferwall,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF131B2A), Color(0xFF0C101A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.4)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00FF87).withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00FF87).withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.stars_rounded, color: Color(0xFF00FF87), size: 28),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'CPAlead Mega Offers',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Install apps, surveys & earn instant coins!',
+                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF87), size: 16),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 22),
+
+            // ================= 2. OTHER OFFERWALLS SECTION =================
             if (_notikEnabled || _earnkaroEnabled) ...[
               const Text(
-                '💼 Premium Offerwalls',
+                '💼 Partner Offerwalls',
                 style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
@@ -139,7 +208,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
               const SizedBox(height: 24),
             ],
 
-            // ================= 2. SOCIAL TASKS SECTION =================
+            // ================= 3. SOCIAL TASKS SECTION =================
             const Text(
               '🎯 Social & Daily Tasks',
               style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
@@ -263,4 +332,3 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
     );
   }
 }
-
