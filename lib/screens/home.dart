@@ -1,6 +1,8 @@
 import '../widgets/announcement_banner.dart';
 import '../widgets/home_banner_carousel.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class HomeScreen extends StatefulWidget {
   final int coins;
@@ -52,7 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Map<String, dynamic>> banners = [
     {
-      'title': '🔥 Notik Super Offerwall',
+      'title': '🔥 CPAlead Mega Offerwall',
+      'desc': 'Complete High Paying Offers & Earn Big Coins',
+      'color': const Color(0xFF00FF87),
+      'tag': 'HOT OFFER'
+    },
+    {
+      'title': '🎮 Notik Super Offerwall',
       'desc': 'Play Popular Games & Earn up to ₹500',
       'color': const Color(0xFF6C63FF),
       'tag': 'TOP OFFER'
@@ -81,13 +89,20 @@ class _HomeScreenState extends State<HomeScreen> {
       'color': const Color(0xFF00FF87),
       'tag': 'REFERRAL'
     },
-    {
-      'title': '🎯 Spin & Win Real Cash',
-      'desc': '3 Free Daily Spins are Waiting for You!',
-      'color': const Color(0xFFFFD700),
-      'tag': 'GAMES'
-    },
   ];
+
+  Future<void> _openCpaOfferwall() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid ?? 'guest';
+    final url = 'https://www.qckclk.com/wall/asCl?subid=$uid';
+    try {
+      if (await canLaunchUrlString(url)) {
+        await launchUrlString(url, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint("Error opening CPAlead: $e");
+    }
+  }
 
   void _openNotificationSheet() {
     setState(() => _hasUnreadNotification = false);
@@ -186,7 +201,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
-          // Notification Bell Icon with Indicator
           Stack(
             alignment: Alignment.center,
             children: [
@@ -245,14 +259,11 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-                       // 🖼️ Firebase Live Carousel Banners
             const HomeBannerCarousel(),
             const SizedBox(height: 12),
-            // 📢 Admin Live Announcement Notice
             const AnnouncementBanner(),
             const SizedBox(height: 10),
-            
-            
+
             // 6-Slide Hero Carousel
             SizedBox(
               height: 140,
@@ -352,7 +363,47 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 16),
+
+            // 🔥 CPAlead Direct Mega Card in Home Screen
+            GestureDetector(
+              onTap: _openCpaOfferwall,
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF151922), Color(0xFF0D121B)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.4)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00FF87).withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.stars_rounded, color: Color(0xFF00FF87), size: 26),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('🔥 CPAlead Mega Offers', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                          SizedBox(height: 2),
+                          Text('Install Apps, Surveys & Earn Big Coins', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF00FF87)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // Dual Earning Walls (Notik + EarnKaro)
             const Text('Super Earning Walls', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
