@@ -197,7 +197,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                       children: [
                         const Icon(Icons.card_giftcard, color: Color(0xFFFFD700), size: 18),
                         const SizedBox(width: 6),
-                        Text('Cards: ${widget.scratchLeft} / 2', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('Cards: ${scratchLeft} / 2', style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -315,7 +315,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
           // 🎮 Gamezop Mini Games Section (Firebase Live)
           MiniGamesSection(
             onRewardEarned: (coins, reason) {
-              widget.onSpinWin(coins);
+              onSpinWin(coins);
             },
           ),
           const SizedBox(height: 24),
