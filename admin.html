@@ -124,17 +124,31 @@
       </div>
     </main>
 
-    <!-- TAB 2: PAYOUTS (ONLY PAYOUTS & CASHFREE CSV) -->
+    <!-- TAB 2: PAYOUTS (DUAL MODE: CASHFREE AUTO + MANUAL UPI) -->
     <main id="tabContent-payouts" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-xl font-black text-white">Withdrawal Queue</h2>
-          <p class="text-[11px] text-gray-400">One-Tap UPI & Cashfree Batch Export</p>
+          <p class="text-[11px] text-gray-400">Manage UPI payouts & Cashfree Auto Mode</p>
         </div>
-        <button onclick="exportCashfreeCSV()" class="px-3 py-1.5 bg-blue-600 active:bg-blue-500 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
+        <button onclick="exportCashfreeCSV()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
           📥 Cashfree CSV
         </button>
       </div>
+
+      <!-- Cashfree Auto Payout Toggle Card -->
+      <div class="dark-card p-4 rounded-2xl border border-white/10 flex items-center justify-between shadow-lg">
+        <div>
+          <div class="text-xs font-black text-white uppercase tracking-wider">Cashfree Auto Payout</div>
+          <div id="payoutModeLabel" class="text-[11px] text-amber-400 font-semibold mt-0.5">Mode: Manual UPI (Admin Pays)</div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="cashfreeAutoToggle" onchange="toggleCashfreeAutoMode(this.checked)" class="sr-only peer">
+          <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-400"></div>
+        </label>
+      </div>
+
+      <!-- Withdrawals Queue List -->
       <div id="withdrawalsList" class="space-y-3">
         <div class="text-center py-10 text-gray-500 text-xs">Loading queue...</div>
       </div>
@@ -243,14 +257,14 @@
       </div>
     </main>
 
-    <!-- TAB 5: SETTINGS (UNITY ADS + P1, P2, P3 CONTROLS) -->
+    <!-- TAB 5: SETTINGS (UNITY ADS + P1, P2, P3 CONTROLS + GPLINKS) -->
     <main id="tabContent-settings" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div>
         <h2 class="text-xl font-black text-white">Settings & Controls</h2>
-        <p class="text-[11px] text-gray-400">Manage Unity Ads, Economy, Game limits & Security</p>
+        <p class="text-[11px] text-gray-400">Manage Unity Ads, Economy, Game limits, Security & Referrals</p>
       </div>
 
-      <!-- 1. UNITY ADS REMOTE CONTROLLER (SETTINGS NALLIDE) -->
+      <!-- 1. UNITY ADS REMOTE CONTROLLER -->
       <div class="dark-card p-4 rounded-2xl space-y-3 border border-indigo-500/30">
         <div class="flex items-center justify-between border-b border-white/5 pb-2">
           <h3 class="text-xs font-black text-indigo-400 uppercase tracking-wider">📺 Unity Ads Remote Switcher</h3>
@@ -374,6 +388,23 @@
           Save Security Settings
         </button>
       </div>
+
+      <!-- 5. GPLINKS REFERRAL SETTINGS (MOVED INSIDE SETTINGS TAB) -->
+      <div class="dark-card p-5 rounded-2xl border border-white/10 space-y-3">
+        <h3 class="text-xs font-black text-white uppercase tracking-wider">🔗 GPLinks Referral Settings</h3>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-300 font-medium">Enable GPLinks Shortener for Referrals</span>
+          <input type="checkbox" id="gplinksToggle" class="w-4 h-4 accent-green-400 rounded cursor-pointer">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400 font-bold uppercase">GPLinks API Key</label>
+          <input type="text" id="gplinksKeyInput" placeholder="Enter API Key" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-green-400">
+        </div>
+        <button type="button" onclick="saveGplinksConfig()" class="w-full py-2.5 bg-green-400 hover:bg-green-300 text-black font-black rounded-xl text-xs transition-all shadow-lg">
+          Save Referral Settings
+        </button>
+      </div>
+
     </main>
 
     <!-- ================= BOTTOM NAVIGATION ================= -->
@@ -525,7 +556,7 @@
 
   <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-green-400 text-black px-4 py-2 rounded-2xl text-xs font-black shadow-xl hidden z-50"></div>
 
-    <!-- Inline Tab Switcher - Never Fails even with Cache -->
+  <!-- Inline Tab Switcher -->
   <script>
     function switchTaskSubTab(sub) {
       var subs = ['social', 'banners', 'games', 'offerwalls'];
@@ -543,26 +574,48 @@
         }
       });
     }
+
+    // Cashfree Auto Mode Switcher Function
+    async function toggleCashfreeAutoMode(isAuto) {
+      const label = document.getElementById('payoutModeLabel');
+      if (label) {
+        label.innerText = isAuto ? 'Mode: Cashfree Auto Payout (API)' : 'Mode: Manual UPI (Admin Pays)';
+        label.className = isAuto ? 'text-[11px] text-green-400 font-semibold mt-0.5' : 'text-[11px] text-amber-400 font-semibold mt-0.5';
+      }
+      try {
+        await firebase.firestore().collection('app_config').doc('withdrawal_settings').set({
+          cashfree_auto: isAuto
+        }, { merge: true });
+        showToast(isAuto ? 'Cashfree Auto Payout Enabled' : 'Switched to Manual UPI Mode');
+      } catch (e) {
+        alert('Error updating setting: ' + e.message);
+      }
+    }
+
+    // UPI Direct Intent Trigger
+    function payViaUPI(upiId, amount, reqId) {
+      const note = encodeURIComponent('TPL APP WITHDRAW ' + reqId);
+      const upiUrl = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${note}&cu=INR`;
+      window.location.href = upiUrl;
+    }
+
+    // Mark Withdrawal as Paid
+    async function markWithdrawalPaid(reqId) {
+      if (!confirm('Mark this withdrawal request as Paid?')) return;
+      try {
+        await firebase.firestore().collection('withdrawals').doc(reqId).update({
+          status: 'completed',
+          paidAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast('Payment Marked Completed!');
+        if (typeof fetchAllData === 'function') fetchAllData();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
   </script>
 
-  <!-- Cache Buster Added (?v=2.1) -->
-  <script src="app.js?v=2.1"></script>
-  <!-- GPLINKS REFERRAL SETTINGS -->
-<div class="dark-card p-5 rounded-2xl border border-white/10 my-4 space-y-3">
-  <h3 class="text-lg font-bold text-white">GPLinks Referral Settings</h3>
-  <div class="flex items-center gap-3">
-    <input type="checkbox" id="gplinksToggle" class="w-5 h-5 accent-green-500 rounded cursor-pointer">
-    <label for="gplinksToggle" class="text-sm text-gray-300 font-medium">Enable GPLinks Shortener for Referrals</label>
-  </div>
-  <div>
-    <label class="text-xs text-gray-400 font-bold uppercase">GPLinks API Key</label>
-    <input type="text" id="gplinksKeyInput" placeholder="Enter API Key" class="w-full mt-1 px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-green-500">
-  </div>
-  <button type="button" onclick="saveGplinksConfig()" class="w-full py-2.5 bg-green-500 hover:bg-green-400 text-black font-bold rounded-xl text-sm transition-all shadow-lg">
-    Save Referral Settings
-  </button>
-</div>
-  
+  <!-- External App JS -->
+  <script src="app.js?v=2.2"></script>
 </body>
 </html>
-
