@@ -94,7 +94,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
                         child: Container(
                           decoration: BoxDecoration(
                             color: const Color(0xFF111622),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                            border: Border.all(color: Colors.white.withOpacity(0.08)),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Image.network(
@@ -131,7 +131,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
                     decoration: BoxDecoration(
                       color: _currentPage == index
                           ? const Color(0xFF00FF87)
-                          : Colors.white.withValues(alpha: 0.2),
+                          : Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   );
