@@ -154,81 +154,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
-  Future<void> _saveUpiToFirebase(String newUpi) async {
-    if (currentUid == null) return;
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-        'upiId': newUpi,
-      });
-      setState(() => savedUpiId = newUpi);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('UPI ID successfully saved!')),
-        );
-      }
-    } catch (e) {
-      debugPrint("Error saving UPI: $e");
-    }
-  }
-
-  Future<void> _convertCoinsInFirebase(int coinsEntered) async {
-    if (currentUid == null) return;
-    double rupeesToAdd = coinsEntered / 100.0;
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-        'coins': FieldValue.increment(-coinsEntered),
-        'taskCash': FieldValue.increment(rupeesToAdd),
-        'hasConvertedToday': true,
-      });
-      setState(() {
-        coinHistory.insert(0, '-$coinsEntered Coins - Converted to ₹${rupeesToAdd.toStringAsFixed(2)}');
-        cashHistory.insert(0, '+₹${rupeesToAdd.toStringAsFixed(2)} - Converted from Coins');
-      });
-    } catch (e) {
-      debugPrint("Error converting coins: $e");
-    }
-  }
-
-  Future<void> _submitWithdrawalRequest(double amount, {required bool isTask}) async {
-    if (currentUid == null || savedUpiId == null) return;
-    User? user = FirebaseAuth.instance.currentUser;
-
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-        isTask ? 'taskCash' : 'referCash': FieldValue.increment(-amount),
-        isTask ? 'hasTaskWithdrawnToday' : 'hasReferWithdrawnToday': true,
-      });
-
-      await FirebaseFirestore.instance.collection('withdrawals').add({
-        'uid': currentUid,
-        'userName': user?.displayName ?? 'TPL Player',
-        'userEmail': user?.email ?? '',
-        'upiId': savedUpiId,
-        'amount': amount,
-        'type': isTask ? 'Task Cash' : 'Referral Cash',
-        'status': 'Pending',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      setState(() {
-        if (isTask) {
-          cashHistory.insert(0, '-₹${amount.toStringAsFixed(2)} - UPI Pending');
-        } else {
-          referHistory.insert(0, '-₹${amount.toStringAsFixed(2)} - UPI Pending');
-        }
-      });
-    } catch (e) {
-      debugPrint("Error creating withdrawal: $e");
-    }
-  }
-
   void switchTab(int index) {
     setState(() => _currentIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
-    // 🔒 ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ Maintenance Mode ಆನ್ ಇದ್ದರೆ ಆ್ಯಪ್ ಬ್ಲಾಕ್ ಆಗುತ್ತದೆ
+    // 🔒 Maintenance Mode check
     if (RemoteConfigService.instance.maintenanceMode) {
       return const Scaffold(
         backgroundColor: Color(0xFF080B10),
@@ -257,7 +189,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       );
     }
 
-    // 🛡️ Anti-Cheat: VPN ಆನ್ ಇದ್ದರೆ ಆ್ಯಪ್ ಲಾಕ್ ಆಗುತ್ತದೆ
+    // 🛡️ Anti-Cheat VPN check
     if (_isVpnDetected) {
       return const Scaffold(
         backgroundColor: Color(0xFF080B10),
@@ -336,16 +268,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         coins: coins,
         taskCash: taskCash,
         referCash: referCash,
-        hasConvertedToday: hasConvertedToday,
-        hasTaskWithdrawnToday: hasTaskWithdrawnToday,
-        hasReferWithdrawnToday: hasReferWithdrawnToday,
-        coinHistory: coinHistory,
         cashHistory: cashHistory,
-        referHistory: referHistory,
-        onSaveUpi: _saveUpiToFirebase,
-        onConvertCoins: _convertCoinsInFirebase,
-        onWithdrawTaskCash: (amt) => _submitWithdrawalRequest(amt, isTask: true),
-        onWithdrawReferCash: (amt) => _submitWithdrawalRequest(amt, isTask: false),
+        onCoinsConverted: () {
+          setState(() {});
+        },
       ),
     ];
 
@@ -374,4 +300,3 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 }
-
