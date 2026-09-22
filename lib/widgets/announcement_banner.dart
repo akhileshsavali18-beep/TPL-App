@@ -23,7 +23,7 @@ class AnnouncementBanner extends StatelessWidget {
         final String message = data['message'] ?? '';
         final String title = data['title'] ?? 'Notice';
 
-        // ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಆಫ್ ಇದ್ದರೆ ಅಥವಾ ಮೆಸೇಜ್ ಖಾಲಿ ಇದ್ದರೆ ತೋರಿಸುವುದಿಲ್ಲ
+        // Admin nalli off iddre athava message khali iddre thorsalla
         if (!isEnabled || message.trim().isEmpty) {
           return const SizedBox.shrink();
         }
@@ -34,14 +34,14 @@ class AnnouncementBanner extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF00FF87).withValues(alpha: 0.15),
-                const Color(0xFF60EFFF).withValues(alpha: 0.05),
+                const Color(0xFF00FF87).withOpacity(0.15),
+                const Color(0xFF60EFFF).withOpacity(0.05),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF00FF87).withValues(alpha: 0.4)),
+            border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.4)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +49,7 @@ class AnnouncementBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00FF87).withValues(alpha: 0.2),
+                  color: const Color(0xFF00FF87).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
