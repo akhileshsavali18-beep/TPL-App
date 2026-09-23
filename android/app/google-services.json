@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "940679131159",
+    "firebase_url": "https://tpl-5bd9d-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "tpl-5bd9d",
     "storage_bucket": "tpl-5bd9d.firebasestorage.app"
   },
@@ -12,7 +13,12 @@
           "package_name": "com.tpl.rewards"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "940679131159-tbmloscmukg3qfqsinak12goq1g0hbt6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDNUAx_Zhn-8RYKKkv5qAjMWwFWwI5tMI8"
@@ -20,7 +26,41 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "940679131159-tbmloscmukg3qfqsinak12goq1g0hbt6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:940679131159:android:f5ed5fc5b6f6ac285a2c52",
+        "android_client_info": {
+          "package_name": "com.tplpro.app.tpl_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "940679131159-tbmloscmukg3qfqsinak12goq1g0hbt6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNUAx_Zhn-8RYKKkv5qAjMWwFWwI5tMI8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "940679131159-tbmloscmukg3qfqsinak12goq1g0hbt6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
