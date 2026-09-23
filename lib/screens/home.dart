@@ -1,8 +1,8 @@
-import '../widgets/announcement_banner.dart';
-import '../widgets/home_banner_carousel.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   final int coins;
@@ -27,147 +27,135 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final PageController _bannerController = PageController();
-  int _currentBannerIndex = 0;
-  bool _hasUnreadNotification = true;
+  late PageController _pageController;
+  int _currentPage = 0;
+  Timer? _bannerTimer;
 
-  final List<Map<String, dynamic>> notifications = [
-    {
-      'title': '🎉 Welcome Bonus Credited!',
-      'time': 'Just now',
-      'desc': '50 Coins have been added to your coin bank for joining TPL.',
-      'type': 'bonus',
-    },
-    {
-      'title': '🔥 High Pay Alert: Meesho Task',
-      'time': '2 hours ago',
-      'desc': 'Earn ₹12 instantly by completing the Meesho install offer.',
-      'type': 'task',
-    },
-    {
-      'title': '⚡ Instant UPI Payouts Active',
-      'time': 'Today',
-      'desc': 'Minimum withdrawal is ₹5. Link your UPI ID in the Wallet tab.',
-      'type': 'alert',
-    },
-  ];
-
+  // 1. Sliding Banners Data
   final List<Map<String, dynamic>> banners = [
     {
-      'title': '🔥 CPAlead Mega Offerwall',
-      'desc': 'Complete High Paying Offers & Earn Big Coins',
-      'color': const Color(0xFF00FF87),
-      'tag': 'HOT OFFER'
+      'title': 'CPAlead Mega Offerwall',
+      'tag': 'HOT OFFER',
+      'sub': 'Complete high paying app installs & earn huge coins',
+      'color1': const Color(0xFF00B09B),
+      'color2': const Color(0xFF96C93D),
+      'url': 'https://fasttrk.net/offers?id=cpalead_tpl', // CPAlead URL
     },
     {
-      'title': '🎮 Notik Super Offerwall',
-      'desc': 'Play Popular Games & Earn up to ₹500',
-      'color': const Color(0xFF6C63FF),
-      'tag': 'TOP OFFER'
+      'title': 'Instant UPI Withdrawals',
+      'tag': 'FAST PAYOUT',
+      'sub': 'Start with just ₹5 minimum payout directly to bank',
+      'color1': const Color(0xFF6A11CB),
+      'color2': const Color(0xFF2575FC),
+      'url': null,
     },
     {
-      'title': '⚡ EarnKaro App Deals',
-      'desc': 'Install Meesho & Kotak 811 to get ₹45 Cash',
-      'color': const Color(0xFFFF6584),
-      'tag': 'HIGH PAY'
-    },
-    {
-      'title': '📱 Official Telegram Channel',
-      'desc': 'Join for Daily Giveaway Codes & 100 Coins',
-      'color': const Color(0xFF0088CC),
-      'tag': 'FREE BONUS'
-    },
-    {
-      'title': '📸 Follow on Instagram',
-      'desc': 'Watch Payment Proofs & Earn 50 Coins',
-      'color': const Color(0xFFE1306C),
-      'tag': 'SOCIAL'
-    },
-    {
-      'title': '👥 Invite & Earn Big',
-      'desc': 'Get ₹5 Instant Cash on Every Friend Join',
-      'color': const Color(0xFF00FF87),
-      'tag': 'REFERRAL'
+      'title': 'Lucky Spin & Win',
+      'tag': 'DAILY FREE',
+      'sub': 'Spin the wheel daily to grab bonus coins',
+      'color1': const Color(0xFFFF416C),
+      'color2': const Color(0xFFFF4B2B),
+      'url': null,
     },
   ];
 
-  Future<void> _openCpaOfferwall() async {
-    final user = FirebaseAuth.instance.currentUser;
-    final uid = user?.uid ?? 'guest';
-    final url = 'https://www.qckclk.com/wall/asCl?subid=$uid';
-    try {
-      if (await canLaunchUrlString(url)) {
-        await launchUrlString(url, mode: LaunchMode.externalApplication);
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: 0);
+
+    // Auto-scroll banners every 4 seconds
+    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_currentPage < banners.length - 1) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
       }
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _bannerTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  // CPAlead In-App Browser Launcher (Not Chrome App)
+  Future<void> _openInAppBrowser(String url) async {
+    try {
+      await launchUrlString(
+        url,
+        mode: LaunchMode.inAppBrowserView, // In-App Webview
+      );
     } catch (e) {
-      debugPrint("Error opening CPAlead: $e");
+      debugPrint("Error opening URL: $e");
     }
   }
 
-  void _openNotificationSheet() {
-    setState(() => _hasUnreadNotification = false);
+  // Notifications Modal BottomSheet
+  void _showNotifications() {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF151922),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
+      builder: (ctx) {
         return Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.between,
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.notifications_active, color: Color(0xFF00FF87), size: 20),
+                      Icon(Icons.notifications_active, color: Color(0xFF00FF87), size: 22),
                       SizedBox(width: 8),
-                      Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('Notifications', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 20, color: Colors.grey),
-                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.white60),
+                    onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
               ),
-              const Divider(color: Colors.white12),
-              Expanded(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    final item = notifications[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0B0E14),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white10),
-                      ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B0E14),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.celebration, color: Colors.amber, size: 28),
+                    SizedBox(width: 12),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                              Text(item['time'], style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(item['desc'], style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                          Text('Welcome to TPL Pro!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                          SizedBox(height: 2),
+                          Text('Complete tasks and play daily spin to withdraw instant UPI cash.', style: TextStyle(color: Colors.white60, fontSize: 12)),
                         ],
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 10),
             ],
           ),
         );
@@ -177,76 +165,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double rupees = widget.coins / 100.0;
-
     return Scaffold(
+      backgroundColor: const Color(0xFF080B10),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const CircleAvatar(
-            radius: 17,
-            backgroundColor: Color(0xFF1E2235),
-            child: Icon(Icons.person, color: Colors.white, size: 20),
-          ),
+          icon: const Icon(Icons.menu_rounded, color: Colors.white),
           onPressed: widget.onOpenDrawer,
         ),
-        title: const Text(
-          'TPL',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 2,
-            fontSize: 22,
-            color: Color(0xFF00FF87),
-          ),
-        ),
+        title: const Text('TPL', style: TextStyle(color: Color(0xFF00FF87), fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none, color: Colors.white, size: 24),
-                onPressed: _openNotificationSheet,
-              ),
-              if (_hasUnreadNotification)
-                Positioned(
-                  top: 14,
-                  right: 14,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+            onPressed: _showNotifications,
           ),
+          // Wallet Balance Pill
           GestureDetector(
             onTap: widget.onOpenWallet,
             child: Container(
-              margin: const EdgeInsets.only(right: 14, left: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              margin: const EdgeInsets.only(right: 16, top: 10, bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFF151922),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.5)),
+                border: Border.all(color: Colors.amber.withOpacity(0.4)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 16),
+                  const Icon(Icons.monetization_on, color: Colors.amber, size: 16),
                   const SizedBox(width: 4),
-                  Text('${widget.coins}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                  Container(
-                    height: 12,
-                    width: 1,
-                    color: Colors.white24,
-                    margin: const EdgeInsets.symmetric(horizontal: 6),
-                  ),
                   Text(
-                    '₹${rupees.toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00FF87), fontSize: 12),
+                    '${widget.coins}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ],
               ),
@@ -259,31 +210,32 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const HomeBannerCarousel(),
-            const SizedBox(height: 12),
-            const AnnouncementBanner(),
-            const SizedBox(height: 10),
-
-            // 6-Slide Hero Carousel
+            // 1. Auto Sliding Banners Carousel
             SizedBox(
-              height: 140,
+              height: 155,
               child: PageView.builder(
-                controller: _bannerController,
+                controller: _pageController,
                 itemCount: banners.length,
-                onPageChanged: (i) => setState(() => _currentBannerIndex = i),
+                onPageChanged: (index) => setState(() => _currentPage = index),
                 itemBuilder: (context, index) {
-                  final b = banners[index];
+                  final banner = banners[index];
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [b['color'].withOpacity(0.85), const Color(0xFF151922)],
+                        colors: [banner['color1'] as Color, banner['color2'] as Color],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white12),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (banner['color1'] as Color).withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,57 +244,78 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: Colors.black45,
+                            color: Colors.black.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(b['tag'], style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+                          child: Text(
+                            banner['tag'] as String,
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        Text(b['title'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text(
+                          banner['title'] as String,
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                        ),
                         const SizedBox(height: 4),
-                        Text(b['desc'], style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                        Text(
+                          banner['sub'] as String,
+                          style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12),
+                        ),
                       ],
                     ),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 10),
+
+            // Banner Dots Indicator
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                 banners.length,
                 (i) => Container(
                   margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: _currentBannerIndex == i ? 16 : 6,
+                  width: _currentPage == i ? 18 : 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: _currentBannerIndex == i ? const Color(0xFF00FF87) : Colors.white24,
-                    borderRadius: BorderRadius.circular(4),
+                    color: _currentPage == i ? const Color(0xFF00FF87) : Colors.white24,
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 18),
 
-            // Compact Daily Streak
+            const SizedBox(height: 20),
+
+            // 2. Daily Check-in Card (Claimable)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0xFF151922),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white10),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.06)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.card_giftcard, color: Color(0xFFFFD700), size: 26),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.card_giftcard, color: Colors.amber, size: 24),
+                  ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Daily Check-in (Day 1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('Claim 20 Coins daily bonus', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        Text('Daily Check-in (Day 1)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                        SizedBox(height: 2),
+                        Text('Claim 20 bonus coins everyday', style: TextStyle(color: Colors.grey, fontSize: 11)),
                       ],
                     ),
                   ),
@@ -351,30 +324,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00FF87),
                       foregroundColor: Colors.black,
+                      disabledBackgroundColor: Colors.white12,
+                      disabledForegroundColor: Colors.white38,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      minimumSize: Size.zero,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: Text(
                       widget.streakClaimed ? 'CLAIMED' : 'CLAIM +20',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
 
-            // 🔥 CPAlead Direct Mega Card in Home Screen
+            const SizedBox(height: 20),
+
+            // 3. CPAlead Mega Offers Card (In-App Only)
             GestureDetector(
-              onTap: _openCpaOfferwall,
+              onTap: () => _openInAppBrowser('https://fasttrk.net/offers?id=cpalead_tpl'),
               child: Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF151922), Color(0xFF0D121B)],
+                    colors: [Color(0xFF0C2419), Color(0xFF151922)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.4)),
                 ),
                 child: Row(
@@ -382,152 +359,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00FF87).withOpacity(0.12),
+                        color: const Color(0xFF00FF87).withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.stars_rounded, color: Color(0xFF00FF87), size: 26),
+                      child: const Icon(Icons.star_rounded, color: Color(0xFF00FF87), size: 28),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('🔥 CPAlead Mega Offers', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                          SizedBox(height: 2),
-                          Text('Install Apps, Surveys & Earn Big Coins', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                          Text(
+                            '🔥 CPAlead Mega Offers',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Install Apps, Surveys & Earn Big Coins directly in app',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF00FF87)),
+                    const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF87), size: 18),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
 
-            // Dual Earning Walls (Notik + EarnKaro)
-            const Text('Super Earning Walls', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _cardWall(
-                    title: '🎮 Notik Wall',
-                    subtitle: 'Games & Surveys',
-                    payout: 'Earn ₹10 - ₹200',
-                    color: const Color(0xFF6C63FF),
-                    onTap: () => widget.onTaskClick('Notik Wall', 500),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _cardWall(
-                    title: '⚡ EarnKaro Hub',
-                    subtitle: 'Meesho & Finance',
-                    payout: 'Earn ₹25 - ₹100',
-                    color: const Color(0xFFFF6584),
-                    onTap: () => widget.onTaskClick('EarnKaro Hub', 1000),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
-
-            // Official Social Channels
-            const Text('Official Channels & Social Tasks', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            _taskTile(
-              title: 'Join Official Telegram',
-              desc: 'Get live redeem codes & proof',
-              reward: '+100 Coins (₹1.00)',
-              icon: Icons.send,
-              color: const Color(0xFF0088CC),
-              onTap: () => widget.onTaskClick('Join Telegram', 100),
-            ),
-            _taskTile(
-              title: 'Subscribe A28 YouTube',
-              desc: 'Watch tutorials & app updates',
-              reward: '+100 Coins (₹1.00)',
-              icon: Icons.play_arrow,
-              color: const Color(0xFFFF0000),
-              onTap: () => widget.onTaskClick('Subscribe YouTube', 100),
-            ),
-            _taskTile(
-              title: 'Follow on Instagram',
-              desc: 'Follow for daily contest alerts',
-              reward: '+50 Coins (₹0.50)',
-              icon: Icons.camera_alt,
-              color: const Color(0xFFE1306C),
-              onTap: () => widget.onTaskClick('Follow Instagram', 50),
-            ),
+            const SizedBox(height: 24),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _cardWall({
-    required String title,
-    required String subtitle,
-    required String payout,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF151922),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.4)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: color)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.white70)),
-            const SizedBox(height: 2),
-            Text(payout, style: const TextStyle(fontSize: 11, color: Color(0xFF00FF87), fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _taskTile({
-    required String title,
-    required String desc,
-    required String reward,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF151922),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.2),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        subtitle: Text(desc, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(reward, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF00FF87))),
-            const SizedBox(height: 2),
-            const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
-          ],
-        ),
-        onTap: onTap,
       ),
     );
   }
