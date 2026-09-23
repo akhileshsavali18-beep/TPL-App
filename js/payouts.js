@@ -6,59 +6,80 @@ let cachedWithdrawals = [];
 
 function listenWithdrawals() {
   const container = document.getElementById('withdrawalsList');
-  
-  // Safe direct stream without composite index requirement
+
+  // Try reading from 'withdrawals' first
   db.collection('withdrawals').onSnapshot(snap => {
-    cachedWithdrawals = [];
-    let pendingCount = 0;
-    let pendingAmount = 0.0;
-    let totalPaid = 0.0;
-
-    snap.forEach(d => {
-      const w = { id: d.id, ...d.data() };
-      cachedWithdrawals.push(w);
-
-      const amt = parseFloat(w.amount) || 0.0;
-      const st = (w.status || 'pending').toLowerCase();
-
-      if (st === 'pending') {
-        pendingCount++;
-        pendingAmount += amt;
-      } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
-        totalPaid += amt;
-      }
-    });
-
-    // Client-side sort by date
-    cachedWithdrawals.sort((a, b) => {
-      const tA = a.createdAt?.seconds || 0;
-      const tB = b.createdAt?.seconds || 0;
-      return tB - tA;
-    });
-
-    // Update Home Metrics
-    const pCountEl = document.getElementById('statPendingCount');
-    const pAmtEl = document.getElementById('statPendingAmount');
-    const paidAmtEl = document.getElementById('statPaidAmount');
-    const badgeEl = document.getElementById('navBadge');
-
-    if (pCountEl) pCountEl.innerText = pendingCount;
-    if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
-    if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
-
-    if (badgeEl) {
-      badgeEl.innerText = pendingCount;
-      if (pendingCount > 0) badgeEl.classList.remove('hidden');
-      else badgeEl.classList.add('hidden');
+    if (!snap.empty) {
+      processWithdrawalDocs(snap);
+    } else {
+      // Fallback: Check if collection is named 'withdrawal_requests'
+      db.collection('withdrawal_requests').onSnapshot(snapFallback => {
+        if (!snapFallback.empty) {
+          processWithdrawalDocs(snapFallback);
+        } else {
+          processWithdrawalDocs(snap); // renders empty state cleanly
+        }
+      }, errFallback => {
+        processWithdrawalDocs(snap);
+      });
     }
-
-    renderWithdrawals(cachedWithdrawals);
   }, err => {
     console.error("Payouts Firestore Error:", err);
     if (container) {
-      container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Error: ${err.message}</div>`;
+      container.innerHTML = `
+        <div class="dark-card p-4 rounded-2xl text-center space-y-2 border border-red-500/30">
+          <div class="text-red-400 font-bold text-xs">⚠️ Firestore Read Permission Denied</div>
+          <p class="text-[11px] text-gray-400">Firebase Console -> Firestore -> Rules nalli 'allow read, write: if true;' haaki Publish maadi.</p>
+        </div>`;
     }
   });
+}
+
+function processWithdrawalDocs(snap) {
+  cachedWithdrawals = [];
+  let pendingCount = 0;
+  let pendingAmount = 0.0;
+  let totalPaid = 0.0;
+
+  snap.forEach(d => {
+    const w = { id: d.id, ...d.data() };
+    cachedWithdrawals.push(w);
+
+    const amt = parseFloat(w.amount) || 0.0;
+    const st = (w.status || 'pending').toLowerCase();
+
+    if (st === 'pending') {
+      pendingCount++;
+      pendingAmount += amt;
+    } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
+      totalPaid += amt;
+    }
+  });
+
+  // Client-side sort by timestamp
+  cachedWithdrawals.sort((a, b) => {
+    const tA = a.createdAt?.seconds || 0;
+    const tB = b.createdAt?.seconds || 0;
+    return tB - tA;
+  });
+
+  // Update Home Metrics
+  const pCountEl = document.getElementById('statPendingCount');
+  const pAmtEl = document.getElementById('statPendingAmount');
+  const paidAmtEl = document.getElementById('statPaidAmount');
+  const badgeEl = document.getElementById('navBadge');
+
+  if (pCountEl) pCountEl.innerText = pendingCount;
+  if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
+  if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
+
+  if (badgeEl) {
+    badgeEl.innerText = pendingCount;
+    if (pendingCount > 0) badgeEl.classList.remove('hidden');
+    else badgeEl.classList.add('hidden');
+  }
+
+  renderWithdrawals(cachedWithdrawals);
 }
 
 function renderWithdrawals(withdrawals) {
@@ -66,7 +87,7 @@ function renderWithdrawals(withdrawals) {
   if (!container) return;
 
   if (withdrawals.length === 0) {
-    container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs">No withdrawal requests found.</div>';
+    container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs">No withdrawal requests found in database.</div>';
     return;
   }
 
@@ -98,17 +119,19 @@ function renderWithdrawals(withdrawals) {
         </div>
         <div class="text-right">
           <div class="text-xl font-black text-green-400">₹${parseFloat(w.amount || 0).toFixed(2)}</div>
-          <div class="text-[9px] text-gray-500">${w.createdAt?.toDate ? w.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recent'}</div>
+          <div class="text-[9px] text-gray-500">${w.createdAt?.toDate ? w.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Today'}</div>
         </div>
       </div>
 
       <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+        <!-- 📲 Pay UPI Button ONLY WHEN PENDING -->
         ${isPending ? `
           <button onclick="payViaUPI('${w.upiId || ''}', ${w.amount \vert{}\vert{} 0}, '${w.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
             <span>📲 Pay UPI</span>
           </button>
         ` : ''}
 
+        <!-- Status Dropdown with Auto-Refund -->
         <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value)" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
           <option value="pending" ${isPending ? 'selected' : ''}>⏳ Pending</option>
           <option value="completed" ${isSuccess ? 'selected' : ''}>✅ Success</option>
@@ -122,7 +145,7 @@ function renderWithdrawals(withdrawals) {
 
 function payViaUPI(upiId, amount, reqId) {
   if (!upiId) return alert('UPI ID not found!');
-  const note = encodeURIComponent('TPL PAYOUT ' + reqId);
+  const note = encodeURIComponent('TPL APP PAYOUT ' + reqId);
   window.location.href = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${note}&cu=INR`;
 }
 
@@ -130,12 +153,15 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
   if (oldStatus === newStatus) return;
 
   try {
-    await db.collection('withdrawals').doc(reqId).update({
+    // Try updating in 'withdrawals', if not found update 'withdrawal_requests'
+    const collName = cachedWithdrawals.find(x => x.id === reqId)?.collection || 'withdrawals';
+    await db.collection(collName).doc(reqId).update({
       status: newStatus,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       ...(newStatus === 'completed' ? { paidAt: firebase.firestore.FieldValue.serverTimestamp() } : {})
     });
 
+    // 1. REJECTED -> AUTOMATIC REFUND TO USER WALLET
     if (newStatus === 'rejected' && oldStatus === 'pending' && uid) {
       const isRefer = (type || '').toLowerCase().includes('refer');
       const refundField = isRefer ? 'referCash' : 'taskCash';
@@ -146,7 +172,7 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
 
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '❌ Withdrawal Rejected',
-        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} was rejected. Money refunded to your balance.`,
+        message: `Your withdrawal request of ₹${parseFloat(amount).toFixed(2)} was rejected. The full amount has been refunded to your ${isRefer ? 'Refer' : 'Cash'} balance.`,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -155,10 +181,11 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
       return;
     }
 
+    // 2. SUCCESS -> AUTO NOTIFICATION
     if (newStatus === 'completed' && uid) {
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '🎉 Payout Successful!',
-        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been credited to ${upiId || 'your UPI'}!`,
+        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been successfully credited to ${upiId || 'your UPI'}!`,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -179,9 +206,11 @@ function exportCashfreeCSV() {
   cachedWithdrawals.forEach(w => {
     csv += `"${w.id}","${w.amount}","","${w.userEmail || ''}","${w.upiId || ''}","${w.status || 'pending'}"\n`;
   });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = window.URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  a.download = `TPL_Payouts_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.href = url;
+  a.download = `TPL_Cashfree_Payouts_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
 }
 
@@ -199,3 +228,4 @@ auth.onAuthStateChanged(user => {
     listenWithdrawals();
   }
 });
+      
