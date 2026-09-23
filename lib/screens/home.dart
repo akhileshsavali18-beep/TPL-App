@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   final int coins;
@@ -29,49 +31,47 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentPage = 0;
   Timer? _bannerTimer;
 
-  // Sliding Banners Data
-  final List<Map<String, dynamic>> banners = [
+  // Fallback default banners
+  final List<Map<String, dynamic>> _defaultBanners = [
     {
       'title': 'CPAlead Mega Offerwall',
-      'tag': 'HOT OFFER',
       'sub': 'Complete high paying app installs & earn huge coins',
+      'tag': 'HOT OFFER',
       'color1': const Color(0xFF00B09B),
       'color2': const Color(0xFF96C93D),
-      'url': 'https://fasttrk.net/offers?id=cpalead_tpl',
+      'targetUrl': 'https://fasttrk.net/offers?id=cpalead_tpl',
     },
     {
       'title': 'Instant UPI Withdrawals',
-      'tag': 'FAST PAYOUT',
       'sub': 'Safe & direct cash payouts to your bank account',
+      'tag': 'FAST PAYOUT',
       'color1': const Color(0xFF6A11CB),
       'color2': const Color(0xFF2575FC),
-      'url': null,
+      'targetUrl': null,
     },
     {
       'title': 'Lucky Spin & Win',
-      'tag': 'DAILY FREE',
       'sub': 'Spin the wheel daily to grab bonus coins',
+      'tag': 'DAILY FREE',
       'color1': const Color(0xFFFF416C),
       'color2': const Color(0xFFFF4B2B),
-      'url': null,
+      'targetUrl': null,
     },
   ];
+
+  String _cpaleadUrl = 'https://fasttrk.net/offers?id=cpalead_tpl';
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
+    _listenRemoteOfferwalls();
 
     // Auto-scroll banners every 4 seconds
     _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (_currentPage < banners.length - 1) {
-        _currentPage++;
-      } else {
-        _currentPage = 0;
-      }
+      if (!mounted) return;
       if (_pageController.hasClients) {
-        _pageController.animateToPage(
-          _currentPage,
+        _pageController.nextPage(
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeInOut,
         );
@@ -86,6 +86,18 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  // Listen to Admin Panel Offerwalls Config
+  void _listenRemoteOfferwalls() {
+    FirebaseFirestore.instance.collection('settings').doc('offerwalls').snapshots().listen((snap) {
+      if (snap.exists && mounted) {
+        final data = snap.data();
+        if (data != null && data['cpaleadUrl'] != null && data['cpaleadUrl'].toString().isNotEmpty) {
+          setState(() => _cpaleadUrl = data['cpaleadUrl']);
+        }
+      }
+    });
+  }
+
   // CPAlead In-App Browser Launcher
   Future<void> _openInAppBrowser(String url) async {
     try {
@@ -98,8 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Notifications Modal BottomSheet
+  // Notifications Modal BottomSheet (Live Firestore Stream)
   void _showNotifications() {
+    final user = FirebaseAuth.instance.currentUser;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF151922),
@@ -107,10 +121,21 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        return Padding(
+        if (user == null) {
+          return const Padding(
+            padding: EdgeInsets.all(30),
+            child: Center(
+              child: Text('Please login to view notifications.', style: TextStyle(color: Colors.white70)),
+            ),
+          );
+        }
+
+        return Container(
           padding: const EdgeInsets.all(20),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.65,
+          ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -129,31 +154,88 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0B0E14),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.celebration, color: Colors.amber, size: 28),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Welcome to TPL Pro!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                          SizedBox(height: 2),
-                          Text('Complete tasks and play daily spin to withdraw instant UPI cash.', style: TextStyle(color: Colors.white60, fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 12),
+
+              // Live Notifications Stream from Admin Alerts & Payouts
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .collection('notifications')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator(color: Color(0xFF00FF87)));
+                    }
+
+                    final docs = snapshot.data?.docs ?? [];
+
+                    if (docs.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.notifications_none_rounded, color: Colors.white.withOpacity(0.3), size: 48),
+                            const SizedBox(height: 10),
+                            const Text('No notifications yet', style: TextStyle(color: Colors.white60, fontSize: 13)),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        final notif = docs[index].data() as Map<String, dynamic>;
+                        final title = notif['title'] ?? '📢 Notification';
+                        final message = notif['message'] ?? '';
+                        final isPayout = title.toString().contains('Payout') || title.toString().contains('Withdrawal');
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0B0E14),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isPayout ? const Color(0xFF00FF87).withOpacity(0.3) : Colors.white10,
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                isPayout ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+                                color: isPayout ? const Color(0xFF00FF87) : Colors.amber,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      title,
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      message,
+                                      style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
-              const SizedBox(height: 10),
             ],
           ),
         );
@@ -163,6 +245,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: const Color(0xFF080B10),
       appBar: AppBar(
@@ -174,9 +258,42 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         title: const Text('TPL', style: TextStyle(color: Color(0xFF00FF87), fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
-            onPressed: _showNotifications,
+          // Notification Bell with Unread Badge
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+                onPressed: _showNotifications,
+              ),
+              if (user != null)
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .collection('notifications')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.docs.length ?? 0;
+                    if (count == 0) return const SizedBox.shrink();
+                    return Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF00FF87),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+            ],
           ),
           // Wallet Balance Pill
           GestureDetector(
@@ -208,82 +325,124 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Auto Sliding Banners Carousel
-            SizedBox(
-              height: 155,
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: banners.length,
-                onPageChanged: (index) => setState(() => _currentPage = index),
-                itemBuilder: (context, index) {
-                  final banner = banners[index];
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [banner['color1'] as Color, banner['color2'] as Color],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+            // 1. Live Carousel Banners Stream (Direct Sync with Admin Panel)
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('banners').snapshots(),
+              builder: (context, snapshot) {
+                List<Map<String, dynamic>> activeBanners = [];
+
+                if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                  final colors = [
+                    [const Color(0xFF00B09B), const Color(0xFF96C93D)],
+                    [const Color(0xFF6A11CB), const Color(0xFF2575FC)],
+                    [const Color(0xFFFF416C), const Color(0xFFFF4B2B)],
+                    [const Color(0xFFF7971E), const Color(0xFFFFD200)],
+                  ];
+
+                  int colorIdx = 0;
+                  for (var doc in snapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final pair = colors[colorIdx % colors.length];
+                    colorIdx++;
+
+                    activeBanners.add({
+                      'title': data['title'] ?? 'TPL Special Offer',
+                      'sub': data['sub'] ?? 'Complete tasks & earn coins',
+                      'tag': 'HOT OFFER',
+                      'color1': pair[0],
+                      'color2': pair[1],
+                      'targetUrl': data['targetUrl'],
+                    });
+                  }
+                } else {
+                  activeBanners = _defaultBanners;
+                }
+
+                return Column(
+                  children: [
+                    SizedBox(
+                      height: 155,
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: activeBanners.length,
+                        onPageChanged: (index) => setState(() => _currentPage = index % activeBanners.length),
+                        itemBuilder: (context, index) {
+                          final banner = activeBanners[index % activeBanners.length];
+                          return GestureDetector(
+                            onTap: () {
+                              if (banner['targetUrl'] != null && banner['targetUrl'].toString().startsWith('http')) {
+                                _openInAppBrowser(banner['targetUrl']);
+                              }
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [banner['color1'] as Color, banner['color2'] as Color],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (banner['color1'] as Color).withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      banner['tag'] as String,
+                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    banner['title'] as String,
+                                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    banner['sub'] as String,
+                                    style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (banner['color1'] as Color).withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 10),
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      children: List.generate(
+                        activeBanners.length,
+                        (i) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: _currentPage == i ? 18 : 6,
+                          height: 6,
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
+                            color: _currentPage == i ? const Color(0xFF00FF87) : Colors.white24,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
-                            banner['tag'] as String,
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          banner['title'] as String,
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          banner['sub'] as String,
-                          style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12),
-                        ),
-                      ],
+                      ),
                     ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Banner Dots Indicator
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                banners.length,
-                (i) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: _currentPage == i ? 18 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: _currentPage == i ? const Color(0xFF00FF87) : Colors.white24,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-              ),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 20),
@@ -340,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // 3. CPAlead Mega Offers Card (In-App Only)
             GestureDetector(
-              onTap: () => _openInAppBrowser('https://fasttrk.net/offers?id=cpalead_tpl'),
+              onTap: () => _openInAppBrowser(_cpaleadUrl),
               child: Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
