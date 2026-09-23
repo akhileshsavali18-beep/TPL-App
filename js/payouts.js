@@ -1,102 +1,86 @@
 // ==========================================
-// PAYOUTS MODULE (js/payouts.js) - WITH ERROR DETECTOR
+// PAYOUTS MODULE (js/payouts.js)
 // ==========================================
 
-// 1. On-Screen Script Error Catcher (ಯಾವುದೇ ಸ್ಕ್ರಿಪ್ಟ್ ಎರರ್ ಬಂದರೆ ಸ್ಕ್ರೀನ್ ಮೇಲೆಯೇ ತೋರಿಸುತ್ತದೆ)
-window.addEventListener('error', function(e) {
-  const container = document.getElementById('withdrawalsList');
-  if (container) {
-    container.innerHTML = `
-      <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-center space-y-1">
-        <div class="text-xs font-bold text-red-400">⚠️ Script Error Found:</div>
-        <div class="text-[11px] text-white font-mono">${e.message}</div>
-        <div class="text-[9px] text-gray-400">File: ${e.filename ? e.filename.split('/').pop() : 'script'} (Line: ${e.lineno})</div>
-      </div>`;
-  }
-});
-
-// Safe global variable (Duplicate declaration crash ಆಗುವುದಿಲ್ಲ)
-window.cachedWithdrawals = window.cachedWithdrawals || [];
+console.log("payouts.js file successfully loaded by browser!");
 
 function listenWithdrawals() {
   const container = document.getElementById('withdrawalsList');
-  if (!container) return;
 
-  try {
-    if (typeof db === 'undefined') {
-      container.innerHTML = '<div class="text-center py-6 text-red-400 text-xs font-bold">⚠️ Firebase DB not initialized!</div>';
-      return;
-    }
-
-    db.collection('withdrawals').onSnapshot(snap => {
-      window.cachedWithdrawals = [];
-      let pendingCount = 0;
-      let pendingAmount = 0.0;
-      let totalPaid = 0.0;
-
-      snap.forEach(d => {
-        const w = { id: d.id, ...d.data() };
-        window.cachedWithdrawals.push(w);
-
-        const amt = parseFloat(w.amount) || 0.0;
-        const st = (w.status || 'pending').toLowerCase();
-
-        if (st === 'pending') {
-          pendingCount++;
-          pendingAmount += amt;
-        } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
-          totalPaid += amt;
-        }
-      });
-
-      // Sort recent first
-      window.cachedWithdrawals.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
-      // Update Home Metrics Live
-      const pCountEl = document.getElementById('statPendingCount');
-      const pAmtEl = document.getElementById('statPendingAmount');
-      const paidAmtEl = document.getElementById('statPaidAmount');
-      const badgeEl = document.getElementById('navBadge');
-
-      if (pCountEl) pCountEl.innerText = pendingCount;
-      if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
-      if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
-
-      if (badgeEl) {
-        badgeEl.innerText = pendingCount;
-        if (pendingCount > 0) badgeEl.classList.remove('hidden');
-        else badgeEl.classList.add('hidden');
+  // Try both 'withdrawals' and 'Withdrawals' (handles capital W)
+  const fetchFromDb = (collName) => {
+    db.collection(collName).onSnapshot(snap => {
+      if (!snap.empty) {
+        renderWithdrawalsData(snap, collName);
+      } else if (collName === 'withdrawals') {
+        fetchFromDb('Withdrawals');
+      } else {
+        renderWithdrawalsData(snap, collName);
       }
-
-      renderWithdrawals(window.cachedWithdrawals);
     }, err => {
-      console.error("Payouts Firestore Error:", err);
-      container.innerHTML = `
-        <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-center space-y-1">
-          <div class="text-xs font-bold text-red-400">⚠️ Firestore Error:</div>
-          <div class="text-[11px] text-white">${err.message}</div>
-        </div>`;
+      console.error("Firestore error on " + collName, err);
+      if (collName === 'withdrawals') {
+        fetchFromDb('Withdrawals');
+      } else if (container) {
+        container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Firestore Error: ${err.message}</div>`;
+      }
     });
-  } catch (err) {
-    container.innerHTML = `
-      <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-center space-y-1">
-        <div class="text-xs font-bold text-red-400">⚠️ Execution Error:</div>
-        <div class="text-[11px] text-white">${err.message}</div>
-      </div>`;
-  }
+  };
+
+  fetchFromDb('withdrawals');
 }
 
-function renderWithdrawals(withdrawals) {
+function renderWithdrawalsData(snap, activeColl) {
   const container = document.getElementById('withdrawalsList');
   if (!container) return;
 
-  if (!withdrawals || withdrawals.length === 0) {
+  if (snap.empty) {
     container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs">No withdrawal requests found in database.</div>';
     return;
   }
 
+  let list = [];
+  let pendingCount = 0;
+  let pendingAmount = 0.0;
+  let totalPaid = 0.0;
+
+  snap.forEach(d => {
+    const w = { id: d.id, _coll: activeColl, ...d.data() };
+    list.push(w);
+
+    const amt = parseFloat(w.amount) || 0.0;
+    const st = (w.status || 'pending').toLowerCase();
+
+    if (st === 'pending') {
+      pendingCount++;
+      pendingAmount += amt;
+    } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
+      totalPaid += amt;
+    }
+  });
+
+  // Sort recent first
+  list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+  // Update Home Screen Live Numbers
+  const pCountEl = document.getElementById('statPendingCount');
+  const pAmtEl = document.getElementById('statPendingAmount');
+  const paidAmtEl = document.getElementById('statPaidAmount');
+  const badgeEl = document.getElementById('navBadge');
+
+  if (pCountEl) pCountEl.innerText = pendingCount;
+  if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
+  if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
+
+  if (badgeEl) {
+    badgeEl.innerText = pendingCount;
+    if (pendingCount > 0) badgeEl.classList.remove('hidden');
+    else badgeEl.classList.add('hidden');
+  }
+
+  // Draw Cards on Screen
   container.innerHTML = '';
-  withdrawals.forEach(w => {
+  list.forEach(w => {
     const st = (w.status || 'pending').toLowerCase();
     const isPending = st === 'pending';
     const isSuccess = ['completed', 'success', 'settled', 'paid'].includes(st);
@@ -128,15 +112,15 @@ function renderWithdrawals(withdrawals) {
       </div>
 
       <div class="flex items-center gap-2 pt-2 border-t border-white/5">
-        <!-- 📲 Pay UPI Button (Pending ಇದ್ದಾಗ ಮಾತ್ರ ಕಾಣುತ್ತದೆ) -->
+        <!-- Pay UPI Button: Shows ONLY when Pending -->
         ${isPending ? `
           <button onclick="payViaUPI('${w.upiId || ''}', ${w.amount \vert{}\vert{} 0}, '${w.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
             <span>📲 Pay UPI</span>
           </button>
         ` : ''}
 
-        <!-- Status Controller -->
-        <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value)" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
+        <!-- Status Controller with Auto-Refund -->
+        <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value, '${w._coll}')" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
           <option value="pending" ${isPending ? 'selected' : ''}>⏳ Pending</option>
           <option value="completed" ${isSuccess ? 'selected' : ''}>✅ Success</option>
           <option value="rejected" ${isRejected ? 'selected' : ''}>❌ Rejected</option>
@@ -149,15 +133,14 @@ function renderWithdrawals(withdrawals) {
 
 function payViaUPI(upiId, amount, reqId) {
   if (!upiId) return alert('UPI ID not found!');
-  const note = encodeURIComponent('TPL PAYOUT ' + reqId);
-  window.location.href = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${note}&cu=INR`;
+  window.location.href = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${encodeURIComponent('TPL PAYOUT ' + reqId)}&cu=INR`;
 }
 
-async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus, newStatus) {
+async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus, newStatus, collName) {
   if (oldStatus === newStatus) return;
 
   try {
-    await db.collection('withdrawals').doc(reqId).update({
+    await db.collection(collName || 'withdrawals').doc(reqId).update({
       status: newStatus,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       ...(newStatus === 'completed' ? { paidAt: firebase.firestore.FieldValue.serverTimestamp() } : {})
@@ -173,7 +156,7 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
 
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '❌ Withdrawal Rejected',
-        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} was rejected. Refunded to balance.`,
+        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} was rejected. Refunded to your balance.`,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -185,7 +168,7 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
     if (newStatus === 'completed' && uid) {
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '🎉 Payout Successful!',
-        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been credited to ${upiId || 'your UPI'}!`,
+        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been credited to your UPI!`,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -206,13 +189,11 @@ function copyToClipboard(text) {
   showToast('Copied: ' + text);
 }
 
-// 1. Immediate Run
+// Immediate load
 listenWithdrawals();
 
-// 2. Run on Auth Change
 if (typeof auth !== 'undefined') {
   auth.onAuthStateChanged(user => {
     if (user) listenWithdrawals();
-  })
+  });
 }
-    
