@@ -4,9 +4,9 @@
 
 let cachedWithdrawals = [];
 
-// 1. Listen to Live Withdrawals Queue
+// 1. Listen to Live Withdrawals Queue (Error-Safe Query)
 function listenWithdrawals() {
-  db.collection('withdrawals').orderBy('createdAt', 'desc').onSnapshot(snap => {
+  db.collection('withdrawals').onSnapshot(snap => {
     cachedWithdrawals = [];
     let pendingCount = 0;
     let pendingAmount = 0.0;
@@ -27,6 +27,13 @@ function listenWithdrawals() {
       }
     });
 
+    // Client-side sort by date
+    cachedWithdrawals.sort((a, b) => {
+      const tA = a.createdAt?.seconds || 0;
+      const tB = b.createdAt?.seconds || 0;
+      return tB - tA;
+    });
+
     const pendingCountEl = document.getElementById('statPendingCount');
     const pendingAmountEl = document.getElementById('statPendingAmount');
     const paidAmountEl = document.getElementById('statPaidAmount');
@@ -43,6 +50,10 @@ function listenWithdrawals() {
     }
 
     renderWithdrawals(cachedWithdrawals);
+  }, err => {
+    console.error("Payouts load error:", err);
+    const container = document.getElementById('withdrawalsList');
+    if (container) container.innerHTML = '<div class="text-center py-6 text-red-400 text-xs">Error loading payouts. Check Firestore Rules.</div>';
   });
 }
 
@@ -151,7 +162,7 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
     if (newStatus === 'completed' && uid) {
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '🎉 Payout Successful!',
-        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been successfully credited to ${upiId || 'your UPI'}!`,
+        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been credited to ${upiId || 'your UPI'}!`,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -196,14 +207,12 @@ async function toggleCashfreeAutoMode(isAuto) {
   }
 }
 
-// 7. Clipboard Helper
 function copyToClipboard(text) {
   if (!text) return;
   navigator.clipboard.writeText(text);
   showToast('Copied: ' + text);
 }
 
-// Auto-run when authenticated
 auth.onAuthStateChanged(user => {
   if (user) {
     listenWithdrawals();
