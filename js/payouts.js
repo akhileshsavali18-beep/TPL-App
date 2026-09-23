@@ -1,5 +1,5 @@
 // ==========================================
-// PAYOUTS & WITHDRAWALS MODULE (js/payouts.js)
+// PAYOUTS MODULE (js/payouts.js) - AUTO DETECT
 // ==========================================
 
 let cachedWithdrawals = [];
@@ -7,42 +7,38 @@ let cachedWithdrawals = [];
 function listenWithdrawals() {
   const container = document.getElementById('withdrawalsList');
 
-  // Try reading from 'withdrawals' first
-  db.collection('withdrawals').onSnapshot(snap => {
-    if (!snap.empty) {
-      processWithdrawalDocs(snap);
-    } else {
-      // Fallback: Check if collection is named 'withdrawal_requests'
-      db.collection('withdrawal_requests').onSnapshot(snapFallback => {
-        if (!snapFallback.empty) {
-          processWithdrawalDocs(snapFallback);
-        } else {
-          processWithdrawalDocs(snap); // renders empty state cleanly
-        }
-      }, errFallback => {
-        processWithdrawalDocs(snap);
-      });
-    }
-  }, err => {
-    console.error("Payouts Firestore Error:", err);
-    if (container) {
-      container.innerHTML = `
-        <div class="dark-card p-4 rounded-2xl text-center space-y-2 border border-red-500/30">
-          <div class="text-red-400 font-bold text-xs">⚠️ Firestore Read Permission Denied</div>
-          <p class="text-[11px] text-gray-400">Firebase Console -> Firestore -> Rules nalli 'allow read, write: if true;' haaki Publish maadi.</p>
-        </div>`;
-    }
-  });
+  // Multi-Collection Fallback Listener
+  const tryLoad = (collName) => {
+    db.collection(collName).onSnapshot(snap => {
+      if (!snap.empty) {
+        processDocs(snap, collName);
+      } else if (collName === 'withdrawals') {
+        tryLoad('withdrawal_requests');
+      } else if (collName === 'withdrawal_requests') {
+        tryLoad('payouts');
+      } else {
+        processDocs(snap, collName);
+      }
+    }, err => {
+      console.error(collName + " error:", err);
+      if (collName === 'withdrawals') tryLoad('withdrawal_requests');
+      else if (container) {
+        container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Firestore Error: ${err.message}</div>`;
+      }
+    });
+  };
+
+  tryLoad('withdrawals');
 }
 
-function processWithdrawalDocs(snap) {
+function processDocs(snap, activeColl) {
   cachedWithdrawals = [];
   let pendingCount = 0;
   let pendingAmount = 0.0;
   let totalPaid = 0.0;
 
   snap.forEach(d => {
-    const w = { id: d.id, ...d.data() };
+    const w = { id: d.id, _coll: activeColl, ...d.data() };
     cachedWithdrawals.push(w);
 
     const amt = parseFloat(w.amount) || 0.0;
@@ -56,14 +52,9 @@ function processWithdrawalDocs(snap) {
     }
   });
 
-  // Client-side sort by timestamp
-  cachedWithdrawals.sort((a, b) => {
-    const tA = a.createdAt?.seconds || 0;
-    const tB = b.createdAt?.seconds || 0;
-    return tB - tA;
-  });
+  cachedWithdrawals.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-  // Update Home Metrics
+  // Update Home Metrics Live
   const pCountEl = document.getElementById('statPendingCount');
   const pAmtEl = document.getElementById('statPendingAmount');
   const paidAmtEl = document.getElementById('statPaidAmount');
@@ -119,7 +110,7 @@ function renderWithdrawals(withdrawals) {
         </div>
         <div class="text-right">
           <div class="text-xl font-black text-green-400">₹${parseFloat(w.amount || 0).toFixed(2)}</div>
-          <div class="text-[9px] text-gray-500">${w.createdAt?.toDate ? w.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Today'}</div>
+          <div class="text-[9px] text-gray-500">${w.createdAt?.toDate ? w.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recent'}</div>
         </div>
       </div>
 
@@ -132,7 +123,7 @@ function renderWithdrawals(withdrawals) {
         ` : ''}
 
         <!-- Status Dropdown with Auto-Refund -->
-        <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value)" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
+        <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value, '${w._coll}')" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
           <option value="pending" ${isPending ? 'selected' : ''}>⏳ Pending</option>
           <option value="completed" ${isSuccess ? 'selected' : ''}>✅ Success</option>
           <option value="rejected" ${isRejected ? 'selected' : ''}>❌ Rejected</option>
@@ -145,23 +136,20 @@ function renderWithdrawals(withdrawals) {
 
 function payViaUPI(upiId, amount, reqId) {
   if (!upiId) return alert('UPI ID not found!');
-  const note = encodeURIComponent('TPL APP PAYOUT ' + reqId);
-  window.location.href = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${note}&cu=INR`;
+  window.location.href = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${encodeURIComponent('TPL PAYOUT ' + reqId)}&cu=INR`;
 }
 
-async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus, newStatus) {
+async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus, newStatus, collName) {
   if (oldStatus === newStatus) return;
 
   try {
-    // Try updating in 'withdrawals', if not found update 'withdrawal_requests'
-    const collName = cachedWithdrawals.find(x => x.id === reqId)?.collection || 'withdrawals';
-    await db.collection(collName).doc(reqId).update({
+    await db.collection(collName || 'withdrawals').doc(reqId).update({
       status: newStatus,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       ...(newStatus === 'completed' ? { paidAt: firebase.firestore.FieldValue.serverTimestamp() } : {})
     });
 
-    // 1. REJECTED -> AUTOMATIC REFUND TO USER WALLET
+    // REJECTED -> AUTO REFUND TO USER WALLET
     if (newStatus === 'rejected' && oldStatus === 'pending' && uid) {
       const isRefer = (type || '').toLowerCase().includes('refer');
       const refundField = isRefer ? 'referCash' : 'taskCash';
@@ -172,7 +160,7 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
 
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '❌ Withdrawal Rejected',
-        message: `Your withdrawal request of ₹${parseFloat(amount).toFixed(2)} was rejected. The full amount has been refunded to your ${isRefer ? 'Refer' : 'Cash'} balance.`,
+        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} was rejected. Refunded to balance.`,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -181,11 +169,11 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
       return;
     }
 
-    // 2. SUCCESS -> AUTO NOTIFICATION
+    // COMPLETED -> NOTIFICATION
     if (newStatus === 'completed' && uid) {
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '🎉 Payout Successful!',
-        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been successfully credited to ${upiId || 'your UPI'}!`,
+        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been credited to your UPI!`,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -200,32 +188,16 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
   }
 }
 
-function exportCashfreeCSV() {
-  if (!cachedWithdrawals.length) return alert('No withdrawals available to export!');
-  let csv = 'Transfer_ID,Amount,Phone,Email,UPI_VPA,Status\n';
-  cachedWithdrawals.forEach(w => {
-    csv += `"${w.id}","${w.amount}","","${w.userEmail || ''}","${w.upiId || ''}","${w.status || 'pending'}"\n`;
-  });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `TPL_Cashfree_Payouts_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-}
-
 function copyToClipboard(text) {
   if (!text) return;
   navigator.clipboard.writeText(text);
   showToast('Copied: ' + text);
 }
 
-// Immediate execution
+// Start Stream
 listenWithdrawals();
 
 auth.onAuthStateChanged(user => {
-  if (user) {
-    listenWithdrawals();
-  }
+  if (user) listenWithdrawals();
 });
-      
+                
