@@ -1,5 +1,5 @@
 // ==========================================
-// PAYOUTS MODULE (js/payouts.js) - AUTO DETECT
+// PAYOUTS MODULE (js/payouts.js) - DIRECT STREAM
 // ==========================================
 
 let cachedWithdrawals = [];
@@ -7,70 +7,58 @@ let cachedWithdrawals = [];
 function listenWithdrawals() {
   const container = document.getElementById('withdrawalsList');
 
-  // Multi-Collection Fallback Listener
-  const tryLoad = (collName) => {
-    db.collection(collName).onSnapshot(snap => {
-      if (!snap.empty) {
-        processDocs(snap, collName);
-      } else if (collName === 'withdrawals') {
-        tryLoad('withdrawal_requests');
-      } else if (collName === 'withdrawal_requests') {
-        tryLoad('payouts');
-      } else {
-        processDocs(snap, collName);
-      }
-    }, err => {
-      console.error(collName + " error:", err);
-      if (collName === 'withdrawals') tryLoad('withdrawal_requests');
-      else if (container) {
-        container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Firestore Error: ${err.message}</div>`;
+  // Direct listen to verified collection: withdrawals
+  db.collection('withdrawals').onSnapshot(snap => {
+    cachedWithdrawals = [];
+    let pendingCount = 0;
+    let pendingAmount = 0.0;
+    let totalPaid = 0.0;
+
+    snap.forEach(d => {
+      const w = { id: d.id, ...d.data() };
+      cachedWithdrawals.push(w);
+
+      const amt = parseFloat(w.amount) || 0.0;
+      const st = (w.status || 'pending').toLowerCase();
+
+      if (st === 'pending') {
+        pendingCount++;
+        pendingAmount += amt;
+      } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
+        totalPaid += amt;
       }
     });
-  };
 
-  tryLoad('withdrawals');
-}
+    // Client sort: Recent first
+    cachedWithdrawals.sort((a, b) => {
+      const tA = a.createdAt?.seconds || 0;
+      const tB = b.createdAt?.seconds || 0;
+      return tB - tA;
+    });
 
-function processDocs(snap, activeColl) {
-  cachedWithdrawals = [];
-  let pendingCount = 0;
-  let pendingAmount = 0.0;
-  let totalPaid = 0.0;
+    // Update Home Metrics Live
+    const pCountEl = document.getElementById('statPendingCount');
+    const pAmtEl = document.getElementById('statPendingAmount');
+    const paidAmtEl = document.getElementById('statPaidAmount');
+    const badgeEl = document.getElementById('navBadge');
 
-  snap.forEach(d => {
-    const w = { id: d.id, _coll: activeColl, ...d.data() };
-    cachedWithdrawals.push(w);
+    if (pCountEl) pCountEl.innerText = pendingCount;
+    if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
+    if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
 
-    const amt = parseFloat(w.amount) || 0.0;
-    const st = (w.status || 'pending').toLowerCase();
+    if (badgeEl) {
+      badgeEl.innerText = pendingCount;
+      if (pendingCount > 0) badgeEl.classList.remove('hidden');
+      else badgeEl.classList.add('hidden');
+    }
 
-    if (st === 'pending') {
-      pendingCount++;
-      pendingAmount += amt;
-    } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
-      totalPaid += amt;
+    renderWithdrawals(cachedWithdrawals);
+  }, err => {
+    console.error("Payouts Error:", err);
+    if (container) {
+      container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Error: ${err.message}</div>`;
     }
   });
-
-  cachedWithdrawals.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
-  // Update Home Metrics Live
-  const pCountEl = document.getElementById('statPendingCount');
-  const pAmtEl = document.getElementById('statPendingAmount');
-  const paidAmtEl = document.getElementById('statPaidAmount');
-  const badgeEl = document.getElementById('navBadge');
-
-  if (pCountEl) pCountEl.innerText = pendingCount;
-  if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
-  if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
-
-  if (badgeEl) {
-    badgeEl.innerText = pendingCount;
-    if (pendingCount > 0) badgeEl.classList.remove('hidden');
-    else badgeEl.classList.add('hidden');
-  }
-
-  renderWithdrawals(cachedWithdrawals);
 }
 
 function renderWithdrawals(withdrawals) {
@@ -115,15 +103,15 @@ function renderWithdrawals(withdrawals) {
       </div>
 
       <div class="flex items-center gap-2 pt-2 border-t border-white/5">
-        <!-- 📲 Pay UPI Button ONLY WHEN PENDING -->
+        <!-- 📲 Pay UPI Button: Appears ONLY when Pending -->
         ${isPending ? `
           <button onclick="payViaUPI('${w.upiId || ''}', ${w.amount \vert{}\vert{} 0}, '${w.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
             <span>📲 Pay UPI</span>
           </button>
         ` : ''}
 
-        <!-- Status Dropdown with Auto-Refund -->
-        <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value, '${w._coll}')" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
+        <!-- Status Controller with Auto-Refund -->
+        <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value)" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
           <option value="pending" ${isPending ? 'selected' : ''}>⏳ Pending</option>
           <option value="completed" ${isSuccess ? 'selected' : ''}>✅ Success</option>
           <option value="rejected" ${isRejected ? 'selected' : ''}>❌ Rejected</option>
@@ -136,20 +124,21 @@ function renderWithdrawals(withdrawals) {
 
 function payViaUPI(upiId, amount, reqId) {
   if (!upiId) return alert('UPI ID not found!');
-  window.location.href = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${encodeURIComponent('TPL PAYOUT ' + reqId)}&cu=INR`;
+  const note = encodeURIComponent('TPL PAYOUT ' + reqId);
+  window.location.href = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${note}&cu=INR`;
 }
 
-async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus, newStatus, collName) {
+async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus, newStatus) {
   if (oldStatus === newStatus) return;
 
   try {
-    await db.collection(collName || 'withdrawals').doc(reqId).update({
+    await db.collection('withdrawals').doc(reqId).update({
       status: newStatus,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       ...(newStatus === 'completed' ? { paidAt: firebase.firestore.FieldValue.serverTimestamp() } : {})
     });
 
-    // REJECTED -> AUTO REFUND TO USER WALLET
+    // Auto-Refund on Rejection
     if (newStatus === 'rejected' && oldStatus === 'pending' && uid) {
       const isRefer = (type || '').toLowerCase().includes('refer');
       const refundField = isRefer ? 'referCash' : 'taskCash';
@@ -169,11 +158,11 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
       return;
     }
 
-    // COMPLETED -> NOTIFICATION
+    // Success Notification
     if (newStatus === 'completed' && uid) {
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '🎉 Payout Successful!',
-        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been credited to your UPI!`,
+        message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been credited to ${upiId || 'your UPI'}!`,
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -194,10 +183,9 @@ function copyToClipboard(text) {
   showToast('Copied: ' + text);
 }
 
-// Start Stream
+// Immediate load
 listenWithdrawals();
 
 auth.onAuthStateChanged(user => {
   if (user) listenWithdrawals();
 });
-                
