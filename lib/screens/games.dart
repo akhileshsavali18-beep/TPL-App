@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:audioplayers/audioplayers.dart'; // 1. Audio import
 
 class GamesScreen extends StatefulWidget {
   final int spinsLeft;
@@ -45,11 +46,14 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   bool _isSpinning = false;
   int _lastTickSlice = -1;
 
+  // 🔊 Audio Player Instances
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   // 3-Task Scratch Card Loop State
   int _taskProgress = 0; // 0 to 3
   bool _scratchRevealed = false;
 
-  // 🎡 Visual Slices (50 & 200 are high attractions)
+  // 🎡 Visual Slices (50 & 200 are visual attractions)
   final List<_WheelItem> wheelSlices = [
     _WheelItem(label: '1 Coin', coins: 1, color: const Color(0xFF00FF87)),
     _WheelItem(label: '50 Coins', coins: 50, color: const Color(0xFFFF5252), isBait: true),
@@ -107,10 +111,25 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   @override
   void dispose() {
     _spinController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
-  // 🛡️ Owner-Safe Weighted Probability Selector (Never selects 50 or 200)
+  // 1. Tick Sound (ವೀಲ್ ತಿರುಗುವಾಗ)
+  void _playTickSound() {
+    try {
+      _audioPlayer.play(AssetSource('sounds/ticktick.mp3'), mode: PlayerMode.lowLatency);
+    } catch (_) {}
+  }
+
+  // 2. Win Celebration Sound (ಗೆದ್ದಾಗ)
+  void _playWinSound() {
+    try {
+      _audioPlayer.play(AssetSource('sounds/win.mp3'));
+    } catch (_) {}
+  }
+
+  // 🛡️ Safe Weighted Probability Selector
   int _pickSafeOutcomeIndex() {
     final rand = math.Random().nextInt(100);
     if (rand < 45) {
@@ -131,7 +150,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       placementId: _rewardedPlacementId,
       onComplete: (id) => _spinWheel(),
       onFailed: (id, err, msg) {
-        debugPrint("Ad failed: $err. Spinning directly.");
+        debugPrint("Ad notice: $err. Spinning directly.");
         _spinWheel();
       },
       onSkipped: (id) {
@@ -150,7 +169,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     final chosenIndex = _pickSafeOutcomeIndex();
     final sliceAngle = (2 * math.pi) / wheelSlices.length;
 
-    // Align target slice precisely under top pointer (12 o'clock = 1.5 * pi)
     const double targetPointerAngle = 1.5 * math.pi;
     final double sliceCenter = (chosenIndex + 0.5) * sliceAngle;
 
@@ -158,17 +176,16 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     if (neededOffset < 0) neededOffset += (2 * math.pi);
 
     final double currentModulo = _currentAngle % (2 * math.pi);
-    final double extraTurns = (6 * 2 * math.pi); // 6 full rotations
+    final double extraTurns = (6 * 2 * math.pi);
     final double targetAngle = _currentAngle + extraTurns + (neededOffset - currentModulo);
 
     _spinAnimation = Tween<double>(begin: _currentAngle, end: targetAngle).animate(
       CurvedAnimation(parent: _spinController, curve: Curves.easeOutCirc),
     )..addListener(() {
-        // Ticking audio/haptic feedback on passing slices
         final currentSliceIndex = ((_spinAnimation.value / sliceAngle).floor()) % wheelSlices.length;
         if (currentSliceIndex != _lastTickSlice) {
           _lastTickSlice = currentSliceIndex;
-          SystemSound.play(SystemSoundType.click);
+          _playTickSound(); // 🔊 Tick Sound Play
           HapticFeedback.selectionClick();
         }
         setState(() {});
@@ -180,6 +197,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       setState(() => _isSpinning = false);
 
       if (wonItem.coins > 0) {
+        _playWinSound(); // 🔊 Win Celebration Sound Play
         widget.onSpinWin(wonItem.coins);
       }
 
@@ -236,12 +254,12 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   void _revealScratchReward() {
     setState(() => _scratchRevealed = true);
+    _playWinSound(); // 🔊 Win sound on scratch reveal
     HapticFeedback.mediumImpact();
-    widget.onScratchWin(6); // Safe profit: 6 Coins (₹0.06)
+    widget.onScratchWin(6); // Safe reward: 6 Coins
 
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
-        // Reset card back to 0/3 tasks requirement loop
         setState(() {
           _taskProgress = 0;
           _scratchRevealed = false;
@@ -261,7 +279,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       if (await canLaunchUrlString(url)) {
         await launchUrlString(url, mode: LaunchMode.externalApplication);
         widget.onSpinWin(coins);
-        // Playing a game counts towards scratch card progress
         if (_taskProgress < 3) {
           setState(() => _taskProgress += 1);
         }
@@ -358,7 +375,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                           ),
                         ),
                       ),
-                      // Top arrow pointer
                       const Icon(Icons.arrow_drop_down, size: 42, color: Colors.white),
                     ],
                   ),
@@ -562,7 +578,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   }
 }
 
-// 🎨 Wheel Painter with Clear Rotated Labels
 class StylizedWheelPainter extends CustomPainter {
   final List<_WheelItem> slices;
   StylizedWheelPainter(this.slices);
@@ -583,7 +598,6 @@ class StylizedWheelPainter extends CustomPainter {
         paint,
       );
 
-      // Draw slice border
       final borderPaint = Paint()
         ..color = Colors.black.withOpacity(0.35)
         ..style = PaintingStyle.stroke
@@ -596,7 +610,6 @@ class StylizedWheelPainter extends CustomPainter {
         borderPaint,
       );
 
-      // Draw Text inside slice
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate((i + 0.5) * sweepAngle);
@@ -617,14 +630,12 @@ class StylizedWheelPainter extends CustomPainter {
       );
       tp.layout();
 
-      // Position text along the radius
       canvas.translate(radius * 0.58, -tp.height / 2);
       tp.paint(canvas, Offset.zero);
 
       canvas.restore();
     }
 
-    // Wheel Center Pin
     canvas.drawCircle(center, 24, Paint()..color = const Color(0xFF0B0E14));
     canvas.drawCircle(center, 18, Paint()..color = const Color(0xFF00FF87));
     canvas.drawCircle(center, 8, Paint()..color = Colors.white);
