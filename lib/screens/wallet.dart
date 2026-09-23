@@ -26,6 +26,13 @@ class WalletScreen extends StatefulWidget {
 class _WalletScreenState extends State<WalletScreen> {
   final TextEditingController _upiController = TextEditingController();
   bool _isProcessing = false;
+  int _withdrawalCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWithdrawalCount();
+  }
 
   @override
   void dispose() {
@@ -33,7 +40,41 @@ class _WalletScreenState extends State<WalletScreen> {
     super.dispose();
   }
 
-  // 1. Coins inda Task Cash ge Convert mado logic
+  // ಯೂಸರ್ ಇದುವರೆಗೆ ಎಷ್ಟು ಬಾರಿ ವಿತ್‌ಡ್ರಾ ಮಾಡಿದ್ದಾರೆ ಎಂಬುದನ್ನು ಪಡೆಯುವುದು
+  Future<void> _fetchWithdrawalCount() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists && mounted) {
+        setState(() {
+          _withdrawalCount = doc.data()?['withdrawalCount'] ?? 0;
+          final savedUpi = doc.data()?['upiId'];
+          if (savedUpi != null && savedUpi.toString().isNotEmpty) {
+            _upiController.text = savedUpi.toString();
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching withdrawal count: $e");
+    }
+  }
+
+  // 1st Time: ₹5, 2nd Time: ₹25, 3rd Time & Lifetime: ₹50
+  int _getCashMinLimit() {
+    if (_withdrawalCount == 0) return 5;
+    if (_withdrawalCount == 1) return 25;
+    return 50;
+  }
+
+  String _getCashLimitBadge() {
+    if (_withdrawalCount == 0) return "1st Withdrawal Special: Min ₹5";
+    if (_withdrawalCount == 1) return "2nd Withdrawal: Min ₹25";
+    return "Standard: Min ₹50";
+  }
+
+  // 1. Coins inda Cash Balance ge Convert maaduvudu
   Future<void> _convertCoinsToCash() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -67,7 +108,7 @@ class _WalletScreenState extends State<WalletScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('🎉 Successfully converted coins to ₹${addedCash.toStringAsFixed(2)} Task Cash!'),
+            content: Text('🎉 Converted coins to ₹${addedCash.toStringAsFixed(2)} Cash Balance!'),
             backgroundColor: const Color(0xFF00FF87),
           ),
         );
@@ -83,26 +124,23 @@ class _WalletScreenState extends State<WalletScreen> {
     }
   }
 
-  // 2. UPI Payout Request Create Madi Admin Payouts ge ಕಳುಹಿಸುವುದು
-  Future<void> _requestWithdrawal(bool isTaskCash) async {
+  // 2. UPI Payout Request Submit Maaduvudu
+  Future<void> _requestWithdrawal(bool isCashBalance) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final config = RemoteConfigService.instance;
-    final double availableBalance = isTaskCash ? widget.taskCash : widget.referCash;
-    final int minLimit = isTaskCash ? config.minTaskWithdrawal : config.minReferWithdrawal;
+    final double availableBalance = isCashBalance ? widget.taskCash : widget.referCash;
+    final int minLimit = isCashBalance ? _getCashMinLimit() : 50; // Refer min is ₹50
 
     if (availableBalance < minLimit) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Minimum withdrawal for ${isTaskCash ? "Task Cash" : "Referral Cash"} is ₹$minLimit!'),
+          content: Text('Minimum withdrawal for ${isCashBalance ? "Cash Balance" : "Referral Cash"} is ₹$minLimit!'),
           backgroundColor: Colors.amber,
         ),
       );
       return;
     }
-
-    _upiController.clear();
 
     showModalBottomSheet(
       context: context,
@@ -129,7 +167,7 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Instant payout to your VPA address',
+                'Instant payout directly to your bank account / VPA',
                 style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
               ),
               const SizedBox(height: 16),
@@ -137,7 +175,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 controller: _upiController,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: 'e.g. username@okhdfcbank',
+                  hintText: 'Enter UPI ID (e.g. 9876543210@ybl)',
                   hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
                   filled: true,
                   fillColor: const Color(0xFF080B10),
@@ -168,28 +206,32 @@ class _WalletScreenState extends State<WalletScreen> {
                     setState(() => _isProcessing = true);
 
                     try {
-                      // Admin Console 'payouts' collection ge request save maaduvudu
-                      await FirebaseFirestore.instance.collection('payouts').add({
-                        'userId': user.uid,
+                      // 1. Withdrawals collection ಗೆ ಆಡ್ ಮಾಡುವುದು
+                      await FirebaseFirestore.instance.collection('withdrawals').add({
+                        'uid': user.uid,
                         'userName': user.displayName ?? 'TPL Player',
                         'userEmail': user.email ?? '',
                         'upiId': upi,
                         'amount': availableBalance,
-                        'type': isTaskCash ? 'Task Cash' : 'Referral Cash',
-                        'status': 'Pending',
+                        'type': isCashBalance ? 'Cash Balance' : 'Referral Balance',
+                        'status': 'pending',
+                        'mode': 'manual',
                         'createdAt': FieldValue.serverTimestamp(),
                       });
 
-                      // User balance deduct madi UPI save maduvudu
+                      // 2. User doc ಅಪ್‌ಡೇಟ್ (Balance ಕಡಿತ ಮತ್ತು count ಹೆಚ್ಚಳ)
                       await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-                        if (isTaskCash) 'taskCash': 0.0 else 'referCash': 0.0,
-                        'savedUpiId': upi,
+                        if (isCashBalance) 'taskCash': 0.0 else 'referCash': 0.0,
+                        'upiId': upi,
+                        'withdrawalCount': FieldValue.increment(1),
                       });
+
+                      setState(() => _withdrawalCount += 1);
 
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Withdrawal request submitted! Processing in 24 hrs.'),
+                            content: Text('🎉 Withdrawal request placed! Processing shortly.'),
                             backgroundColor: Color(0xFF00FF87),
                           ),
                         );
@@ -255,7 +297,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text('Rate: $rate Coins = ₹1', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                        Text('Conversion: $rate Coins = ₹1', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
                         const SizedBox(height: 14),
                         SizedBox(
                           width: double.infinity,
@@ -266,7 +308,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: widget.coins >= rate ? _convertCoinsToCash : null,
-                            child: const Text('Convert Coins to Cash', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text('Convert Coins to Cash Balance', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -275,7 +317,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 2. Task Cash Card
+                  // 2. Cash Balance Card (Formerly Task Balance)
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -288,16 +330,26 @@ class _WalletScreenState extends State<WalletScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.task_alt, color: Color(0xFF00FF87), size: 24),
+                            const Icon(Icons.account_balance_wallet, color: Color(0xFF00FF87), size: 24),
                             const SizedBox(width: 8),
-                            const Text('Task Balance', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                            const Text('Cash Balance', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                             const Spacer(),
-                            Text('₹${widget.taskCash.toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 18, fontWeight: FontWeight.w900)),
+                            Text('₹${widget.taskCash.toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 20, fontWeight: FontWeight.w900)),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text('Min withdrawal: ₹${config.minTaskWithdrawal}', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
-                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00FF87).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _getCashLimitBadge(),
+                            style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -307,7 +359,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () => _requestWithdrawal(true),
-                            child: const Text('Withdraw Task Cash', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text('Withdraw Cash Balance', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -316,7 +368,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 3. Referral Cash Card
+                  // 3. Referral Balance Card
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -331,14 +383,14 @@ class _WalletScreenState extends State<WalletScreen> {
                           children: [
                             const Icon(Icons.people_alt, color: Colors.purpleAccent, size: 24),
                             const SizedBox(width: 8),
-                            const Text('Referral Balance', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                            const Text('Referral Balance', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                             const Spacer(),
-                            Text('₹${widget.referCash.toStringAsFixed(2)}', style: const TextStyle(color: Colors.purpleAccent, fontSize: 18, fontWeight: FontWeight.w900)),
+                            Text('₹${widget.referCash.toStringAsFixed(2)}', style: const TextStyle(color: Colors.purpleAccent, fontSize: 20, fontWeight: FontWeight.w900)),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text('Min withdrawal: ₹${config.minReferWithdrawal}', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
-                        const SizedBox(height: 12),
+                        Text('Min withdrawal: ₹50', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                        const SizedBox(height: 14),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -348,7 +400,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             onPressed: () => _requestWithdrawal(false),
-                            child: const Text('Withdraw Referral Cash', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text('Withdraw Referral Balance', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -360,3 +412,4 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 }
+
