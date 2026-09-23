@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:audioplayers/audioplayers.dart'; // 1. Audio import
+import 'package:audioplayers/audioplayers.dart';
 
 class GamesScreen extends StatefulWidget {
   final int spinsLeft;
@@ -46,14 +46,14 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   bool _isSpinning = false;
   int _lastTickSlice = -1;
 
-  // 🔊 Audio Player Instances
+  // Audio Player Instance
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   // 3-Task Scratch Card Loop State
-  int _taskProgress = 0; // 0 to 3
+  int _taskProgress = 0;
   bool _scratchRevealed = false;
 
-  // 🎡 Visual Slices (50 & 200 are visual attractions)
+  // Visual Slices (50 & 200 are bait slices)
   final List<_WheelItem> wheelSlices = [
     _WheelItem(label: '1 Coin', coins: 1, color: const Color(0xFF00FF87)),
     _WheelItem(label: '50 Coins', coins: 50, color: const Color(0xFFFF5252), isBait: true),
@@ -63,7 +63,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     _WheelItem(label: '12 Coins', coins: 12, color: const Color(0xFF00C0FF)),
   ];
 
-  // 🎮 Top Instant Gamezop Games
+  // Top Instant Gamezop Games
   final List<Map<String, dynamic>> gamezopGames = [
     {
       'title': 'Cricket Gunda',
@@ -115,21 +115,19 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
-  // 1. Tick Sound (ವೀಲ್ ತಿರುಗುವಾಗ)
   void _playTickSound() {
     try {
       _audioPlayer.play(AssetSource('sounds/ticktick.mp3'), mode: PlayerMode.lowLatency);
     } catch (_) {}
   }
 
-  // 2. Win Celebration Sound (ಗೆದ್ದಾಗ)
   void _playWinSound() {
     try {
       _audioPlayer.play(AssetSource('sounds/win.mp3'));
     } catch (_) {}
   }
 
-  // 🛡️ Safe Weighted Probability Selector
+  // Safe Probability Selector (Never selects 50 or 200)
   int _pickSafeOutcomeIndex() {
     final rand = math.Random().nextInt(100);
     if (rand < 45) {
@@ -185,7 +183,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         final currentSliceIndex = ((_spinAnimation.value / sliceAngle).floor()) % wheelSlices.length;
         if (currentSliceIndex != _lastTickSlice) {
           _lastTickSlice = currentSliceIndex;
-          _playTickSound(); // 🔊 Tick Sound Play
+          _playTickSound();
           HapticFeedback.selectionClick();
         }
         setState(() {});
@@ -197,7 +195,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       setState(() => _isSpinning = false);
 
       if (wonItem.coins > 0) {
-        _playWinSound(); // 🔊 Win Celebration Sound Play
+        _playWinSound();
         widget.onSpinWin(wonItem.coins);
       }
 
@@ -234,7 +232,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     });
   }
 
-  // 🎁 Scratch Card: Ad + Win + Reset Loop
   void _watchAdAndScratch() {
     if (_taskProgress < 3 || _scratchRevealed) return;
 
@@ -254,9 +251,9 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   void _revealScratchReward() {
     setState(() => _scratchRevealed = true);
-    _playWinSound(); // 🔊 Win sound on scratch reveal
+    _playWinSound();
     HapticFeedback.mediumImpact();
-    widget.onScratchWin(6); // Safe reward: 6 Coins
+    widget.onScratchWin(6);
 
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
@@ -302,7 +299,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status bar
             Row(
               children: [
                 Expanded(
@@ -347,7 +343,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
             const SizedBox(height: 20),
 
-            // 1. Wheel Card
+            // 1. Lucky Spin Wheel Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -416,7 +412,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('PhonePe Gold Scratch Card', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       Container(
