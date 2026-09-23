@@ -638,25 +638,31 @@
       }
     });
 
-    async function handleLogin() {
+        async function handleLogin() {
       const email = document.getElementById('adminEmail').value.trim();
       const pass = document.getElementById('adminPassword').value.trim();
-      if (!email || !pass) return alert('Enter Email & Password!');
-
       const btn = document.getElementById('loginBtn');
+
+      if (!email || !pass) {
+        btn.innerText = '⚠️ Enter Email & Pass!';
+        setTimeout(() => { btn.innerText = 'Unlock Console'; }, 2000);
+        return;
+      }
+
       btn.innerText = 'Verifying...';
       btn.disabled = true;
 
       try {
         await auth.signInWithEmailAndPassword(email, pass);
-        showToast('Login Successful!');
+        btn.innerText = '✅ Success!';
       } catch (e) {
-        alert('Login Failed: ' + e.message);
-      } finally {
-        btn.innerText = 'Unlock Console';
         btn.disabled = false;
+        alert("Login Error: " + e.message);
+        btn.innerText = '❌ ' + (e.code ? e.code.replace('auth/', '') : 'Failed');
+        setTimeout(() => { btn.innerText = 'Unlock Console'; }, 3000);
       }
-    }
+        }
+    
 
     function handleLogout() {
       if (confirm('Logout from Admin Console?')) {
