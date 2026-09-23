@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 
-
-class ReferScreen extends StatelessWidget {
+class ReferScreen extends StatefulWidget {
   final double referCash;
   final List<Map<String, String>> invitedFriends;
   final VoidCallback onNavigateToWallet;
@@ -18,252 +19,276 @@ class ReferScreen extends StatelessWidget {
   });
 
   @override
+  State<ReferScreen> createState() => _ReferScreenState();
+}
+
+class _ReferScreenState extends State<ReferScreen> {
+  String _referralCode = 'TPLFREE';
+  bool _isLoadingCode = true;
+  bool _isGeneratingLink = false;
+
+  // 🔗 GPLINKS CONFIGURATION:
+  // GPLinks ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಲ್ಲಿ ಸಿಗುವ API Token ಅನ್ನು ಇಲ್ಲಿ ಹಾಕಿ (ಉಚಿತವಾಗಿ ಸಿಗುತ್ತದೆ)
+  static const String _gpLinksApiToken = 'YOUR_GPLINKS_API_KEY';
+  
+  // ನಿಮ್ಮ APK ಡೌನ್‌ಲೋಡ್ ಲಿಂಕ್ (GitHub Releases / Drive / Telegram)
+  static const String _appDownloadDestinationUrl = 'https://t.me/your_tpl_channel';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserReferralCode();
+  }
+
+  Future<void> _fetchUserReferralCode() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() => _isLoadingCode = false);
+      return;
+    }
+
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists && doc.data() != null) {
+        final code = doc.data()!['referralCode'];
+        if (code != null && code.toString().isNotEmpty) {
+          setState(() {
+            _referralCode = code.toString();
+            _isLoadingCode = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching refer code: $e");
+    }
+
+    setState(() => _isLoadingCode = false);
+  }
+
+  // GPLinks API ಮೂಲಕ ಶಾರ್ಟ್ ಲಿಂಕ್ ಪಡೆಯುವುದು
+  Future<String> _getShortenedGPLink() async {
+    // API Token ಹಾಕಿಲ್ಲದಿದ್ದರೆ ಡೈರೆಕ್ಟ್ ಡೆಸ್ಟಿನೇಷನ್ ಲಿಂಕ್ ಶೇರ್ ಆಗುತ್ತದೆ
+    if (_gpLinksApiToken == 'YOUR_GPLINKS_API_KEY' || _gpLinksApiToken.isEmpty) {
+      return _appDownloadDestinationUrl;
+    }
+
+    try {
+      final apiUrl = Uri.parse(
+        'https://gplinks.in/api?api=$_gpLinksApiToken&url=${Uri.encodeComponent("$_appDownloadDestinationUrl?ref=$_referralCode")}',
+      );
+      final res = await http.get(apiUrl).timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['status'] == 'success' && data['shortenedUrl'] != null) {
+          return data['shortenedUrl'];
+        }
+      }
+    } catch (e) {
+      debugPrint("GPLinks API error: $e");
+    }
+
+    return _appDownloadDestinationUrl;
+  }
+
+  Future<void> _shareReferral() async {
+    setState(() => _isGeneratingLink = true);
+    final shortLink = await _getShortenedGPLink();
+    setState(() => _isGeneratingLink = false);
+
+    final shareMsg = '''
+🔥 Play Games & Earn Real Cash daily on TPL Pro!
+
+1️⃣ Download App: $shortLink
+2️⃣ Use my Invite Code: $_referralCode
+🎁 Get 50 Free Welcome Coins instantly!
+💸 Minimum payout is just ₹5 via UPI!
+''';
+
+    Share.share(shareMsg);
+  }
+
+  void _copyReferralCode() {
+    Clipboard.setData(ClipboardData(text: _referralCode));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Referral Code copied to clipboard!'),
+        backgroundColor: Color(0xFF00FF87),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0E14),
+      backgroundColor: const Color(0xFF080B10),
       appBar: AppBar(
-        title: const Text(
-          'Refer & Earn Cash',
-          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
-        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        title: const Text('Refer & Earn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Referral Cash Balance Card
+            // 1. Referral Balance Header Card
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF1E283D), Color(0xFF121724)],
+                  colors: [Color(0xFF2C194D), Color(0xFF151922)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.35)),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.purpleAccent.withOpacity(0.3)),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Total Referral Cash',
-                        style: TextStyle(fontSize: 12, color: Colors.grey, letterSpacing: 0.5),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '₹${referCash.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF00FF87),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.purpleAccent.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.group_add_rounded, color: Colors.purpleAccent, size: 30),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Referral Cash', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        const SizedBox(height: 2),
+                        Text(
+                          '₹${widget.referCash.toStringAsFixed(2)}',
+                          style: const TextStyle(color: Colors.purpleAccent, fontSize: 24, fontWeight: FontWeight.w900),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${invitedFriends.length} Friends Joined',
-                        style: const TextStyle(fontSize: 11, color: Colors.white70),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   ElevatedButton(
-                    onPressed: onNavigateToWallet,
+                    onPressed: widget.onNavigateToWallet,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00FF87),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      backgroundColor: Colors.purpleAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
-                    child: const Text('WITHDRAW', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                    child: const Text('Withdraw', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 20),
 
-            // 2. Invite Code Box & Share Actions
+            // 2. How it works
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: const Color(0xFF151922),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white12),
+                border: Border.all(color: Colors.white.withOpacity(0.06)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('How Referral Works', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                  const SizedBox(height: 12),
+                  _buildStepRow('1', 'Share your GPLinks download link with friends.'),
+                  const SizedBox(height: 8),
+                  _buildStepRow('2', 'Friend registers using your Invite Code & gets 50 Coins.'),
+                  const SizedBox(height: 8),
+                  _buildStepRow('3', 'You get ₹5 Referral Cash directly to your wallet!'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // 3. Referral Code Box
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFF151922),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.3)),
               ),
               child: Column(
                 children: [
-                  const Text(
-                    'Your Unique Referral Code',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
+                  const Text('YOUR UNIQUE INVITE CODE', style: TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0B0E14),
+                      color: const Color(0xFF080B10),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF6C63FF), width: 1.5),
+                      border: Border.all(color: Colors.white12),
                     ),
-                    child: const Text(
-                      'TPL8821',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 3,
-                        color: Colors.white,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _isLoadingCode
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00FF87)))
+                            : Text(
+                                _referralCode,
+                                style: const TextStyle(color: Color(0xFF00FF87), fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 2),
+                              ),
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, color: Colors.white70, size: 20),
+                          onPressed: _copyReferralCode,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+
+                  // Share Button
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        shareReferralLink("TPL0821");
-                      },
-                      
-                      icon: const Icon(Icons.share, color: Colors.white, size: 20),
-                      label: const Text(
-                        'INVITE FRIENDS (EARN ₹5 EACH)',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
-                      ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF25D366),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: const Color(0xFF00FF87),
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: _isGeneratingLink ? null : _shareReferral,
+                      icon: _isGeneratingLink
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                          : const Icon(Icons.share_rounded, size: 20),
+                      label: Text(
+                        _isGeneratingLink ? 'GENERATING LINK...' : 'SHARE LINK ON WHATSAPP',
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 24),
-
-            // 3. Invited Friends List Header
-            const Row(
-              children: [
-                Icon(Icons.people, color: Color(0xFF00FF87), size: 20),
-                SizedBox(width: 8),
-                Text('Invited Friends History', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Friends List
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: invitedFriends.length,
-              itemBuilder: (context, index) {
-                final friend = invitedFriends[index];
-                bool isDone = friend['status'] == 'Completed';
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF151922),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 18,
-                            backgroundColor: isDone ? const Color(0xFF00FF87).withOpacity(0.15) : Colors.white12,
-                            child: Icon(
-                              isDone ? Icons.check : Icons.hourglass_top,
-                              color: isDone ? const Color(0xFF00FF87) : Colors.grey,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(friend['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${friend['id']!} • ${friend['status']!}',
-                                style: TextStyle(fontSize: 11, color: isDone ? Colors.grey : Colors.amber),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Text(
-                        friend['reward']!,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                          color: isDone ? const Color(0xFF00FF87) : Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ),
     );
   }
-}
-Future<void> shareReferralLink(String userReferCode) async {
-  try {
-    DocumentSnapshot configSnap = await FirebaseFirestore.instance
-        .collection('app_config')
-        .doc('referral')
-        .get();
 
-    bool isGplinksEnabled = true;
-    String apiKey = "6fbb840dff7b4f2e4239b3200e0d62fce9b5fbab";
-    String appUrl = "https://tplpro.in";
-    String baseMessage = "Earn daily cash by playing games on TPL Pro! Download now:";
-
-    if (configSnap.exists) {
-      final data = configSnap.data() as Map<String, dynamic>;
-      isGplinksEnabled = data['gplinksEnabled'] ?? isGplinksEnabled;
-      apiKey = data['gplinksApiKey'] ?? apiKey;
-      appUrl = data['appDownloadUrl'] ?? appUrl;
-      baseMessage = data['shareMessage'] ?? baseMessage;
-    }
-
-    String finalShareUrl = "$appUrl?ref=$userReferCode";
-
-    if (isGplinksEnabled && apiKey.isNotEmpty) {
-      try {
-        final gplinksApiUrl = Uri.parse(
-          'https://api.gplinks.com/st?api=$apiKey&url=${Uri.encodeComponent(finalShareUrl)}',
-        );
-
-        final response = await http.get(gplinksApiUrl).timeout(const Duration(seconds: 4));
-
-        if (response.statusCode == 200) {
-          final resData = jsonDecode(response.body);
-          if (resData['status'] == 'success' && resData['shortenedUrl'] != null) {
-            finalShareUrl = resData['shortenedUrl'];
-          }
-        }
-      } catch (e) {
-        // Fallback to direct URL
-      }
-    }
-
-    await Share.share(
-      "$baseMessage\n$finalShareUrl\nUse my Referral Code: $userReferCode",
-      subject: "Download TPL Pro",
+  Widget _buildStepRow(String number, String text) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 11,
+          backgroundColor: const Color(0xFF00FF87).withOpacity(0.2),
+          child: Text(number, style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ),
+      ],
     );
-  } catch (e) {
-    // Error handling
   }
 }
-
