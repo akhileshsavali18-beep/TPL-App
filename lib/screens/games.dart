@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GamesScreen extends StatefulWidget {
   final int spinsLeft;
@@ -38,7 +39,11 @@ class _WheelItem {
 }
 
 class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStateMixin {
-  static const String _rewardedPlacementId = 'BP_Rewarded_Android';
+  // Remote Ads Configuration from Admin Panel
+  bool _adsActive = true;
+  String _unityGameId = '5868205';
+  String _rewardedPlacementId = 'BP_Rewarded_Android';
+  bool _unityInitialized = false;
 
   late AnimationController _spinController;
   late Animation<double> _spinAnimation;
@@ -63,7 +68,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     _WheelItem(label: '12 Coins', coins: 12, color: const Color(0xFF00C0FF)),
   ];
 
-  // Top Instant Gamezop Games
+  // Default Fallback Instant Games
   final List<Map<String, dynamic>> gamezopGames = [
     {
       'title': 'Cricket Gunda',
@@ -106,6 +111,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 3800),
     );
+    _listenRemoteUnityAds();
   }
 
   @override
@@ -113,6 +119,52 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     _spinController.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  // 📡 Listen to Unity Ads switch and settings from Admin Panel
+  void _listenRemoteUnityAds() {
+    FirebaseFirestore.instance
+        .collection('settings')
+        .doc('unity_ads')
+        .snapshots()
+        .listen((snap) {
+      if (snap.exists && mounted) {
+        final data = snap.data();
+        if (data != null) {
+          setState(() {
+            _adsActive = data['adsActive'] ?? true;
+            if (data['gameId'] != null && data['gameId'].toString().trim().isNotEmpty) {
+              _unityGameId = data['gameId'].toString().trim();
+            }
+            if (data['rewardedId'] != null && data['rewardedId'].toString().trim().isNotEmpty) {
+              _rewardedPlacementId = data['rewardedId'].toString().trim();
+            }
+          });
+          _initUnityAds(data['testMode'] ?? false);
+        }
+      } else {
+        _initUnityAds(false);
+      }
+    });
+  }
+
+  void _initUnityAds(bool testMode) {
+    if (_unityInitialized) return;
+    try {
+      UnityAds.init(
+        gameId: _unityGameId,
+        testMode: testMode,
+        onComplete: () {
+          debugPrint('Unity Ads Initialized Successfully: $_unityGameId');
+          _unityInitialized = true;
+        },
+        onFailed: (error, message) {
+          debugPrint('Unity Ads Init Failed: $error - $message');
+        },
+      );
+    } catch (e) {
+      debugPrint('Unity init exception: $e');
+    }
   }
 
   void _playTickSound() {
@@ -143,6 +195,12 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   void _watchAdAndSpin() {
     if (widget.spinsLeft <= 0 || _isSpinning) return;
+
+    // If Admin paused ads in settings, spin directly
+    if (!_adsActive) {
+      _spinWheel();
+      return;
+    }
 
     UnityAds.showVideoAd(
       placementId: _rewardedPlacementId,
@@ -234,6 +292,12 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   void _watchAdAndScratch() {
     if (_taskProgress < 3 || _scratchRevealed) return;
+
+    // If Admin paused ads, scratch directly
+    if (!_adsActive) {
+      _revealScratchReward();
+      return;
+    }
 
     UnityAds.showVideoAd(
       placementId: _rewardedPlacementId,
@@ -509,59 +573,92 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
             const SizedBox(height: 24),
 
-            // 3. Gamezop Mini Games
+            // 3. Gamezop Mini Games (Live Stream from Admin Panel with Default Fallback)
             const Text(
               '🎮 Play Instant Games (Gives Progress)',
               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 12),
 
-            GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.25,
-              ),
-              itemCount: gamezopGames.length,
-              itemBuilder: (context, index) {
-                final game = gamezopGames[index];
-                return InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () => _playGame(game['url'], game['coins'], game['title']),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF151922),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.08)),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: (game['color'] as Color).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(game['icon'] as IconData, color: game['color'] as Color, size: 28),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          game['title'],
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '+${game['coins']} Coins & Task +1',
-                          style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('games').snapshots(),
+              builder: (context, snapshot) {
+                List<Map<String, dynamic>> displayedGames = [];
+
+                if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                  for (var doc in snapshot.data!.docs) {
+                    final d = doc.data() as Map<String, dynamic>;
+                    displayedGames.add({
+                      'title': d['title'] ?? 'Mini Game',
+                      'category': d['category'] ?? 'Arcade',
+                      'coins': d['coins'] is int ? d['coins'] : (int.tryParse(d['coins'].toString()) ?? 2),
+                      'url': d['url'] ?? 'https://www.gamezop.com',
+                      'icon': Icons.sports_esports_rounded,
+                      'color': const Color(0xFF00FF87),
+                    });
+                  }
+                } else {
+                  displayedGames = gamezopGames;
+                }
+
+                return GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.25,
                   ),
+                  itemCount: displayedGames.length,
+                  itemBuilder: (context, index) {
+                    final game = displayedGames[index];
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () => _playGame(
+                        game['url'],
+                        game['coins'] as int,
+                        game['title'],
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF151922),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withOpacity(0.08)),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: ((game['color'] as Color?) ?? const Color(0xFF00FF87)).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                (game['icon'] as IconData?) ?? Icons.sports_esports_rounded,
+                                color: (game['color'] as Color?) ?? const Color(0xFF00FF87),
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              game['title'] ?? '',
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '+${game['coins']} Coins & Task +1',
+                              style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
