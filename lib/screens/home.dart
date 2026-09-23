@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   final int coins;
@@ -31,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentPage = 0;
   Timer? _bannerTimer;
 
-  // 1. Sliding Banners Data
+  // Sliding Banners Data
   final List<Map<String, dynamic>> banners = [
     {
       'title': 'CPAlead Mega Offerwall',
@@ -39,12 +37,12 @@ class _HomeScreenState extends State<HomeScreen> {
       'sub': 'Complete high paying app installs & earn huge coins',
       'color1': const Color(0xFF00B09B),
       'color2': const Color(0xFF96C93D),
-      'url': 'https://fasttrk.net/offers?id=cpalead_tpl', // CPAlead URL
+      'url': 'https://fasttrk.net/offers?id=cpalead_tpl',
     },
     {
       'title': 'Instant UPI Withdrawals',
       'tag': 'FAST PAYOUT',
-      'sub': 'Start with just ₹5 minimum payout directly to bank',
+      'sub': 'Safe & direct cash payouts to your bank account',
       'color1': const Color(0xFF6A11CB),
       'color2': const Color(0xFF2575FC),
       'url': null,
@@ -88,12 +86,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // CPAlead In-App Browser Launcher (Not Chrome App)
+  // CPAlead In-App Browser Launcher
   Future<void> _openInAppBrowser(String url) async {
     try {
       await launchUrlString(
         url,
-        mode: LaunchMode.inAppBrowserView, // In-App Webview
+        mode: LaunchMode.inAppBrowserView,
       );
     } catch (e) {
       debugPrint("Error opening URL: $e");
@@ -116,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Row(
                     children: [
@@ -290,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 20),
 
-            // 2. Daily Check-in Card (Claimable)
+            // 2. Daily Check-in Card
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
@@ -313,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Daily Check-in (Day 1)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text('Daily Check-in', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                         SizedBox(height: 2),
                         Text('Claim 20 bonus coins everyday', style: TextStyle(color: Colors.grey, fontSize: 11)),
                       ],
