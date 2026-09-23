@@ -45,8 +45,9 @@ jobs:
             cp temp_backup/google-services.json android/app/google-services.json
           fi
 
-          # Safe single replacement for minSdk
-          sed -i 's/flutter.minSdkVersion/21/g' android/app/build.gradle || true
+          # Set minSdk to 23 for Firebase Auth compatibility
+          sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle || true
+          sed -i 's/minSdkVersion 21/minSdkVersion 23/g' android/app/build.gradle || true
 
           # Google Services Gradle configuration
           sed -i '/plugins {/a \    id "com.google.gms.google-services" version "4.4.2" apply false' android/settings.gradle || true
