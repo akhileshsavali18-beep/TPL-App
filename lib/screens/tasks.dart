@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import '../widgets/unity_banner_widget.dart';
 
 class TasksTabScreen extends StatefulWidget {
   final Function(String, int) onCompleteTask;
@@ -15,7 +16,6 @@ class TasksTabScreen extends StatefulWidget {
 }
 
 class _TasksTabScreenState extends State<TasksTabScreen> {
-  // ಲೋಕಲ್ ಆಗಿ ಕಂಪ್ಲೀಟ್ ಆದ ಟಾಸ್ಕ್‌ಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು
   final Map<String, bool> _completed = {};
 
   Future<void> _handleTask(String taskId, String title, int coins, String url) async {
@@ -25,7 +25,6 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
       }
     } catch (_) {}
 
-    // ಕಾಯಿನ್‌ಗಳನ್ನು ಕ್ರೆಡಿಟ್ ಮಾಡುವುದು
     if (!(_completed[taskId] ?? false)) {
       widget.onCompleteTask(title, coins);
       setState(() => _completed[taskId] = true);
@@ -42,7 +41,6 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
     }
   }
 
-  // ಟೈಟಲ್ ಆಧರಿಸಿ ಬ್ರ್ಯಾಂಡ್ ಕಲರ್ ಸೆಟ್ ಮಾಡುವ ಹೆಲ್ಪರ್
   Color _getBrandColor(String title) {
     final t = title.toLowerCase();
     if (t.contains('telegram')) return const Color(0xFF229ED9);
@@ -52,7 +50,6 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
     return const Color(0xFF00FF87);
   }
 
-  // ಟೈಟಲ್ ಆಧರಿಸಿ ಐಕಾನ್ ಸೆಟ್ ಮಾಡುವ ಹೆಲ್ಪರ್
   IconData _getBrandIcon(String title) {
     final t = title.toLowerCase();
     if (t.contains('telegram')) return Icons.send_rounded;
@@ -76,6 +73,11 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 📺 Top Unity Banner Ad Inside Tasks Tab
+            const UnityBannerWidget(),
+
+            const SizedBox(height: 12),
+
             // 1. Partner Deals Hub (EarnKaro)
             const Text('💼 Partner Deals Hub', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
@@ -118,7 +120,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
 
             const SizedBox(height: 24),
 
-            // 2. Community & Social Tasks (Firestore Real-time Stream)
+            // 2. Community & Social Tasks (Firestore Stream)
             const Text('🎯 Community & Social Tasks', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
 
