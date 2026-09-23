@@ -499,36 +499,43 @@
 
     <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-green-400 text-black px-4 py-2 rounded-2xl text-xs font-black shadow-xl hidden z-50"></div>
 
-  <!-- External Moduler Scripts -->
+  <!-- Moduler Scripts -->
   <script src="js/auth.js"></script>
   <script src="js/users.js"></script>
   <script src="js/tasks.js"></script>
   <script src="js/settings.js"></script>
 
-  <!-- Payouts Direct Engine (Syntax Fixed) -->
+  <!-- Payouts Standalone Direct Engine -->
   <script>
-    console.log("Direct Payouts Engine Initialized");
+    console.log("Starting Standalone Payouts Engine...");
 
-    let cachedWithdrawals = [];
+    // Standalone Firebase DB Connection (Zero Dependency)
+    const payoutFbConfig = {
+      apiKey: "AIzaSyDNUAx_Zhn-8RYKKkv5qAjMWwFWwI5tMI8",
+      authDomain: "tpl-5bd9d.firebaseapp.com",
+      projectId: "tpl-5bd9d"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(payoutFbConfig);
+    const payoutDb = firebase.firestore();
 
     function listenWithdrawals() {
       const container = document.getElementById('withdrawalsList');
-      if (!container || typeof db === 'undefined') return;
+      if (!container) return;
 
-      db.collection('withdrawals').onSnapshot(snap => {
+      payoutDb.collection('withdrawals').onSnapshot(snap => {
         if (snap.empty) {
           container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs font-bold">No withdrawal requests found.</div>';
           return;
         }
 
-        cachedWithdrawals = [];
+        let list = [];
         let pendingCount = 0;
         let pendingAmount = 0.0;
         let totalPaid = 0.0;
 
         snap.forEach(d => {
           const w = { id: d.id, ...d.data() };
-          cachedWithdrawals.push(w);
+          list.push(w);
 
           const amt = parseFloat(w.amount) || 0.0;
           const st = (w.status || 'pending').toLowerCase();
@@ -542,7 +549,7 @@
         });
 
         // Client Sort: Recent first
-        cachedWithdrawals.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
         // Update Overview Live Numbers
         const pCountEl = document.getElementById('statPendingCount');
@@ -562,7 +569,7 @@
 
         // Render Cards (Shows completed/manual ₹25 & any pending)
         container.innerHTML = '';
-        cachedWithdrawals.forEach(w => {
+        list.forEach(w => {
           const st = (w.status || 'pending').toLowerCase();
           const isPending = st === 'pending';
           const isSuccess = ['completed', 'success', 'settled', 'paid'].includes(st);
@@ -605,7 +612,7 @@
           container.appendChild(div);
         });
       }, err => {
-        if (container) container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Firestore Error: ${err.message}</div>`;
+        container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Firestore Error: ${err.message}</div>`;
       });
     }
 
@@ -615,29 +622,16 @@
     }
 
     async function updateWithdrawalStatus(id, newStatus) {
-      await db.collection('withdrawals').doc(id).update({
+      await payoutDb.collection('withdrawals').doc(id).update({
         status: newStatus,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         ...(newStatus === 'completed' ? { paidAt: firebase.firestore.FieldValue.serverTimestamp() } : {})
       });
-      showToast('Status Updated to ' + newStatus);
+      if (typeof showToast === 'function') showToast('Status Updated to ' + newStatus);
     }
 
-    function copyToClipboard(text) {
-      if (!text) return;
-      navigator.clipboard.writeText(text);
-      showToast('Copied: ' + text);
-    }
-
-    // Direct listener invocation
+    // Direct listen immediately
     listenWithdrawals();
-
-    if (typeof auth !== 'undefined') {
-      auth.onAuthStateChanged(user => {
-        if (user) listenWithdrawals();
-      });
-    }
   </script>
 </body>
 </html>
-
