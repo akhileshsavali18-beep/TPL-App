@@ -39,7 +39,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
   }
 
   Future<void> _handleBannerClick(String targetUrl) async {
-    if (targetUrl.isEmpty) return;
+    if (targetUrl.trim().isEmpty) return;
     try {
       if (await canLaunchUrlString(targetUrl)) {
         await launchUrlString(targetUrl, mode: LaunchMode.externalApplication);
@@ -51,19 +51,26 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    // ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನ 'banners' ಕಲೆಕ್ಷನ್‌ಗೆ ನೇರ ರಿಯಲ್-ಟೈಮ್ ಕನೆಕ್ಷನ್
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('home_banners')
-          .where('isActive', isEqualTo: true)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('banners').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const SizedBox.shrink(); // ಬ್ಯಾನರ್ ಇಲ್ಲದಿದ್ದರೆ ಜಾಗ ಬಿಡುವುದಿಲ್ಲ
+          return const SizedBox.shrink();
         }
 
-        final banners = snapshot.data!.docs;
+        // isActive: false ಆಗಿದ್ದರೆ ಮಾತ್ರ ಹೈಡ್ ಮಾಡುವುದು, ಇಲ್ಲದಿದ್ದರೆ ಎಲ್ಲವನ್ನೂ ತೋರಿಸುವುದು
+        final banners = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          if (data == null) return false;
+          return data['isActive'] != false;
+        }).toList();
 
-        // Auto-scroll Timer ಆರಂಭಿಸುವುದು
+        if (banners.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        // Auto-scroll Timer ಆರಂಭ
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_timer == null || !_timer!.isActive) {
             _startAutoScroll(banners.length);
@@ -82,8 +89,9 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
                 },
                 itemBuilder: (context, index) {
                   final data = banners[index].data() as Map<String, dynamic>;
-                  final imageUrl = data['imageUrl'] ?? '';
-                  final targetUrl = data['targetUrl'] ?? '';
+                  // image ಅಥವಾ imageUrl ಎರಡನ್ನೂ ಸಪೋರ್ಟ್ ಮಾಡುತ್ತದೆ
+                  final imageUrl = (data['imageUrl'] ?? data['image'] ?? '').toString();
+                  final targetUrl = (data['targetUrl'] ?? data['url'] ?? data['link'] ?? '').toString();
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
@@ -97,19 +105,23 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
                             border: Border.all(color: Colors.white.withOpacity(0.08)),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: const Color(0xFF111622),
-                                child: const Center(
-                                  child: Icon(Icons.broken_image, color: Colors.white30, size: 40),
+                          child: imageUrl.isNotEmpty
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: const Color(0xFF111622),
+                                      child: const Center(
+                                        child: Icon(Icons.broken_image, color: Colors.white30, size: 40),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : const Center(
+                                  child: Icon(Icons.image, color: Colors.white30, size: 40),
                                 ),
-                              );
-                            },
-                          ),
                         ),
                       ),
                     ),
@@ -118,7 +130,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
               ),
             ),
 
-            // Indicator Dots
+            // Carousel Dots Indicator
             if (banners.length > 1)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
