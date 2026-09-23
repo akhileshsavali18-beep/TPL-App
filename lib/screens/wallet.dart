@@ -40,7 +40,6 @@ class _WalletScreenState extends State<WalletScreen> {
     super.dispose();
   }
 
-  // ಯೂಸರ್ ಇದುವರೆಗೆ ಎಷ್ಟು ಬಾರಿ ವಿತ್‌ಡ್ರಾ ಮಾಡಿದ್ದಾರೆ ಎಂಬುದನ್ನು ಪಡೆಯುವುದು
   Future<void> _fetchWithdrawalCount() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -61,20 +60,17 @@ class _WalletScreenState extends State<WalletScreen> {
     }
   }
 
-  // 1st Time: ₹5, 2nd Time: ₹25, 3rd Time & Lifetime: ₹50
+  // 🛡️ Owner-Safe Rules: 1st Time: ₹25, Lifetime: ₹50
   int _getCashMinLimit() {
-    if (_withdrawalCount == 0) return 5;
-    if (_withdrawalCount == 1) return 25;
+    if (_withdrawalCount == 0) return 25;
     return 50;
   }
 
   String _getCashLimitBadge() {
-    if (_withdrawalCount == 0) return "1st Withdrawal Special: Min ₹5";
-    if (_withdrawalCount == 1) return "2nd Withdrawal: Min ₹25";
+    if (_withdrawalCount == 0) return "1st Withdrawal: Min ₹25";
     return "Standard: Min ₹50";
   }
 
-  // 1. Coins inda Cash Balance ge Convert maaduvudu
   Future<void> _convertCoinsToCash() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -124,18 +120,17 @@ class _WalletScreenState extends State<WalletScreen> {
     }
   }
 
-  // 2. UPI Payout Request Submit Maaduvudu
   Future<void> _requestWithdrawal(bool isCashBalance) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     final double availableBalance = isCashBalance ? widget.taskCash : widget.referCash;
-    final int minLimit = isCashBalance ? _getCashMinLimit() : 50; // Refer min is ₹50
+    final int minLimit = isCashBalance ? _getCashMinLimit() : 50;
 
     if (availableBalance < minLimit) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Minimum withdrawal for ${isCashBalance ? "Cash Balance" : "Referral Cash"} is ₹$minLimit!'),
+          content: Text('Minimum withdrawal for ${isCashBalance ? "Cash Balance" : "Referral Cash"} is ₹$minLimit! Complete tasks to earn.'),
           backgroundColor: Colors.amber,
         ),
       );
@@ -167,7 +162,7 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Instant payout directly to your bank account / VPA',
+                'Direct payout to your UPI VPA',
                 style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
               ),
               const SizedBox(height: 16),
@@ -206,7 +201,6 @@ class _WalletScreenState extends State<WalletScreen> {
                     setState(() => _isProcessing = true);
 
                     try {
-                      // 1. Withdrawals collection ಗೆ ಆಡ್ ಮಾಡುವುದು
                       await FirebaseFirestore.instance.collection('withdrawals').add({
                         'uid': user.uid,
                         'userName': user.displayName ?? 'TPL Player',
@@ -219,7 +213,6 @@ class _WalletScreenState extends State<WalletScreen> {
                         'createdAt': FieldValue.serverTimestamp(),
                       });
 
-                      // 2. User doc ಅಪ್‌ಡೇಟ್ (Balance ಕಡಿತ ಮತ್ತು count ಹೆಚ್ಚಳ)
                       await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
                         if (isCashBalance) 'taskCash': 0.0 else 'referCash': 0.0,
                         'upiId': upi,
@@ -276,7 +269,7 @@ class _WalletScreenState extends State<WalletScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Coins Bank Card
+                  // Coins Bank
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -317,7 +310,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 2. Cash Balance Card (Formerly Task Balance)
+                  // Cash Balance Card
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -368,7 +361,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 3. Referral Balance Card
+                  // Referral Balance Card
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -412,4 +405,3 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 }
-
