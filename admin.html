@@ -258,15 +258,26 @@
         <p class="text-[11px] text-gray-400">Manage Unity Ads, Economy, Game limits, Security & Referrals</p>
       </div>
 
-      <!-- Unity Ads Remote Switcher -->
-      <div class="dark-card p-4 rounded-2xl space-y-3 border border-indigo-500/30">
-        <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-indigo-400 uppercase tracking-wider">📺 Unity Ads Remote Switcher</h3>
-          <label class="flex items-center gap-2 text-xs text-green-400 font-bold">
-            <span id="adsStatusLabel">Ads Active</span>
-            <input type="checkbox" id="ads-enabledToggle" onchange="toggleAdsLabel(this.checked)" class="w-4 h-4 accent-green-400" checked>
-          </label>
+              <!-- UNITY ADS REMOTE SWITCHER ಕಾರ್ಡ್ ಒಳಗಡೆ -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Unity Game ID (Android)</label>
+            <input type="text" id="ads-gameId" ...>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Ad Cooldown (Seconds)</label>
+            <input type="number" id="ads-cooldown" ...>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Rewarded Ad Unit ID</label>
+            <input type="text" id="ads-rewardedId" ...>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">Interstitial Ad Unit ID</label>
+            <input type="text" id="ads-interstitialId" ...>
+          </div>
         </div>
+      
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Unity Game ID (Android)</label>
