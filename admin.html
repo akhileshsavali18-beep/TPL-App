@@ -124,7 +124,7 @@
       </div>
     </main>
 
-    <!-- TAB 2: PAYOUTS (DUAL MODE: CASHFREE AUTO + MANUAL UPI) -->
+    <!-- TAB 2: PAYOUTS (ONLY PENDING HAS PAY BUTTON + AUTO REFUND) -->
     <main id="tabContent-payouts" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div class="flex items-center justify-between">
         <div>
@@ -154,11 +154,11 @@
       </div>
     </main>
 
-    <!-- TAB 3: USERS DIRECTORY -->
+    <!-- TAB 3: USERS DIRECTORY (WITH EDIT PROFILE OPTION) -->
     <main id="tabContent-users" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div>
         <h2 class="text-xl font-black text-white">Users Directory</h2>
-        <p class="text-[11px] text-gray-400">Manage user profiles, send in-app alerts & ban cheaters</p>
+        <p class="text-[11px] text-gray-400">Manage user profiles, edit balances, send alerts & ban</p>
       </div>
 
       <div class="relative">
@@ -171,7 +171,7 @@
       </div>
     </main>
 
-    <!-- TAB 4: TASKS HUB (Social Tasks, Home Banners, Gamezop, Offerwalls) -->
+    <!-- TAB 4: TASKS HUB (CPALEAD + EARNKARO + BANNERS + GAMES) -->
     <main id="tabContent-tasks" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div>
         <h2 class="text-xl font-black text-white">Content & Tasks Hub</h2>
@@ -197,10 +197,10 @@
         </div>
       </div>
 
-      <!-- SUBTAB 2: HOME TOP BANNERS (4-5 CAROUSEL) -->
+      <!-- SUBTAB 2: HOME TOP BANNERS -->
       <div id="view-task-banners" class="hidden space-y-3">
         <div class="flex justify-between items-center">
-          <span class="text-xs text-gray-400 font-bold">Top 4-5 Carousel Banners</span>
+          <span class="text-xs text-gray-400 font-bold">Top Carousel Banners</span>
           <button onclick="openAddBannerModal()" class="px-3 py-1 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-xl active:scale-95">+ Add Banner</button>
         </div>
         <div id="bannersList" class="space-y-3">
@@ -211,7 +211,7 @@
       <!-- SUBTAB 3: GAMEZOP MINI GAMES -->
       <div id="view-task-games" class="hidden space-y-3">
         <div class="flex justify-between items-center">
-          <span class="text-xs text-gray-400 font-bold">WinZO Style HTML5 Games</span>
+          <span class="text-xs text-gray-400 font-bold">WinZO Style Instant Games</span>
           <button onclick="openAddGameModal()" class="px-3 py-1 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-xl active:scale-95">+ Add Game</button>
         </div>
         <div id="gamesList" class="space-y-3">
@@ -219,20 +219,20 @@
         </div>
       </div>
 
-      <!-- SUBTAB 4: OFFERWALLS (Notik & EarnKaro) -->
+      <!-- SUBTAB 4: OFFERWALLS (CPALEAD + EARNKARO MATCHED WITH FLUTTER) -->
       <div id="view-task-offerwalls" class="hidden space-y-4">
-        <!-- Notik Offerwall -->
+        <!-- CPAlead Offerwall -->
         <div class="dark-card p-4 rounded-2xl space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="text-xs font-black text-sky-400 uppercase">Notik Offerwall</h3>
+            <h3 class="text-xs font-black text-green-400 uppercase">CPAlead Mega Offerwall</h3>
             <label class="flex items-center gap-2 text-xs">
               <span>Enable</span>
-              <input type="checkbox" id="notikEnabled" class="w-4 h-4 accent-green-400">
+              <input type="checkbox" id="cpaleadEnabled" class="w-4 h-4 accent-green-400" checked>
             </label>
           </div>
           <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Notik App URL / Offerwall Link</label>
-            <input type="text" id="notikUrl" placeholder="https://notik.me/coins/..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <label class="text-[10px] text-gray-400 font-bold uppercase">CPAlead Offerwall URL</label>
+            <input type="text" id="cpaleadUrlInput" value="https://fasttrk.net/offers?id=cpalead_tpl" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
         </div>
 
@@ -242,12 +242,12 @@
             <h3 class="text-xs font-black text-amber-400 uppercase">EarnKaro Deals & Store</h3>
             <label class="flex items-center gap-2 text-xs">
               <span>Enable</span>
-              <input type="checkbox" id="earnkaroEnabled" class="w-4 h-4 accent-green-400">
+              <input type="checkbox" id="earnkaroEnabled" class="w-4 h-4 accent-green-400" checked>
             </label>
           </div>
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">EarnKaro Affiliate URL</label>
-            <input type="text" id="earnkaroUrl" placeholder="https://earnkaro.com/..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="text" id="earnkaroUrl" value="https://earningshub.co/Akhilesh-17901502844466" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
         </div>
 
@@ -257,7 +257,7 @@
       </div>
     </main>
 
-    <!-- TAB 5: SETTINGS (UNITY ADS + P1, P2, P3 CONTROLS + GPLINKS) -->
+    <!-- TAB 5: SETTINGS -->
     <main id="tabContent-settings" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div>
         <h2 class="text-xl font-black text-white">Settings & Controls</h2>
@@ -270,25 +270,25 @@
           <h3 class="text-xs font-black text-indigo-400 uppercase tracking-wider">📺 Unity Ads Remote Switcher</h3>
           <label class="flex items-center gap-2 text-xs text-green-400 font-bold">
             <span id="adsStatusLabel">Ads Active</span>
-            <input type="checkbox" id="ads-enabledToggle" onchange="toggleAdsLabel(this.checked)" class="w-4 h-4 accent-green-400">
+            <input type="checkbox" id="ads-enabledToggle" onchange="toggleAdsLabel(this.checked)" class="w-4 h-4 accent-green-400" checked>
           </label>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Unity Game ID (Android)</label>
-            <input type="text" id="ads-gameId" placeholder="e.g. 5868205" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="text" id="ads-gameId" value="5868205" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Ad Cooldown (Seconds)</label>
-            <input type="number" id="ads-cooldown" placeholder="60" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="number" id="ads-cooldown" value="60" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Rewarded Ad Unit ID</label>
-            <input type="text" id="ads-rewardedId" placeholder="Rewarded_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="text" id="ads-rewardedId" value="BP_Rewarded_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Interstitial Ad Unit ID</label>
-            <input type="text" id="ads-interstitialId" placeholder="Interstitial_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="text" id="ads-interstitialId" value="Interstitial_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
         </div>
         <div class="flex items-center justify-between pt-1">
@@ -309,19 +309,19 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Coin Rate (Coins = ₹1)</label>
-            <input type="number" id="p1-coinRate" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="number" id="p1-coinRate" value="100" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Referral Bonus (₹)</label>
-            <input type="number" id="p1-referBonus" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="number" id="p1-referBonus" value="5" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Min Task Cash (₹)</label>
-            <input type="number" id="p1-minTask" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="number" id="p1-minTask" value="25" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Min Refer Cash (₹)</label>
-            <input type="number" id="p1-minRefer" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="number" id="p1-minRefer" value="50" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
         </div>
         <div>
@@ -339,7 +339,7 @@
         <button onclick="saveP1Config()" class="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-green-400 font-bold text-xs rounded-xl active:scale-95">
           Save Core Controls
         </button>
-     </div>
+      </div>
 
       <!-- 3. P2: Game Controls -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
@@ -349,16 +349,16 @@
         </div>
         <div>
           <label class="text-[10px] text-gray-400 font-bold uppercase">Wheel Numbers (Comma separated)</label>
-          <input type="text" id="p2-wheelSlices" placeholder="1, 50, 5, 0, 200, 12" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+          <input type="text" id="p2-wheelSlices" value="1, 50, 5, 0, 200, 12" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Daily Spin Limit</label>
-            <input type="number" id="p2-spinLimit" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="number" id="p2-spinLimit" value="1" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
           <div>
             <label class="text-[10px] text-gray-400 font-bold uppercase">Daily Scratch Limit</label>
-            <input type="number" id="p2-scratchLimit" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+            <input type="number" id="p2-scratchLimit" value="1" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
           </div>
         </div>
         <button onclick="saveP2Config()" class="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-amber-400 font-bold text-xs rounded-xl active:scale-95">
@@ -394,11 +394,11 @@
         <h3 class="text-xs font-black text-white uppercase tracking-wider">🔗 GPLinks Referral Settings</h3>
         <div class="flex items-center justify-between">
           <span class="text-xs text-gray-300 font-medium">Enable GPLinks Shortener for Referrals</span>
-          <input type="checkbox" id="gplinksToggle" class="w-4 h-4 accent-green-400 rounded cursor-pointer">
+          <input type="checkbox" id="gplinksToggle" class="w-4 h-4 accent-green-400 rounded cursor-pointer" checked>
         </div>
         <div>
           <label class="text-[10px] text-gray-400 font-bold uppercase">GPLinks API Key</label>
-          <input type="text" id="gplinksKeyInput" placeholder="Enter API Key" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-green-400">
+          <input type="text" id="gplinksKeyInput" value="6fbb840dff7b4f2e4239b3200e0d62fce9b5fbab" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-green-400">
         </div>
         <button type="button" onclick="saveGplinksConfig()" class="w-full py-2.5 bg-green-400 hover:bg-green-300 text-black font-black rounded-xl text-xs transition-all shadow-lg active:scale-95">
           Save Referral Settings
@@ -462,7 +462,46 @@
     </div>
   </div>
 
-  <!-- 2. Add Social Task Modal -->
+  <!-- 2. EDIT USER MODAL -->
+  <div id="editUserModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
+    <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-white/5">
+        <h3 class="font-black text-sm text-white">✏️ Edit User Details</h3>
+        <button onclick="closeEditUserModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
+      </div>
+      <input type="hidden" id="editUserId">
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">User Name</label>
+        <input type="text" id="editUserName" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase">Coins</label>
+          <input type="number" id="editUserCoins" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase">Task Cash (₹)</label>
+          <input type="number" step="0.01" id="editUserTaskCash" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase">Refer Cash (₹)</label>
+          <input type="number" step="0.01" id="editUserReferCash" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-gray-400 uppercase">UPI ID</label>
+          <input type="text" id="editUserUpi" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeEditUserModal()" class="flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="saveUserEdit()" class="flex-1 py-2 bg-green-400 text-black font-black rounded-xl text-xs active:scale-95">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Add Social Task Modal -->
   <div id="taskModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
     <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center pb-2 border-b border-white/5">
@@ -497,11 +536,11 @@
     </div>
   </div>
 
-  <!-- 3. Add Banner Modal -->
+  <!-- 4. Add Banner Modal -->
   <div id="bannerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
     <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center pb-2 border-b border-white/5">
-        <h3 class="font-black text-sm text-white">Add Carousel Banner (Top 4-5)</h3>
+        <h3 class="font-black text-sm text-white">Add Carousel Banner</h3>
         <button onclick="closeAddBannerModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
       </div>
       <div>
@@ -523,16 +562,16 @@
     </div>
   </div>
 
-  <!-- 4. Add Gamezop Game Modal -->
+    <!-- 5. Add Gamezop Game Modal -->
   <div id="gameModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50 hidden">
     <div class="dark-card rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center pb-2 border-b border-white/5">
-        <h3 class="font-black text-sm text-white">Add Gamezop / Web Game</h3>
+        <h3 class="font-black text-sm text-white">Add Instant Game</h3>
         <button onclick="closeAddGameModal()" class="p-1 text-gray-400 hover:text-white">✕</button>
       </div>
       <div>
         <label class="text-[10px] font-bold text-gray-400 uppercase">Game Title</label>
-        <input type="text" id="gameTitle" placeholder="e.g. Fruit Samurai" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <input type="text" id="gameTitle" placeholder="e.g. Fruit Chop" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
       </div>
       <div class="grid grid-cols-2 gap-2">
         <div>
@@ -545,7 +584,7 @@
         </div>
       </div>
       <div>
-        <label class="text-[10px] font-bold text-gray-400 uppercase">Gamezop Play Link</label>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">Game Play Link</label>
         <input type="url" id="gameUrl" placeholder="https://gamezop.com/g/..." class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
       </div>
       <div class="flex gap-2 pt-2">
@@ -560,7 +599,6 @@
 
   <!-- ================= 3. COMPLETE JAVASCRIPT ENGINE ================= -->
   <script>
-    // --- Toast Notification ---
     function showToast(msg) {
       const toast = document.getElementById('toast');
       if (toast) {
@@ -570,26 +608,25 @@
       }
     }
 
-    // --- Firebase Initialization ---
-    // (Existing app configuration remains connected automatically)
+    // Production Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNUAx_Zhn-8RYKKkv5qAjMWwFWwI5tMI8",
+      authDomain: "tpl-5bd9d.firebaseapp.com",
+      projectId: "tpl-5bd9d",
+      storageBucket: "tpl-5bd9d.firebasestorage.app",
+      messagingSenderId: "940679131159",
+      appId: "1:940679131159:android:f5ed5fc5b6f6ac285a2c52"
+    };
+
     if (!firebase.apps.length) {
-  firebase.initializeApp({
-    apiKey: "AIzaSyDNUAx_Zhn-8RYKKkv5qAjMWwFWwI5tMI8",
-    authDomain: "tpl-5bd9d.firebaseapp.com",
-    projectId: "tpl-5bd9d",
-    storageBucket: "tpl-5bd9d.firebasestorage.app",
-    messagingSenderId: "940679131159",
-    appId: "1:940679131159:android:f5ed5fc5b6f6ac285a2c52"
-  });
+      firebase.initializeApp(firebaseConfig);
     }
-    
     const auth = firebase.auth();
     const db = firebase.firestore();
 
     let cachedUsers = [];
     let cachedWithdrawals = [];
 
-    // --- Auth State Handler ---
     auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById('loginScreen').classList.add('hidden');
@@ -627,7 +664,6 @@
       }
     }
 
-    // --- Navigation Tabs ---
     function switchTab(tab) {
       const tabs = ['dashboard', 'payouts', 'users', 'tasks', 'settings'];
       tabs.forEach(t => {
@@ -647,7 +683,6 @@
       });
     }
 
-    // --- Tasks Sub-Tabs ---
     function switchTaskSubTab(sub) {
       const subs = ['social', 'banners', 'games', 'offerwalls'];
       subs.forEach(s => {
@@ -669,7 +704,7 @@
     // 1. DATA SYNC & OVERVIEW METRICS
     // ==========================================
     function fetchAllData() {
-      // 1. Users Stream
+      // Users
       db.collection('users').onSnapshot(snap => {
         document.getElementById('statTotalUsers').innerText = snap.size;
         cachedUsers = [];
@@ -677,7 +712,7 @@
         renderUsers(cachedUsers);
       });
 
-      // 2. Withdrawals Stream (Overview metrics & Payouts list)
+      // Withdrawals
       db.collection('withdrawals').orderBy('createdAt', 'desc').onSnapshot(snap => {
         cachedWithdrawals = [];
         let pendingCount = 0;
@@ -713,13 +748,12 @@
         renderWithdrawals(cachedWithdrawals);
       });
 
-      // 3. Load Tasks, Banners, Games, Settings
       loadTasksHub();
       loadAllSettings();
     }
 
     // ==========================================
-    // 2. PAYOUTS LOGIC (MANUAL UPI + DROPDOWN)
+    // 2. PAYOUTS LOGIC (CONDITIONAL PAY & AUTO-REFUND)
     // ==========================================
     function renderWithdrawals(withdrawals) {
       const container = document.getElementById('withdrawalsList');
@@ -733,6 +767,7 @@
       container.innerHTML = '';
       withdrawals.forEach(w => {
         const st = (w.status || 'pending').toLowerCase();
+        const isPending = st === 'pending';
         const isSuccess = st === 'completed' || st === 'success' || st === 'settled' || st === 'paid';
         const isRejected = st === 'rejected';
 
@@ -762,14 +797,16 @@
           </div>
 
           <div class="flex items-center gap-2 pt-2 border-t border-white/5">
-            <!-- 📲 Manual Pay UPI Intent -->
-            <button onclick="payViaUPI('${w.upiId || ''}', ${w.amount || 0}, '${w.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
-              <span>📲 Pay UPI</span>
-            </button>
+            <!-- 📲 Pay UPI Button ONLY WHEN PENDING -->
+            ${isPending ? `
+              <button onclick="payViaUPI('${w.upiId || ''}', ${w.amount \vert{}\vert{} 0}, '${w.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
+                <span>📲 Pay UPI</span>
+              </button>
+            ` : ''}
 
             <!-- Status Dropdown -->
-            <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', this.value)" class="flex-1 py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
-              <option value="pending" ${st === 'pending' ? 'selected' : ''}>⏳ Pending</option>
+            <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value)" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
+              <option value="pending" ${isPending ? 'selected' : ''}>⏳ Pending</option>
               <option value="completed" ${isSuccess ? 'selected' : ''}>✅ Success</option>
               <option value="rejected" ${isRejected ? 'selected' : ''}>❌ Rejected</option>
             </select>
@@ -786,7 +823,9 @@
       window.location.href = upiUrl;
     }
 
-    async function updateWithdrawalStatus(reqId, uid, amount, upiId, newStatus) {
+    async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus, newStatus) {
+      if (oldStatus === newStatus) return;
+
       try {
         await db.collection('withdrawals').doc(reqId).update({
           status: newStatus,
@@ -794,7 +833,27 @@
           ...(newStatus === 'completed' ? { paidAt: firebase.firestore.FieldValue.serverTimestamp() } : {})
         });
 
-        // Auto notification on success
+        // 1. REJECTED -> REFUND AMOUNT TO USER WALLET AUTOMATICALLY
+        if (newStatus === 'rejected' && oldStatus === 'pending' && uid) {
+          const isRefer = (type || '').toLowerCase().includes('refer');
+          const refundField = isRefer ? 'referCash' : 'taskCash';
+
+          await db.collection('users').doc(uid).update({
+            [refundField]: firebase.firestore.FieldValue.increment(parseFloat(amount))
+          });
+
+          await db.collection('users').doc(uid).collection('notifications').add({
+            title: '❌ Withdrawal Rejected',
+            message: `Your withdrawal request of ₹${parseFloat(amount).toFixed(2)} was rejected. The full amount has been refunded to your ${isRefer ? 'Refer' : 'Cash'} balance.`,
+            read: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          showToast(`Request Rejected & ₹${amount} Refunded to User!`);
+          return;
+        }
+
+        // 2. SUCCESS -> SEND AUTO NOTIFICATION
         if (newStatus === 'completed' && uid) {
           await db.collection('users').doc(uid).collection('notifications').add({
             title: '🎉 Payout Successful!',
@@ -802,10 +861,12 @@
             read: false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
+
           showToast('Status: Completed & Notification Sent!');
-        } else {
-          showToast('Status updated to ' + newStatus);
+          return;
         }
+
+        showToast('Status updated to ' + newStatus);
       } catch (e) {
         alert('Error updating status: ' + e.message);
       }
@@ -840,7 +901,7 @@
     }
 
     // ==========================================
-    // 3. USERS DIRECTORY & NOTIFICATION
+    // 3. USERS DIRECTORY (EDIT, BAN & ALERT)
     // ==========================================
     function renderUsers(users) {
       const container = document.getElementById('usersList');
@@ -872,6 +933,9 @@
             </div>
           </div>
           <div class="flex gap-2 pt-2 border-t border-white/5">
+            <button onclick="openEditUserModal('${u.id}')" class="flex-1 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-bold rounded-xl active:scale-95">
+              ✏️ Edit
+            </button>
             <button onclick="openNotifModal('${u.id}', '${u.displayName || u.email}')" class="flex-1 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold rounded-xl active:scale-95">
               🔔 Alert
             </button>
@@ -892,6 +956,46 @@
         (u.upiId && u.upiId.toLowerCase().includes(q))
       );
       renderUsers(filtered);
+    }
+
+    function openEditUserModal(uid) {
+      const u = cachedUsers.find(user => user.id === uid);
+      if (!u) return alert('User not found!');
+
+      document.getElementById('editUserId').value = uid;
+      document.getElementById('editUserName').value = u.displayName || '';
+      document.getElementById('editUserCoins').value = u.coins || 0;
+      document.getElementById('editUserTaskCash').value = u.taskCash || 0;
+      document.getElementById('editUserReferCash').value = u.referCash || 0;
+      document.getElementById('editUserUpi').value = u.upiId || '';
+      document.getElementById('editUserModal').classList.remove('hidden');
+    }
+
+    function closeEditUserModal() {
+      document.getElementById('editUserModal').classList.add('hidden');
+    }
+
+    async function saveUserEdit() {
+      const uid = document.getElementById('editUserId').value;
+      const name = document.getElementById('editUserName').value.trim();
+      const coins = parseInt(document.getElementById('editUserCoins').value) || 0;
+      const taskCash = parseFloat(document.getElementById('editUserTaskCash').value) || 0.0;
+      const referCash = parseFloat(document.getElementById('editUserReferCash').value) || 0.0;
+      const upiId = document.getElementById('editUserUpi').value.trim();
+
+      try {
+        await db.collection('users').doc(uid).update({
+          displayName: name,
+          coins: coins,
+          taskCash: taskCash,
+          referCash: referCash,
+          upiId: upiId
+        });
+        showToast('User updated successfully!');
+        closeEditUserModal();
+      } catch (e) {
+        alert('Error updating user: ' + e.message);
+      }
     }
 
     function openNotifModal(uid, name) {
@@ -937,7 +1041,7 @@
     }
 
     // ==========================================
-    // 4. TASKS HUB (TASKS, BANNERS, GAMES, OFFERWALLS)
+    // 4. TASKS HUB (CPALEAD + BANNERS + GAMES)
     // ==========================================
     function loadTasksHub() {
       // Social Tasks
@@ -958,7 +1062,7 @@
               <div class="text-xs font-bold text-white">${t.title || 'Task'}</div>
               <div class="text-[10px] text-green-400 font-semibold">+${t.coins || 25} Coins • ${t.category || 'Social'}</div>
             </div>
-            <button onclick="deleteDoc('tasks', '${doc.id}')" class="text-red-400 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg">Delete</button>
+            <button onclick="deleteDoc('tasks', '${doc.id}')" class="text-red-400 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg active:scale-95">Delete</button>
           `;
           c.appendChild(div);
         });
@@ -982,7 +1086,7 @@
               <div class="text-xs font-bold text-white">${b.title || 'Banner'}</div>
               <div class="text-[10px] text-gray-400">${b.sub || 'Carousel Banner'}</div>
             </div>
-            <button onclick="deleteDoc('banners', '${doc.id}')" class="text-red-400 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg">Delete</button>
+            <button onclick="deleteDoc('banners', '${doc.id}')" class="text-red-400 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg active:scale-95">Delete</button>
           `;
           c.appendChild(div);
         });
@@ -1006,25 +1110,24 @@
               <div class="text-xs font-bold text-white">${g.title || 'Game'}</div>
               <div class="text-[10px] text-green-400">+${g.coins || 2} Coins • ${g.category || 'Arcade'}</div>
             </div>
-            <button onclick="deleteDoc('games', '${doc.id}')" class="text-red-400 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg">Delete</button>
+            <button onclick="deleteDoc('games', '${doc.id}')" class="text-red-400 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg active:scale-95">Delete</button>
           `;
           c.appendChild(div);
         });
       });
 
-      // Offerwalls Config
+      // Offerwalls Config Sync (CPAlead + EarnKaro)
       db.collection('settings').doc('offerwalls').get().then(doc => {
         if (doc.exists) {
           const d = doc.data();
-          document.getElementById('notikEnabled').checked = d.notikActive || false;
-          if (d.notikUrl) document.getElementById('notikUrl').value = d.notikUrl;
+          document.getElementById('cpaleadEnabled').checked = d.cpaleadActive !== false;
+          if (d.cpaleadUrl) document.getElementById('cpaleadUrlInput').value = d.cpaleadUrl;
           document.getElementById('earnkaroEnabled').checked = d.earnkaroActive !== false;
           if (d.earnkaroUrl) document.getElementById('earnkaroUrl').value = d.earnkaroUrl;
         }
       });
     }
 
-    // Modal Triggers
     function openAddTaskModal() { document.getElementById('taskModal').classList.remove('hidden'); }
     function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
 
@@ -1070,13 +1173,14 @@
     }
 
     async function saveOfferwallsConfig() {
-      const notikActive = document.getElementById('notikEnabled').checked;
-      const notikUrl = document.getElementById('notikUrl').value.trim();
+      const cpaleadActive = document.getElementById('cpaleadEnabled').checked;
+      const cpaleadUrl = document.getElementById('cpaleadUrlInput').value.trim();
       const earnkaroActive = document.getElementById('earnkaroEnabled').checked;
       const earnkaroUrl = document.getElementById('earnkaroUrl').value.trim();
 
       await db.collection('settings').doc('offerwalls').set({
-        notikActive, notikUrl, earnkaroActive, earnkaroUrl
+        cpaleadActive, cpaleadUrl, earnkaroActive, earnkaroUrl,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
 
       showToast('Offerwalls Saved & Synced!');
@@ -1090,7 +1194,7 @@
     }
 
     // ==========================================
-    // 5. SETTINGS CONTROLLERS (UNITY ADS, P1, P2, P3, GPLINKS)
+    // 5. SETTINGS CONTROLLERS
     // ==========================================
     function toggleAdsLabel(isActive) {
       const lbl = document.getElementById('adsStatusLabel');
@@ -1116,7 +1220,7 @@
         }
       });
 
-      // P1 Economy
+     // P1 Economy
       db.collection('settings').doc('economy').get().then(doc => {
         if (doc.exists) {
           const d = doc.data();
