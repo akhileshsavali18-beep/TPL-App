@@ -1,158 +1,159 @@
-import 'unity_banner_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:url_launcher/url_launcher_string.dart';
-import '../screens/splash_login.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'unity_banner_widget.dart';
 
-class SideProfileDrawer extends StatelessWidget {
-  const SideProfileDrawer({super.key});
-
-  Future<void> _openSocialLink(String url) async {
-    try {
-      if (await canLaunchUrlString(url)) {
-        await launchUrlString(url, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      debugPrint("Error opening URL: $e");
-    }
-  }
-
-  Future<void> _handleLogout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    if (context.mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const SplashScreen()),
-        (route) => false,
-      );
-    }
-  }
+class ProfileDrawer extends StatelessWidget {
+  const ProfileDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-    final String email = user?.email ?? 'No email';
-    final String displayName = user?.displayName?.isNotEmpty == true
-        ? user!.displayName!
-        : (user?.email?.split('@')[0] ?? 'TPL Player');
-    final String initialLetter = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'T';
+    final user = FirebaseAuth.instance.currentUser;
 
     return Drawer(
-      backgroundColor: const Color(0xFF0F131C),
+      backgroundColor: const Color(0xFF0D111A),
       child: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User Header Profile Section
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 34,
-                    backgroundColor: const Color(0xFF6C63FF),
-                    child: Text(
-                      initialLetter,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
+            StreamBuilder<DocumentSnapshot>(
+              stream: user != null
+                  ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots()
+                  : null,
+              builder: (context, snapshot) {
+                String name = user?.displayName ?? 'TPL Player';
+                String email = user?.email ?? 'No email';
+                int coins = 0;
+
+                if (snapshot.hasData && snapshot.data?.data() != null) {
+                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                  name = data['name'] ?? name;
+                  coins = int.tryParse(data['coins']?.toString() ?? '') ?? 0;
+                }
+
+                return Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white10)),
                   ),
-                  const SizedBox(height: 14),
-                  Text(
-                    displayName,
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    email,
-                    style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00FF87).withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.3)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.verified, color: Color(0xFF00FF87), size: 14),
-                        SizedBox(width: 6),
-                        Text(
-                          'TPL Verified Player',
-                          style: TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: const Color(0xFF00FF87).withOpacity(0.15),
+                        child: const Icon(Icons.person, color: Color(0xFF00FF87), size: 32),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              email,
+                              style: const TextStyle(color: Colors.white54, fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '🪙 $coins Coins',
+                                style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                );
+              },
+            ),
+
+            // Navigation Items List
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                children: [
+                  _buildDrawerItem(Icons.account_balance_wallet, 'My Wallet & Payouts', () {
+                    Navigator.pop(context);
+                  }),
+                  _buildDrawerItem(Icons.history, 'Transaction History', () {
+                    Navigator.pop(context);
+                  }),
+                  _buildDrawerItem(Icons.group_add, 'Refer Friends & Earn', () {
+                    Navigator.pop(context);
+                  }),
+                  _buildDrawerItem(Icons.shield_outlined, 'Privacy Policy & Terms', () {
+                    Navigator.pop(context);
+                  }),
+                  _buildDrawerItem(Icons.help_outline, 'Help & Support', () {
+                    Navigator.pop(context);
+                  }),
                 ],
               ),
             ),
 
-            const Divider(color: Colors.white10, height: 1),
-            const SizedBox(height: 10),
-
-            // Social Channels
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF229ED9).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.send_rounded, color: Color(0xFF229ED9), size: 20),
-              ),
-              title: const Text('Official Telegram Channel', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-              subtitle: const Text('Get daily redeem codes', style: TextStyle(color: Colors.grey, fontSize: 11)),
-              onTap: () => _openSocialLink('https://t.me/your_tpl_channel'),
+            // 📺 Unity Banner Ad Inside Drawer
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: UnityBannerWidget(),
             ),
 
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE1306C).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.camera_alt_rounded, color: Color(0xFFE1306C), size: 20),
-              ),
-              title: const Text('Follow on Instagram', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-              subtitle: const Text('Contest announcements & proof', style: TextStyle(color: Colors.grey, fontSize: 11)),
-              onTap: () => _openSocialLink('https://instagram.com/your_tpl_page'),
-            ),
-
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF0000).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.play_arrow_rounded, color: Color(0xFFFF0000), size: 20),
-              ),
-              title: const Text('Subscribe YouTube', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-              subtitle: const Text('Tutorials & tips', style: TextStyle(color: Colors.grey, fontSize: 11)),
-              onTap: () => _openSocialLink('https://youtube.com/@your_tpl_channel'),
-            ),
-
-            const Spacer(),
-            const Divider(color: Colors.white10, height: 1),
+            const SizedBox(height: 6),
 
             // Logout Button
-            ListTile(
-              leading: const Icon(Icons.logout_rounded, color: Color(0xFFFF5252)),
-              title: const Text(
-                'Logout',
-                style: TextStyle(color: Color(0xFFFF5252), fontWeight: FontWeight.bold, fontSize: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (context.mounted) Navigator.pop(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.logout, color: Colors.redAccent, size: 18),
+                      SizedBox(width: 8),
+                      Text('Log Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+                    ],
+                  ),
+                ),
               ),
-              onTap: () => _handleLogout(context),
             ),
-            const SizedBox(height: 12),
           ],
         ),
       ),
     );
   }
+
+  static Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white70, size: 22),
+      title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+      onTap: onTap,
+    );
+  }
 }
+
