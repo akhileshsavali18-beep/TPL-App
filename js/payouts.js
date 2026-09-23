@@ -1,71 +1,96 @@
 // ==========================================
-// PAYOUTS MODULE (js/payouts.js) - DIRECT STREAM
+// PAYOUTS MODULE (js/payouts.js) - WITH ERROR DETECTOR
 // ==========================================
 
-let cachedWithdrawals = [];
+// 1. On-Screen Script Error Catcher (ಯಾವುದೇ ಸ್ಕ್ರಿಪ್ಟ್ ಎರರ್ ಬಂದರೆ ಸ್ಕ್ರೀನ್ ಮೇಲೆಯೇ ತೋರಿಸುತ್ತದೆ)
+window.addEventListener('error', function(e) {
+  const container = document.getElementById('withdrawalsList');
+  if (container) {
+    container.innerHTML = `
+      <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-center space-y-1">
+        <div class="text-xs font-bold text-red-400">⚠️ Script Error Found:</div>
+        <div class="text-[11px] text-white font-mono">${e.message}</div>
+        <div class="text-[9px] text-gray-400">File: ${e.filename ? e.filename.split('/').pop() : 'script'} (Line: ${e.lineno})</div>
+      </div>`;
+  }
+});
+
+// Safe global variable (Duplicate declaration crash ಆಗುವುದಿಲ್ಲ)
+window.cachedWithdrawals = window.cachedWithdrawals || [];
 
 function listenWithdrawals() {
   const container = document.getElementById('withdrawalsList');
+  if (!container) return;
 
-  // Direct listen to verified collection: withdrawals
-  db.collection('withdrawals').onSnapshot(snap => {
-    cachedWithdrawals = [];
-    let pendingCount = 0;
-    let pendingAmount = 0.0;
-    let totalPaid = 0.0;
+  try {
+    if (typeof db === 'undefined') {
+      container.innerHTML = '<div class="text-center py-6 text-red-400 text-xs font-bold">⚠️ Firebase DB not initialized!</div>';
+      return;
+    }
 
-    snap.forEach(d => {
-      const w = { id: d.id, ...d.data() };
-      cachedWithdrawals.push(w);
+    db.collection('withdrawals').onSnapshot(snap => {
+      window.cachedWithdrawals = [];
+      let pendingCount = 0;
+      let pendingAmount = 0.0;
+      let totalPaid = 0.0;
 
-      const amt = parseFloat(w.amount) || 0.0;
-      const st = (w.status || 'pending').toLowerCase();
+      snap.forEach(d => {
+        const w = { id: d.id, ...d.data() };
+        window.cachedWithdrawals.push(w);
 
-      if (st === 'pending') {
-        pendingCount++;
-        pendingAmount += amt;
-      } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
-        totalPaid += amt;
+        const amt = parseFloat(w.amount) || 0.0;
+        const st = (w.status || 'pending').toLowerCase();
+
+        if (st === 'pending') {
+          pendingCount++;
+          pendingAmount += amt;
+        } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
+          totalPaid += amt;
+        }
+      });
+
+      // Sort recent first
+      window.cachedWithdrawals.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+      // Update Home Metrics Live
+      const pCountEl = document.getElementById('statPendingCount');
+      const pAmtEl = document.getElementById('statPendingAmount');
+      const paidAmtEl = document.getElementById('statPaidAmount');
+      const badgeEl = document.getElementById('navBadge');
+
+      if (pCountEl) pCountEl.innerText = pendingCount;
+      if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
+      if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
+
+      if (badgeEl) {
+        badgeEl.innerText = pendingCount;
+        if (pendingCount > 0) badgeEl.classList.remove('hidden');
+        else badgeEl.classList.add('hidden');
       }
+
+      renderWithdrawals(window.cachedWithdrawals);
+    }, err => {
+      console.error("Payouts Firestore Error:", err);
+      container.innerHTML = `
+        <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-center space-y-1">
+          <div class="text-xs font-bold text-red-400">⚠️ Firestore Error:</div>
+          <div class="text-[11px] text-white">${err.message}</div>
+        </div>`;
     });
-
-    // Client sort: Recent first
-    cachedWithdrawals.sort((a, b) => {
-      const tA = a.createdAt?.seconds || 0;
-      const tB = b.createdAt?.seconds || 0;
-      return tB - tA;
-    });
-
-    // Update Home Metrics Live
-    const pCountEl = document.getElementById('statPendingCount');
-    const pAmtEl = document.getElementById('statPendingAmount');
-    const paidAmtEl = document.getElementById('statPaidAmount');
-    const badgeEl = document.getElementById('navBadge');
-
-    if (pCountEl) pCountEl.innerText = pendingCount;
-    if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
-    if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
-
-    if (badgeEl) {
-      badgeEl.innerText = pendingCount;
-      if (pendingCount > 0) badgeEl.classList.remove('hidden');
-      else badgeEl.classList.add('hidden');
-    }
-
-    renderWithdrawals(cachedWithdrawals);
-  }, err => {
-    console.error("Payouts Error:", err);
-    if (container) {
-      container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Error: ${err.message}</div>`;
-    }
-  });
+  } catch (err) {
+    container.innerHTML = `
+      <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-center space-y-1">
+        <div class="text-xs font-bold text-red-400">⚠️ Execution Error:</div>
+        <div class="text-[11px] text-white">${err.message}</div>
+      </div>`;
+  }
 }
 
 function renderWithdrawals(withdrawals) {
   const container = document.getElementById('withdrawalsList');
   if (!container) return;
 
-  if (withdrawals.length === 0) {
+  if (!withdrawals || withdrawals.length === 0) {
     container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs">No withdrawal requests found in database.</div>';
     return;
   }
@@ -103,14 +128,14 @@ function renderWithdrawals(withdrawals) {
       </div>
 
       <div class="flex items-center gap-2 pt-2 border-t border-white/5">
-        <!-- 📲 Pay UPI Button: Appears ONLY when Pending -->
+        <!-- 📲 Pay UPI Button (Pending ಇದ್ದಾಗ ಮಾತ್ರ ಕಾಣುತ್ತದೆ) -->
         ${isPending ? `
           <button onclick="payViaUPI('${w.upiId || ''}', ${w.amount \vert{}\vert{} 0}, '${w.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
             <span>📲 Pay UPI</span>
           </button>
         ` : ''}
 
-        <!-- Status Controller with Auto-Refund -->
+        <!-- Status Controller -->
         <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount}, '${w.upiId}', '${w.type || 'Cash'}', '${st}', this.value)" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
           <option value="pending" ${isPending ? 'selected' : ''}>⏳ Pending</option>
           <option value="completed" ${isSuccess ? 'selected' : ''}>✅ Success</option>
@@ -138,7 +163,6 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
       ...(newStatus === 'completed' ? { paidAt: firebase.firestore.FieldValue.serverTimestamp() } : {})
     });
 
-    // Auto-Refund on Rejection
     if (newStatus === 'rejected' && oldStatus === 'pending' && uid) {
       const isRefer = (type || '').toLowerCase().includes('refer');
       const refundField = isRefer ? 'referCash' : 'taskCash';
@@ -158,7 +182,6 @@ async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus
       return;
     }
 
-    // Success Notification
     if (newStatus === 'completed' && uid) {
       await db.collection('users').doc(uid).collection('notifications').add({
         title: '🎉 Payout Successful!',
@@ -183,9 +206,13 @@ function copyToClipboard(text) {
   showToast('Copied: ' + text);
 }
 
-// Immediate load
+// 1. Immediate Run
 listenWithdrawals();
 
-auth.onAuthStateChanged(user => {
-  if (user) listenWithdrawals();
-});
+// 2. Run on Auth Change
+if (typeof auth !== 'undefined') {
+  auth.onAuthStateChanged(user => {
+    if (user) listenWithdrawals();
+  })
+}
+    
