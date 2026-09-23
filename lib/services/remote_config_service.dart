@@ -9,16 +9,16 @@ class RemoteConfigService {
   // P1: Core Economy & Status
   int coinRate = 100;
   int referBonus = 5;
-  int minTaskWithdrawal = 10;
+  int minTaskWithdrawal = 25;
   int minReferWithdrawal = 50;
   String announcementText = '';
   bool showAnnouncement = false;
   bool maintenanceMode = false;
 
   // P2: Game & Limits
-  List<int> wheelSlices = [10, 50, 25, 100, 15, 200];
-  int dailySpinLimit = 3;
-  int dailyScratchLimit = 2;
+  List<int> wheelSlices = [1, 50, 5, 0, 200, 12];
+  int dailySpinLimit = 1;
+  int dailyScratchLimit = 1;
 
   // P3: Security Shield
   bool blockVPN = false;
@@ -29,41 +29,48 @@ class RemoteConfigService {
   bool adsEnabled = true;
   String unityGameId = '5868205';
   int adCooldown = 60;
-  String rewardedPlacementId = 'Rewarded_Android';
+  String rewardedPlacementId = 'BP_Rewarded_Android';
   String interstitialPlacementId = 'Interstitial_Android';
   bool unityTestMode = false;
 
-  /// ಆ್ಯಪ್ ಆರಂಭದಲ್ಲಿ ಒಮ್ಮೆ ಕರೆದು ರಿಯಲ್-ಟೈಮ್ ಲಿಸನರ್ ಸೆಟ್ ಮಾಡುವುದು
+  /// ಆ್ಯಪ್ ಆರಂಭದಲ್ಲಿ ಒಮ್ಮೆ ಕರೆದು ಅಡ್ಮಿನ್ ಸೆಟ್ಟಿಂಗ್ಸ್ ರಿಯಲ್-ಟೈಮ್ ಸಿಂಕ್ ಮಾಡುವುದು
   Future<void> init() async {
     try {
-      // 1. Core Config Listener
-      _firestore.collection('app_config').doc('core').snapshots().listen((snap) {
+      // 1. Core Economy Listener (Admin: settings/economy)
+      _firestore.collection('settings').doc('economy').snapshots().listen((snap) {
         if (snap.exists && snap.data() != null) {
           final data = snap.data()!;
-          coinRate = data['coinRate'] ?? 100;
-          referBonus = data['referBonus'] ?? 5;
-          minTaskWithdrawal = data['minTask'] ?? 10;
-          minReferWithdrawal = data['minRefer'] ?? 50;
-          announcementText = data['announcement'] ?? '';
+          coinRate = int.tryParse(data['coinRate']?.toString() ?? '') ?? 100;
+          referBonus = int.tryParse(data['referBonus']?.toString() ?? '') ?? 5;
+          minTaskWithdrawal = int.tryParse(data['minTask']?.toString() ?? '') ?? 25;
+          minReferWithdrawal = int.tryParse(data['minRefer']?.toString() ?? '') ?? 50;
+          announcementText = data['announcement']?.toString() ?? '';
           showAnnouncement = data['showAnnouncement'] ?? false;
           maintenanceMode = data['maintenanceMode'] ?? false;
         }
       });
 
-      // 2. Game Config Listener
-      _firestore.collection('app_config').doc('game').snapshots().listen((snap) {
+      // 2. Game Controls Listener (Admin: settings/game_limits ಅಥವಾ settings/economy)
+      _firestore.collection('settings').doc('game_limits').snapshots().listen((snap) {
         if (snap.exists && snap.data() != null) {
           final data = snap.data()!;
           if (data['wheelSlices'] != null) {
-            wheelSlices = List<int>.from(data['wheelSlices']);
+            if (data['wheelSlices'] is String) {
+              wheelSlices = (data['wheelSlices'] as String)
+                  .split(',')
+                  .map((e) => int.tryParse(e.trim()) ?? 0)
+                  .toList();
+            } else if (data['wheelSlices'] is List) {
+              wheelSlices = List<int>.from(data['wheelSlices']);
+            }
           }
-          dailySpinLimit = data['spinLimit'] ?? 3;
-          dailyScratchLimit = data['scratchLimit'] ?? 2;
+          dailySpinLimit = int.tryParse(data['spinLimit']?.toString() ?? '') ?? 1;
+          dailyScratchLimit = int.tryParse(data['scratchLimit']?.toString() ?? '') ?? 1;
         }
       });
 
-      // 3. Security Config Listener
-      _firestore.collection('app_config').doc('security').snapshots().listen((snap) {
+      // 3. Security Shield Listener (Admin: settings/security)
+      _firestore.collection('settings').doc('security').snapshots().listen((snap) {
         if (snap.exists && snap.data() != null) {
           final data = snap.data()!;
           blockVPN = data['blockVPN'] ?? false;
@@ -72,20 +79,30 @@ class RemoteConfigService {
         }
       });
 
-      // 4. Unity Ads Config Listener
-      _firestore.collection('app_config').doc('ads').snapshots().listen((snap) {
+      // 4. Unity Ads Remote Switcher Listener (Admin: settings/unity_ads)
+      _firestore.collection('settings').doc('unity_ads').snapshots().listen((snap) {
         if (snap.exists && snap.data() != null) {
           final data = snap.data()!;
-          adsEnabled = data['adsEnabled'] ?? true;
-          unityGameId = data['gameId'] ?? '5868205';
-          adCooldown = data['cooldown'] ?? 60;
-          rewardedPlacementId = data['rewardedId'] ?? 'Rewarded_Android';
-          interstitialPlacementId = data['interstitialId'] ?? 'Interstitial_Android';
+          // ಅಡ್ಮಿನ್ 'adsActive' ಅಥವಾ 'adsEnabled' ಎರಡನ್ನೂ ಸಪೋರ್ಟ್ ಮಾಡುತ್ತದೆ
+          adsEnabled = data['adsActive'] ?? data['adsEnabled'] ?? true;
+          unityGameId = data['gameId']?.toString() ?? '5868205';
+          adCooldown = int.tryParse(data['cooldown']?.toString() ?? '') ?? 60;
+          rewardedPlacementId = data['rewardedId']?.toString() ?? 'BP_Rewarded_Android';
+          interstitialPlacementId = data['interstitialId']?.toString() ?? 'Interstitial_Android';
           unityTestMode = data['testMode'] ?? false;
         }
       });
+
+      // Fallback: Legacy app_config ಗೂ ಲಿಸನ್ ಮಾಡುವುದು
+      _firestore.collection('app_config').doc('core').snapshots().listen((snap) {
+        if (snap.exists && snap.data() != null && !showAnnouncement) {
+          final data = snap.data()!;
+          announcementText = data['announcement'] ?? announcementText;
+          showAnnouncement = data['showAnnouncement'] ?? showAnnouncement;
+        }
+      });
     } catch (e) {
-      // Fallback: ನೆಟ್‌ವರ್ಕ್ ಇಲ್ಲದಿದ್ದರೂ ಆ್ಯಪ್ ಕ್ರ್ಯಾಶ್ ಆಗದೆ ಡಿಫಾಲ್ಟ್ ವ್ಯಾಲ್ಯೂ ಬಳಸುವುದು
+      // ನೆಟ್‌ವರ್ಕ್ ಇಲ್ಲದಿದ್ದರೂ ಡೀಫಾಲ್ಟ್ ವ್ಯಾಲ್ಯೂಗಳೊಂದಿಗೆ ಆ್ಯಪ್ ರನ್ ಆಗುತ್ತದೆ
     }
   }
 
@@ -95,4 +112,3 @@ class RemoteConfigService {
     return coins / coinRate;
   }
 }
-
