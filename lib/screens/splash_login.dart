@@ -1,7 +1,7 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../main.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -11,187 +11,194 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _glowAnimation;
+class _SplashScreenState extends State<SplashScreen> {
+  bool _isCheckingAuth = true;
+  bool _isLoginMode = true;
+  bool _isLoading = false;
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _inviteController = TextEditingController();
+
+  bool _isInviteValid = false;
+  bool _isCheckingInvite = false;
+  String? _verifiedReferrerUid;
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-
-    _glowAnimation = Tween<double>(begin: 0.85, end: 1.1).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        User? currentUser = FirebaseAuth.instance.currentUser;
-        if (currentUser != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
-        }
-      }
-    });
+    _checkAutoLogin();
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _inviteController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF07090E),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Spacer(),
-            AnimatedBuilder(
-              animation: _glowAnimation,
-              builder: (context, child) => Transform.scale(
-                scale: _glowAnimation.value,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF00FF87).withOpacity(0.4),
-                        blurRadius: 35,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(60),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF151922),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF00FF87), width: 2),
-                        ),
-                        child: const Center(
-                          child: Text('TPL', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Color(0xFF00FF87))),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'TASK PREMIER LEAGUE',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF151922),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: const Text(
-                '⚡ Next-Gen Rewards Engine',
-                style: TextStyle(fontSize: 11, color: Color(0xFF00FF87), letterSpacing: 1),
-              ),
-            ),
-            const Spacer(),
-            const Text('DEVELOPED BY', style: TextStyle(fontSize: 11, color: Colors.grey, letterSpacing: 1.5)),
-            const SizedBox(height: 4),
-            const Text(
-              'A28 TECHNOLOGIES',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 2.5, color: Colors.white),
-            ),
-            const SizedBox(height: 35),
-          ],
-        ),
-      ),
-    );
-  }
-}
+  // 1. Auto-Login Check (Problem 15 Fix)
+  Future<void> _checkAutoLogin() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+    final User? user = FirebaseAuth.instance.currentUser;
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
-
-  @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _referralController = TextEditingController();
-  bool _showReferralField = false;
-  bool _isLoading = false;
-
-  Future<void> _signInWithGoogle() async {
-    setState(() => _isLoading = true);
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+    if (user != null && mounted) {
+      // User already logged in -> Direct Home Screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
       );
+    } else if (mounted) {
+      setState(() => _isCheckingAuth = false);
+    }
+  }
 
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      User? user = userCredential.user;
+  // 2. Invite Code Verification (Problem 2 Fix)
+  Future<void> _verifyInviteCode() async {
+    final code = _inviteController.text.trim().toUpperCase();
+    if (code.isEmpty) return;
 
-      if (user != null) {
-        var userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-        var doc = await userRef.get();
+    setState(() => _isCheckingInvite = true);
 
-        if (!doc.exists) {
-          await userRef.set({
-            'uid': user.uid,
-            'name': user.displayName ?? 'TPL Player',
-            'email': user.email ?? '',
-            'coins': 50,
-            'taskCash': 0.0,
-            'referCash': 0.0,
-            'appliedReferral': _referralController.text.trim(),
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .where('referralCode', isEqualTo: code)
+          .limit(1)
+          .get();
 
+      if (snap.docs.isNotEmpty) {
+        setState(() {
+          _isInviteValid = true;
+          _verifiedReferrerUid = snap.docs.first.id;
+        });
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🎉 Valid Referral Code! +Bonus applied.'),
+              backgroundColor: Color(0xFF00FF87),
+            ),
+          );
+        }
+      } else {
+        setState(() {
+          _isInviteValid = false;
+          _verifiedReferrerUid = null;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid referral code. Please check and try again.'),
+              backgroundColor: Colors.redAccent,
+            ),
           );
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Notice: Continuing to Dashboard... ($e)')),
+      debugPrint("Invite verify error: $e");
+    } finally {
+      if (mounted) setState(() => _isCheckingInvite = false);
+    }
+  }
+
+  // Generate Unique Referral Code for New User
+  String _generateReferralCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final rand = Random();
+    String randomStr = List.generate(5, (index) => chars[rand.nextInt(chars.length)]).join();
+    return 'TPL$randomStr';
+  }
+
+  // 3. Email & Password Auth Submit (Problem 3 Fix)
+  Future<void> _handleSubmit() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address!')),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters!')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      if (_isLoginMode) {
+        // === LOGIN ===
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
         );
+      } else {
+        // === SIGN UP ===
+        final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        final user = cred.user;
+        if (user != null) {
+          final myReferralCode = _generateReferralCode();
+
+          // Create User Profile in Firestore
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+            'uid': user.uid,
+            'email': email,
+            'displayName': email.split('@')[0],
+            'coins': 50, // 50 Welcome bonus coins
+            'taskCash': 0.0,
+            'referCash': 0.0,
+            'spinsLeft': 3,
+            'scratchLeft': 2,
+            'referralCode': myReferralCode,
+            'referredBy': _isInviteValid ? _inviteController.text.trim().toUpperCase() : null,
+            'streakClaimedToday': false,
+            'hasConvertedToday': false,
+            'hasTaskWithdrawnToday': false,
+            'hasReferWithdrawnToday': false,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+          // If valid referral, give referral bonus to inviter
+          if (_isInviteValid && _verifiedReferrerUid != null) {
+            await FirebaseFirestore.instance.collection('users').doc(_verifiedReferrerUid).update({
+              'referCash': FieldValue.increment(5.0), // ₹5 refer bonus
+            });
+          }
+        }
+      }
+
+      if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Authentication failed';
+      if (e.code == 'user-not-found') message = 'No account found with this email.';
+      if (e.code == 'wrong-password') message = 'Incorrect password.';
+      if (e.code == 'email-already-in-use') message = 'Email already registered. Please Login.';
+      if (e.code == 'weak-password') message = 'Password is too weak.';
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
         );
       }
     } finally {
@@ -201,170 +208,312 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF07090E),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    if (_isCheckingAuth) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF080B10),
+        body: Center(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 25),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00FF87).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.4)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.verified, size: 14, color: Color(0xFF00FF87)),
-                    SizedBox(width: 6),
-                    Text('100% Instant UPI Payouts', style: TextStyle(fontSize: 11, color: Color(0xFF00FF87), fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 25),
               Container(
                 width: 90,
                 height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: const Color(0xFF00FF87).withOpacity(0.3), blurRadius: 25),
+                    BoxShadow(
+                      color: const Color(0xFF00FF87).withOpacity(0.3),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    )
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(45),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF151922),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF00FF87), width: 1.5),
-                      ),
-                      child: const Center(
-                        child: Text('TPL', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF00FF87))),
-                      ),
-                    ),
-                  ),
-                ),
+                child: Image.asset('assets/images/logo.png', errorBuilder: (_, __, ___) {
+                  return const Icon(Icons.flash_on, size: 50, color: Color(0xFF00FF87));
+                }),
               ),
-              const SizedBox(height: 18),
-              const Text('Welcome to TPL', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 6),
-              const Text('Play Games • Complete Tasks • Withdraw to UPI', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 30),
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF111520),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
-                ),
-                child: Column(
-                  children: [
-                    _featureRow(Icons.currency_rupee, 'Low Minimum Payout: Start at just ₹5', const Color(0xFF00FF87)),
-                    const SizedBox(height: 14),
-                    _featureRow(Icons.auto_awesome, '3 Free Lucky Spins & Scratch Daily', const Color(0xFFFFD700)),
-                    const SizedBox(height: 14),
-                    _featureRow(Icons.group_add, 'Earn ₹5 Cash on Every Referral', const Color(0xFF6C63FF)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 25),
-              if (!_showReferralField)
-                InkWell(
-                  onTap: () => setState(() => _showReferralField = true),
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.card_giftcard, size: 16, color: Color(0xFF00FF87)),
-                        SizedBox(width: 8),
-                        Text('Have an invite code? Tap to apply', style: TextStyle(color: Color(0xFF00FF87), fontSize: 13, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF151922),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.5)),
-                  ),
-                  child: TextField(
-                    controller: _referralController,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: InputDecoration(
-                      hintText: 'ENTER CODE (E.G. TPL8821)',
-                      hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
-                      border: InputBorder.none,
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.check_circle, color: Color(0xFF00FF87), size: 20),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Invite Code Saved!')),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 25),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _signInWithGoogle,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.black)
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.g_mobiledata, color: Colors.red, size: 34),
-                            SizedBox(width: 6),
-                            Text('Continue with Google', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-                          ],
-                        ),
+              const SizedBox(height: 24),
+              const Text(
+                'TASK PREMIER LEAGUE',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  letterSpacing: 2,
                 ),
               ),
               const SizedBox(height: 16),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF00FF87)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF080B10),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 10),
+
+              // Header Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00FF87).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.3)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.verified, color: Color(0xFF00FF87), size: 14),
+                    SizedBox(width: 6),
+                    Text(
+                      '100% Instant UPI Payouts',
+                      style: TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Logo & App Name
+              Container(
+                width: 75,
+                height: 75,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00FF87).withOpacity(0.2),
+                      blurRadius: 25,
+                      spreadRadius: 2,
+                    )
+                  ],
+                ),
+                child: Image.asset('assets/images/logo.png', errorBuilder: (_, __, ___) {
+                  return const Icon(Icons.flash_on, size: 45, color: Color(0xFF00FF87));
+                }),
+              ),
+              const SizedBox(height: 14),
               const Text(
+                'Welcome to TPL',
+                style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Play Games • Complete Tasks • Withdraw to UPI',
+                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+              ),
+
+              const SizedBox(height: 28),
+
+              // Switch Tab: Login vs Sign Up
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111622),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _isLoginMode = true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _isLoginMode ? const Color(0xFF00FF87) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Login',
+                              style: TextStyle(
+                                color: _isLoginMode ? Colors.black : Colors.white70,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _isLoginMode = false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: !_isLoginMode ? const Color(0xFF00FF87) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Create Account',
+                              style: TextStyle(
+                                color: !_isLoginMode ? Colors.black : Colors.white70,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Inputs Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111622),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                ),
+                child: Column(
+                  children: [
+                    // Email Field
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Email Address',
+                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
+                        filled: true,
+                        fillColor: const Color(0xFF080B10),
+                        prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF00FF87), size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Password Field
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Password (min 6 chars)',
+                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
+                        filled: true,
+                        fillColor: const Color(0xFF080B10),
+                        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF00FF87), size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    // Invite Code (Only in Sign-Up mode)
+                    if (!_isLoginMode) ...[
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _inviteController,
+                              textCapitalization: TextCapitalization.characters,
+                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                              decoration: InputDecoration(
+                                hintText: 'Invite Code (Optional)',
+                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
+                                filled: true,
+                                fillColor: const Color(0xFF080B10),
+                                prefixIcon: const Icon(Icons.card_giftcard, color: Colors.amber, size: 18),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _isInviteValid ? const Color(0xFF00FF87) : const Color(0xFF1F293D),
+                                foregroundColor: _isInviteValid ? Colors.black : Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                              onPressed: _isCheckingInvite ? null : _verifyInviteCode,
+                              child: _isCheckingInvite
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : Icon(
+                                      _isInviteValid ? Icons.check : Icons.arrow_forward,
+                                      size: 18,
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00FF87),
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 6,
+                        ),
+                        onPressed: _isLoading ? null : _handleSubmit,
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
+                              )
+                            : Text(
+                                _isLoginMode ? 'Login to TPL' : 'Create Account & Claim 50 Coins',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              Text(
                 'By signing in, you agree to TPL Terms & Privacy Policy',
-                style: TextStyle(fontSize: 10, color: Colors.white38),
-                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _featureRow(IconData icon, String text, Color color) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: color, size: 18),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white))),
-      ],
     );
   }
 }
