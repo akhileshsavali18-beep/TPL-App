@@ -2,6 +2,7 @@
 
 function loadSettings() {
   if (typeof db === 'undefined') return;
+  loadOfferwallSettings();
 
   // 1. Unity Ads Settings Load
   db.collection('settings').doc('unity_ads').onSnapshot(doc => {
@@ -19,6 +20,12 @@ function loadSettings() {
       if (document.getElementById('ads-interstitialId')) document.getElementById('ads-interstitialId').value = d.interstitialId || 'Interstitial_Android';
       if (document.getElementById('ads-bannerId')) document.getElementById('ads-bannerId').value = d.bannerId || 'Banner_Android';
       if (document.getElementById('ads-testMode')) document.getElementById('ads-testMode').checked = d.testMode ?? true;
+      if (document.getElementById('rewarded-enabled')) document.getElementById('rewarded-enabled').checked = d.rewardedAdsEnabled ?? true;
+      if (document.getElementById('interstitial-enabled')) document.getElementById('interstitial-enabled').checked = d.interstitialEnabled ?? true;
+      if (document.getElementById('rewarded-spin')) document.getElementById('rewarded-spin').checked = d.rewardedSpinEnabled ?? true;
+      if (document.getElementById('rewarded-scratch')) document.getElementById('rewarded-scratch').checked = d.rewardedScratchEnabled ?? true;
+      if (document.getElementById('rewarded-game')) document.getElementById('rewarded-game').checked = d.rewardedGameEnabled ?? true;
+      if (document.getElementById('rewarded-daily-limit')) document.getElementById('rewarded-daily-limit').value = d.rewardedDailyLimit ?? 10;
     }
   });
 
@@ -115,4 +122,40 @@ if (typeof auth !== 'undefined') {
   });
 } else {
   loadSettings();
+}
+
+
+async function saveRewardedAdsConfig() {
+  const data = {
+    rewardedAdsEnabled: document.getElementById('rewarded-enabled')?.checked ?? true,
+    interstitialEnabled: document.getElementById('interstitial-enabled')?.checked ?? true,
+    rewardedSpinEnabled: document.getElementById('rewarded-spin')?.checked ?? true,
+    rewardedScratchEnabled: document.getElementById('rewarded-scratch')?.checked ?? true,
+    rewardedGameEnabled: document.getElementById('rewarded-game')?.checked ?? true,
+    rewardedDailyLimit: parseInt(document.getElementById('rewarded-daily-limit')?.value || '10') || 0,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  await db.collection('settings').doc('unity_ads').set(data, {merge:true});
+  await db.collection('app_config').doc('ads').set(data, {merge:true});
+  showToast('Rewarded-ad controls saved live!');
+}
+
+async function saveCpaleadConfig() {
+  const cpaleadActive = document.getElementById('cpaleadEnabled')?.checked ?? false;
+  const cpaleadUrlTemplate = document.getElementById('cpaleadUrlInput')?.value.trim() || '';
+  const cpaleadPostbackUrl = document.getElementById('cpaleadPostbackUrl')?.value.trim() || '';
+  await db.collection('settings').doc('offerwalls').set({cpaleadActive, cpaleadUrlTemplate, cpaleadUrl: cpaleadUrlTemplate, cpaleadPostbackUrl, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+  showToast('CPAlead settings saved live!');
+}
+
+
+
+function loadOfferwallSettings() {
+  if (typeof db === 'undefined') return;
+  db.collection('settings').doc('offerwalls').onSnapshot(doc => {
+    const d = doc.exists ? doc.data() : {};
+    const active=document.getElementById('cpaleadEnabled'); if(active) active.checked=d.cpaleadActive !== false;
+    const url=document.getElementById('cpaleadUrlInput'); if(url) url.value=d.cpaleadUrlTemplate || d.cpaleadUrl || '';
+    const post=document.getElementById('cpaleadPostbackUrl'); if(post) post.value=d.cpaleadPostbackUrl || '';
+  });
 }
