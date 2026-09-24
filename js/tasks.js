@@ -3,7 +3,7 @@
 // ==========================================
 
 function switchTaskSubTab(sub) {
-  const subs = ['social', 'banners', 'games', 'offerwalls'];
+  const subs = ['social', 'offer', 'banners', 'games', 'future'];
   subs.forEach(s => {
     const view = document.getElementById('view-task-' + s);
     const btn = document.getElementById('subtab-' + s);
@@ -104,21 +104,6 @@ function loadTasksHub() {
     });
   });
 
-  // 4. Offerwalls Settings Sync
-  db.collection('settings').doc('offerwalls').get().then(doc => {
-    if (doc.exists) {
-      const d = doc.data();
-      const cpaleadToggle = document.getElementById('cpaleadEnabled');
-      const cpaleadInput = document.getElementById('cpaleadUrlInput');
-      const earnkaroToggle = document.getElementById('earnkaroEnabled');
-      const earnkaroInput = document.getElementById('earnkaroUrl');
-
-      if (cpaleadToggle) cpaleadToggle.checked = d.cpaleadActive !== false;
-      if (cpaleadInput && d.cpaleadUrl) cpaleadInput.value = d.cpaleadUrl;
-      if (earnkaroToggle) earnkaroToggle.checked = d.earnkaroActive !== false;
-      if (earnkaroInput && d.earnkaroUrl) earnkaroInput.value = d.earnkaroUrl;
-    }
-  });
 }
 
 // ⚡ 1-Click Sync Defaults from App to Firebase
@@ -136,7 +121,7 @@ async function seedDefaultTasks() {
 
 async function seedDefaultBanners() {
   const banners = [
-    { title: 'CPAlead Mega Offerwall', sub: 'Complete app installs & earn huge coins', targetUrl: 'https://fasttrk.net/offers?id=cpalead_tpl' },
+    { title: 'CPAlead Mega Offerwall', sub: 'Complete app installs & earn coins', targetUrl: '' },
     { title: 'Instant UPI Withdrawals', sub: 'Safe & direct cash payouts to bank account', targetUrl: '' },
     { title: 'Lucky Spin & Win', sub: 'Spin the wheel daily to grab bonus coins', targetUrl: '' }
   ];
