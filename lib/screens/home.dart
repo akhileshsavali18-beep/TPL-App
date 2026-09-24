@@ -86,7 +86,7 @@ class HomeScreen extends StatelessWidget {
                 }, childCount: docs.length));
               },
             ),
-            SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(16, 20, 16, 8), child: Row(children: [const Expanded(child: Text('🎮 Play & Win', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900))), TextButton(onPressed: onOpenGames, child: const Text('Games'))])),
+            SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(16, 20, 16, 8), child: Row(children: [const Expanded(child: Text('🎮 Play & Win', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900))), TextButton(onPressed: onOpenGames, child: const Text('Games'))]))),
             SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 28), child: Row(children: [
               Expanded(child: _quickCard(Icons.casino_rounded, 'Spin', 'Ad → Extra Spin', onOpenGames)),
               const SizedBox(width: 9),
