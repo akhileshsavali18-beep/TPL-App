@@ -58,22 +58,15 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF10251D), Color(0xFF111622)]), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.25))),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
                 child: Row(children: [
-                  Container(width: 50, height: 50, decoration: BoxDecoration(color: const Color(0xFF00FF87).withOpacity(0.12), borderRadius: BorderRadius.circular(15)), child: const Icon(Icons.local_offer_rounded, color: Color(0xFF00FF87), size: 28)),
-                  const SizedBox(width: 14),
-                  const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('CPAlead Offerwall', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
-                    SizedBox(height: 4),
-                    Text('App installs • Surveys • Signups • More offers', style: TextStyle(color: Colors.white60, fontSize: 11)),
-                  ])),
-                  ElevatedButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CpaleadOfferwallScreen())), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('OPEN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11))),
+                  const Expanded(child: Text('💰 All Offers', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900))),
+                  TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CpaleadOfferwallScreen())), child: const Text('Full Screen')),
                 ]),
               ),
             ),
+            const SliverToBoxAdapter(child: CpaleadOfferwallPanel(height: 620)),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
