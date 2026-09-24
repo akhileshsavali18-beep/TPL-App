@@ -534,8 +534,8 @@ async function fetchConfigs() {
       document.getElementById('earnkaroUrl').value = o.earnkaroUrl || '';
     }
 
-    // 3. P1 Core
-    var p1Snap = await firebase.firestore().collection('app_config').doc('core').get();
+    // 3. P1 Core (canonical live path)
+    var p1Snap = await firebase.firestore().collection('settings').doc('economy').get();
     if (p1Snap.exists) {
       var c = p1Snap.data();
       document.getElementById('p1-coinRate').value = c.coinRate || 100;
@@ -547,8 +547,8 @@ async function fetchConfigs() {
       document.getElementById('p1-maintenanceToggle').checked = c.maintenanceMode === true;
     }
 
-    // 4. P2 Game
-    var p2Snap = await firebase.firestore().collection('app_config').doc('game').get();
+    // 4. P2 Game (canonical live path)
+    var p2Snap = await firebase.firestore().collection('settings').doc('game_limits').get();
     if (p2Snap.exists) {
       var g = p2Snap.data();
       document.getElementById('p2-wheelSlices').value = (g.wheelSlices || [10, 50, 25, 100, 15, 200]).join(', ');
@@ -556,8 +556,8 @@ async function fetchConfigs() {
       document.getElementById('p2-scratchLimit').value = g.scratchLimit || 2;
     }
 
-    // 5. P3 Security
-    var p3Snap = await firebase.firestore().collection('app_config').doc('security').get();
+    // 5. P3 Security (canonical live path)
+    var p3Snap = await firebase.firestore().collection('settings').doc('security').get();
     if (p3Snap.exists) {
       var s = p3Snap.data();
       document.getElementById('p3-blockVPN').checked = s.blockVPN === true;
