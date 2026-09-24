@@ -35,6 +35,14 @@
       color: #000000;
       font-weight: 800;
     }
+    [id^="tabContent-"].hidden { display: none !important; }
+    .payout-filter-btn {
+      flex: 1; min-width: 0; padding: 8px 10px; border-radius: 12px;
+      font-size: 10px; font-weight: 900;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04); color: #9CA3AF;
+    }
+    .payout-filter-btn.active { background: #00FF87; color: #000; border-color: #00FF87; }
   </style>
 </head>
 <body class="min-h-screen pb-24 select-none">
@@ -502,121 +510,26 @@
   <script src="js/tasks.js"></script>
   <script src="js/settings.js"></script>
 
-  <!-- PURE MANUAL UPI PAYOUT ENGINE (Cashfree completely removed) -->
+  <!-- PURE MANUAL UPI PAYOUT ENGINE -->
   <script>
-    console.log("Manual UPI Payout Desk running...");
-
+    console.log("TPL Manual UPI Payout Desk running...");
     let cachedWithdrawals = [];
-
-    function listenWithdrawals() {
-      const container = document.getElementById('withdrawalsList');
-      if (!container || typeof db === 'undefined') return;
-
-      db.collection('withdrawals').onSnapshot(snap => {
-        if (snap.empty) {
-          container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs font-bold">No withdrawal requests found.</div>';
-          return;
-        }
-
-        cachedWithdrawals = [];
-        let pendingCount = 0;
-        let pendingAmount = 0.0;
-        let totalPaid = 0.0;
-
-        snap.forEach(d => {
-          const w = { id: d.id, ...d.data() };
-          cachedWithdrawals.push(w);
-
-          const amt = parseFloat(w.amount) || 0.0;
-          const st = (w.status || 'pending').toLowerCase();
-
-          if (st === 'pending') {
-            pendingCount++;
-            pendingAmount += amt;
-          } else if (['completed', 'success', 'settled', 'paid'].includes(st)) {
-            totalPaid += amt;
-          }
-        });
-
-        cachedWithdrawals.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
-        // Update Overview Live Numbers
-        const pCountEl = document.getElementById('statPendingCount');
-        const pAmtEl = document.getElementById('statPendingAmount');
-        const paidAmtEl = document.getElementById('statPaidAmount');
-        const badgeEl = document.getElementById('navBadge');
-
-        if (pCountEl) pCountEl.innerText = pendingCount;
-        if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
-        if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
-
-        if (badgeEl) {
-          badgeEl.innerText = pendingCount;
-          if (pendingCount > 0) badgeEl.classList.remove('hidden');
-          else badgeEl.classList.add('hidden');
-        }
-
-        // Render List of Manual UPI Withdrawals
-        container.innerHTML = '';
-        cachedWithdrawals.forEach(w => {
-          const st = (w.status || 'pending').toLowerCase();
-          const isPending = st === 'pending';
-          const isSuccess = ['completed', 'success', 'settled', 'paid'].includes(st);
-
-          let badgeClass = isSuccess ? 'bg-green-400/10 text-green-400 border border-green-400/20' : 'bg-amber-400/10 text-amber-400 border border-amber-400/20';
-
-          const div = document.createElement('div');
-          div.className = 'dark-card p-4 rounded-2xl space-y-3';
-          div.innerHTML = `
-            <div class="flex items-start justify-between">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-black text-white">${w.userName || 'TPL Player'}</span>
-                  <span class="text-[9px] font-black px-2 py-0.5 rounded-md uppercase ${badgeClass}">${isSuccess ? '✅ Paid (Manual UPI)' : '⏳ Pending'}</span>
-                </div>
-                <div class="text-[11px] text-gray-400 mt-0.5">${w.type || 'Cash Balance'}</div>
-                <div class="flex items-center gap-1.5 text-xs text-gray-300 font-semibold mt-1">
-                  <span>${w.upiId || 'No UPI'}</span>
-                  <button onclick="copyToClipboard('${w.upiId || ''}')" class="text-gray-500 hover:text-green-400 text-[10px]">📋 Copy</button>
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="text-xl font-black text-green-400">₹${parseFloat(w.amount || 0).toFixed(2)}</div>
-                <div class="text-[9px] text-gray-500">${w.createdAt?.toDate ? w.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recent'}</div>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2 pt-2 border-t border-white/5">
-              ${isPending ? `
-                <button onclick="payViaUPI('${w.upiId || ''}', ${w.amount \vert{}\vert{} 0}, '${w.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
-                  <span>📲 Pay via UPI</span>
-                </button>
-              ` : ''}
-
-              <button onclick="openWithdrawalDetails('${w.id}')" class="flex-1 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-xl text-xs font-bold active:scale-95">
-                👁 View Details
-              </button>
-
-              <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount || 0}, '${w.upiId || ''}', '${w.type || 'Cash'}', '${st}', this.value)" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
-                <option value="pending" ${isPending ? 'selected' : ''}>⏳ Pending</option>
-                <option value="completed" ${isSuccess ? 'selected' : ''}>✅ Paid (Success)</option>
-                <option value="rejected" ${st === 'rejected' ? 'selected' : ''}>❌ Reject & Refund</option>
-              </select>
-            </div>
-          `;
-          container.appendChild(div);
-        });
-      }, err => {
-        if (container) container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Firestore Error: ${err.message}</div>`;
-      });
+    let payoutFilter = 'all';
+    let payoutUnsubscribe = null;
+    const SUCCESS_STATUSES = ['completed', 'success', 'settled', 'paid'];
+    const FAILED_STATUSES = ['rejected', 'failed', 'cancelled'];
+    const normalizePayoutStatus = status => {
+      const s = String(status || 'pending').toLowerCase();
+      if (SUCCESS_STATUSES.includes(s)) return 'success';
+      if (FAILED_STATUSES.includes(s)) return 'failed';
+      return 'pending';
+    };
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
-
-
-    function closeWithdrawalDetails() {
-      const modal = document.getElementById('withdrawalDetailsModal');
-      if (modal) modal.classList.add('hidden');
+    function safeJsString(value) {
+      return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     }
-
     function formatAdminTimestamp(value) {
       if (!value) return '—';
       try {
@@ -625,111 +538,190 @@
         return new Date(value).toLocaleString();
       } catch (e) { return '—'; }
     }
-
     function withdrawalDetailRow(label, value) {
       return '<div class="flex justify-between gap-4 p-3 rounded-xl bg-black/30 border border-white/5">' +
-        '<span class="text-[10px] text-gray-500 font-bold uppercase">' + label + '</span>' +
-        '<span class="text-xs text-gray-200 font-semibold text-right break-all">' + (value || '—') + '</span>' +
-      '</div>';
+        '<span class="text-[10px] text-gray-500 font-bold uppercase">' + escapeHtml(label) + '</span>' +
+        '<span class="text-xs text-gray-200 font-semibold text-right break-all">' + escapeHtml(value || '—') + '</span></div>';
     }
-
+    function ensurePayoutToolbar() {
+      const container = document.getElementById('withdrawalsList');
+      if (!container || document.getElementById('payoutFilterBar')) return;
+      const bar = document.createElement('div');
+      bar.id = 'payoutFilterBar';
+      bar.className = 'dark-card p-2 rounded-2xl grid grid-cols-4 gap-1.5 sticky top-16 z-20';
+      bar.innerHTML = '<button class="payout-filter-btn active" data-filter="all">All <span data-count="all">0</span></button>' +
+        '<button class="payout-filter-btn" data-filter="pending">Pending <span data-count="pending">0</span></button>' +
+        '<button class="payout-filter-btn" data-filter="success">Success <span data-count="success">0</span></button>' +
+        '<button class="payout-filter-btn" data-filter="failed">Failed <span data-count="failed">0</span></button>';
+      bar.querySelectorAll('.payout-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          payoutFilter = btn.dataset.filter || 'all';
+          bar.querySelectorAll('.payout-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+          renderPayoutQueue();
+        });
+      });
+      container.parentElement.insertBefore(bar, container);
+    }
+    function updatePayoutCounts() {
+      const counts = { all: cachedWithdrawals.length, pending: 0, success: 0, failed: 0 };
+      cachedWithdrawals.forEach(w => counts[normalizePayoutStatus(w.status)]++);
+      Object.keys(counts).forEach(key => {
+        const el = document.querySelector('[data-count="' + key + '"]');
+        if (el) el.textContent = counts[key];
+      });
+    }
+    function updateOverviewStats() {
+      let pendingCount = 0, pendingAmount = 0, totalPaid = 0;
+      cachedWithdrawals.forEach(w => {
+        const amount = Number(w.amount) || 0;
+        const status = normalizePayoutStatus(w.status);
+        if (status === 'pending') { pendingCount++; pendingAmount += amount; }
+        else if (status === 'success') totalPaid += amount;
+      });
+      const pCountEl = document.getElementById('statPendingCount');
+      const pAmtEl = document.getElementById('statPendingAmount');
+      const paidAmtEl = document.getElementById('statPaidAmount');
+      const badgeEl = document.getElementById('navBadge');
+      if (pCountEl) pCountEl.innerText = pendingCount;
+      if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
+      if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
+      if (badgeEl) { badgeEl.innerText = pendingCount; badgeEl.classList.toggle('hidden', pendingCount === 0); }
+    }
+    function renderPayoutQueue() {
+      const container = document.getElementById('withdrawalsList');
+      if (!container) return;
+      ensurePayoutToolbar();
+      const visible = payoutFilter === 'all' ? cachedWithdrawals : cachedWithdrawals.filter(w => normalizePayoutStatus(w.status) === payoutFilter);
+      if (!visible.length) {
+        container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs font-bold">No ' + escapeHtml(payoutFilter === 'all' ? '' : payoutFilter + ' ') + 'withdrawal requests found.</div>';
+        return;
+      }
+      container.innerHTML = '';
+      visible.forEach(w => {
+        const rawStatus = String(w.status || 'pending').toLowerCase();
+        const status = normalizePayoutStatus(rawStatus);
+        const isPending = status === 'pending', isSuccess = status === 'success', isFailed = status === 'failed';
+        const badgeClass = isSuccess ? 'bg-green-400/10 text-green-400 border border-green-400/20' : isFailed ? 'bg-red-400/10 text-red-400 border border-red-400/20' : 'bg-amber-400/10 text-amber-400 border border-amber-400/20';
+        const type = w.type || 'Cash Balance';
+        const email = w.userEmail || w.email || '';
+        const amount = Number(w.amount) || 0;
+        const statusLabel = isSuccess ? 'SUCCESS / PAID' : isFailed ? 'FAILED / REFUNDED' : 'PENDING';
+        const div = document.createElement('div');
+        div.className = 'dark-card p-4 rounded-2xl space-y-3';
+        div.innerHTML =
+          '<div class="flex items-start justify-between gap-3">' +
+            '<div class="min-w-0">' +
+              '<div class="flex flex-wrap items-center gap-2"><span class="text-sm font-black text-white">' + escapeHtml(w.userName || 'TPL Player') + '</span>' +
+              '<span class="text-[9px] font-black px-2 py-0.5 rounded-md uppercase ' + badgeClass + '">' + statusLabel + '</span></div>' +
+              '<div class="text-[11px] text-gray-400 mt-0.5">' + escapeHtml(type) + '</div>' +
+              '<div class="text-[10px] text-gray-500 mt-0.5 break-all">' + escapeHtml(email) + '</div>' +
+              '<div class="flex items-center gap-1.5 text-xs text-gray-300 font-semibold mt-1"><span class="break-all">' + escapeHtml(w.upiId || 'No UPI') + '</span>' +
+              (w.upiId ? '<button onclick="copyToClipboard(\'' + safeJsString(w.upiId) + '\')" class="text-gray-500 hover:text-green-400 text-[10px]">📋 Copy</button>' : '') + '</div>' +
+            '</div>' +
+            '<div class="text-right shrink-0"><div class="text-xl font-black text-green-400">₹' + amount.toFixed(2) + '</div><div class="text-[9px] text-gray-500">' + escapeHtml(formatAdminTimestamp(w.createdAt)) + '</div></div>' +
+          '</div>' +
+          '<div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">' +
+            (isPending ? '<button onclick="payViaUPI(\'' + safeJsString(w.upiId) + '\', ' + amount + ', \'' + safeJsString(w.id) + '\')" class="py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 active:scale-95">📲 Pay via UPI</button>' : '<div class="py-2.5 bg-white/5 border border-white/10 text-gray-400 rounded-xl text-xs font-bold text-center">' + (isSuccess ? '✓ Payment Marked Paid' : '↩ Amount Refunded') + '</div>') +
+            '<button onclick="openWithdrawalDetails(\'' + safeJsString(w.id) + '\')" class="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-xl text-xs font-bold active:scale-95">👁 View Details</button>' +
+          '</div>' +
+          '<div class="grid grid-cols-2 gap-2">' +
+            '<select ' + (isPending ? '' : 'disabled') + ' onchange="updateWithdrawalStatus(\'' + safeJsString(w.id) + '\', \'' + safeJsString(w.uid) + '\', ' + amount + ', \'' + safeJsString(w.upiId) + '\', \'' + safeJsString(type) + '\', \'' + safeJsString(rawStatus) + '\', this.value)" class="w-full py-2.5 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none disabled:opacity-70">' +
+              '<option value="pending" ' + (isPending ? 'selected' : '') + '>⏳ Pending</option><option value="completed">✅ Success / Paid</option><option value="rejected">❌ Failed / Refund</option>' +
+            '</select>' +
+            '<div class="py-2.5 px-2 rounded-xl bg-black/30 border border-white/5 text-[10px] text-gray-500 font-semibold text-center">Requested<br>' + escapeHtml(formatAdminTimestamp(w.createdAt)) + '</div>' +
+          '</div>';
+        container.appendChild(div);
+      });
+      updatePayoutCounts();
+    }
+    function listenWithdrawals() {
+      const container = document.getElementById('withdrawalsList');
+      if (!container || typeof db === 'undefined') return;
+      ensurePayoutToolbar();
+      if (payoutUnsubscribe) { payoutUnsubscribe(); payoutUnsubscribe = null; }
+      container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs font-bold">Connecting to payout queue...</div>';
+      payoutUnsubscribe = db.collection('withdrawals').onSnapshot(snap => {
+        cachedWithdrawals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        cachedWithdrawals.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        updateOverviewStats(); updatePayoutCounts(); renderPayoutQueue();
+      }, err => {
+        cachedWithdrawals = []; updateOverviewStats(); updatePayoutCounts();
+        container.innerHTML = '<div class="dark-card p-5 rounded-2xl border border-red-500/20 text-center"><div class="text-red-400 text-xs font-black">⚠️ Payout queue unavailable</div><div class="text-gray-500 text-[10px] mt-1">' + escapeHtml(err.message || 'Firestore connection error') + '</div><button onclick="listenWithdrawals()" class="mt-3 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-xs font-bold">Retry</button></div>';
+      });
+    }
+    function closeWithdrawalDetails() { const modal = document.getElementById('withdrawalDetailsModal'); if (modal) modal.classList.add('hidden'); }
     function openWithdrawalDetails(reqId) {
       const w = cachedWithdrawals.find(item => item.id === reqId);
       if (!w) return alert('Withdrawal request not found!');
-
-      const status = (w.status || 'pending').toLowerCase();
-      const statusLabel = ['completed','success','settled','paid'].includes(status)
-        ? '✅ Paid / Success'
-        : status === 'rejected'
-          ? '❌ Rejected / Refunded'
-          : '⏳ Pending';
-
-      document.getElementById('withdrawalDetailsStatus').innerText =
-        statusLabel + ' • Updated ' + formatAdminTimestamp(w.updatedAt || w.createdAt);
-
+      const status = normalizePayoutStatus(w.status);
+      const statusLabel = status === 'success' ? '✅ Paid / Success' : status === 'failed' ? '❌ Failed / Refunded' : '⏳ Pending';
+      document.getElementById('withdrawalDetailsStatus').innerText = statusLabel + ' • Updated ' + formatAdminTimestamp(w.updatedAt || w.createdAt);
       document.getElementById('withdrawalDetailsBody').innerHTML = [
-        withdrawalDetailRow('User', w.userName || 'TPL Player'),
-        withdrawalDetailRow('Email', w.email || '—'),
-        withdrawalDetailRow('User ID', w.uid || '—'),
-        withdrawalDetailRow('UPI ID', w.upiId || '—'),
-        withdrawalDetailRow('Amount', '₹' + (parseFloat(w.amount) || 0).toFixed(2)),
-        withdrawalDetailRow('Type', w.type || 'Cash Balance'),
-        withdrawalDetailRow('Status', statusLabel),
-        withdrawalDetailRow('Mode', w.mode || 'manual'),
-        withdrawalDetailRow('Requested', formatAdminTimestamp(w.createdAt)),
-        withdrawalDetailRow('Last Updated', formatAdminTimestamp(w.updatedAt)),
-        withdrawalDetailRow('Paid At', formatAdminTimestamp(w.paidAt))
+        withdrawalDetailRow('User', w.userName || 'TPL Player'), withdrawalDetailRow('Email', w.userEmail || w.email || '—'),
+        withdrawalDetailRow('User ID', w.uid || '—'), withdrawalDetailRow('UPI ID', w.upiId || '—'),
+        withdrawalDetailRow('Amount', '₹' + (Number(w.amount) || 0).toFixed(2)), withdrawalDetailRow('Type', w.type || 'Cash Balance'),
+        withdrawalDetailRow('Status', statusLabel), withdrawalDetailRow('Mode', w.mode || 'manual'),
+        withdrawalDetailRow('Requested', formatAdminTimestamp(w.createdAt)), withdrawalDetailRow('Last Updated', formatAdminTimestamp(w.updatedAt)),
+        withdrawalDetailRow('Paid At', formatAdminTimestamp(w.paidAt)), withdrawalDetailRow('Failed / Refunded At', formatAdminTimestamp(w.failedAt))
       ].join('');
-
       document.getElementById('withdrawalDetailsModal').classList.remove('hidden');
     }
-
     function payViaUPI(upiId, amount, reqId) {
       if (!upiId) return alert('UPI ID not found!');
-      window.location.href = `upi://pay?pa=${upiId.trim()}&pn=TPL%20App&am=${parseFloat(amount).toFixed(2)}&tn=${encodeURIComponent('TPL PAYOUT ' + reqId)}&cu=INR`;
+      const uri = 'upi://pay?pa=' + encodeURIComponent(upiId.trim()) + '&pn=' + encodeURIComponent('TPL App') + '&am=' + Number(amount).toFixed(2) + '&tn=' + encodeURIComponent('TPL WITHDRAWAL') + '&cu=INR';
+      window.location.href = uri;
     }
-
     async function updateWithdrawalStatus(reqId, uid, amount, upiId, type, oldStatus, newStatus) {
       if (oldStatus === newStatus) return;
-
+      const oldNormalized = normalizePayoutStatus(oldStatus), newNormalized = normalizePayoutStatus(newStatus);
+      if (oldNormalized !== 'pending') return alert('This withdrawal is already finalized.');
       try {
-        await db.collection('withdrawals').doc(reqId).update({
-          status: newStatus,
-          mode: 'manual',
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          ...(newStatus === 'completed' ? { paidAt: firebase.firestore.FieldValue.serverTimestamp() } : {})
-        });
-
-        // Auto refund on rejection
-        if (newStatus === 'rejected' && oldStatus === 'pending' && uid) {
-          const isRefer = (type || '').toLowerCase().includes('refer');
-          const refundField = isRefer ? 'referCash' : 'taskCash';
-
-          await db.collection('users').doc(uid).update({
-            [refundField]: firebase.firestore.FieldValue.increment(parseFloat(amount))
+        const withdrawalRef = db.collection('withdrawals').doc(reqId);
+        const userRef = uid ? db.collection('users').doc(uid) : null;
+        const isRefer = String(type || '').toLowerCase().includes('refer');
+        const refundField = isRefer ? 'referCash' : 'taskCash';
+        const numericAmount = Number(amount) || 0;
+        if (newNormalized === 'failed') {
+          if (!userRef) throw new Error('User ID is missing; cannot safely refund this withdrawal.');
+          const notificationRef = userRef.collection('notifications').doc();
+          await db.runTransaction(async transaction => {
+            const withdrawalSnap = await transaction.get(withdrawalRef);
+            const userSnap = await transaction.get(userRef);
+            if (!withdrawalSnap.exists) throw new Error('Withdrawal request no longer exists.');
+            if (!userSnap.exists) throw new Error('User account not found.');
+            if (normalizePayoutStatus(withdrawalSnap.data().status) !== 'pending') throw new Error('This withdrawal was already finalized.');
+            transaction.update(withdrawalRef, { status: 'rejected', mode: 'manual', updatedAt: firebase.firestore.FieldValue.serverTimestamp(), failedAt: firebase.firestore.FieldValue.serverTimestamp(), refunded: true, refundedAmount: numericAmount });
+            transaction.update(userRef, { [refundField]: firebase.firestore.FieldValue.increment(numericAmount) });
+            transaction.set(notificationRef, { title: '❌ Withdrawal Failed', message: 'Your withdrawal of ₹' + numericAmount.toFixed(2) + ' failed. ₹' + numericAmount.toFixed(2) + ' has been refunded to your ' + (isRefer ? 'Referral' : 'Cash') + ' balance.', read: false, type: 'withdrawal', withdrawalId: reqId, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
           });
-
-          await db.collection('users').doc(uid).collection('notifications').add({
-            title: '❌ Withdrawal Rejected',
-            message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} was rejected. Money refunded to balance.`,
-            read: false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-
-          showToast(`Rejected & ₹${amount} Refunded to User!`);
-          return;
+          showToast('Failed & ₹' + numericAmount.toFixed(2) + ' refunded to user.'); return;
         }
-        if (newStatus === 'completed' && uid) {
-          await db.collection('users').doc(uid).collection('notifications').add({
-            title: '🎉 Payout Successful!',
-            message: `Your withdrawal of ₹${parseFloat(amount).toFixed(2)} has been paid to your UPI!`,
-            read: false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        if (newNormalized === 'success') {
+          const notificationRef = uid ? userRef.collection('notifications').doc() : null;
+          await db.runTransaction(async transaction => {
+            const withdrawalSnap = await transaction.get(withdrawalRef);
+            if (!withdrawalSnap.exists) throw new Error('Withdrawal request no longer exists.');
+            if (normalizePayoutStatus(withdrawalSnap.data().status) !== 'pending') throw new Error('This withdrawal was already finalized.');
+            transaction.update(withdrawalRef, { status: 'completed', mode: 'manual', updatedAt: firebase.firestore.FieldValue.serverTimestamp(), paidAt: firebase.firestore.FieldValue.serverTimestamp(), paymentNote: 'TPL WITHDRAWAL' });
+            if (notificationRef) transaction.set(notificationRef, { title: '🎉 Withdrawal Successful', message: 'Your withdrawal of ₹' + numericAmount.toFixed(2) + ' has been paid to your UPI ID.', read: false, type: 'withdrawal', withdrawalId: reqId, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
           });
-
-          showToast('Status: Paid via UPI & Notification Sent!');
-          return;
+          showToast('Payment marked Success & user notified.'); return;
         }
-
-        showToast('Status updated to ' + newStatus);
-      } catch (e) {
-        alert('Error updating status: ' + e.message);
-      }
+      } catch (e) { alert('Error updating payout: ' + (e.message || e)); }
     }
-
     function copyToClipboard(text) {
       if (!text) return;
-      navigator.clipboard.writeText(text);
-      showToast('Copied: ' + text);
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => showToast('UPI ID copied!')).catch(() => showToast('Copy failed.'));
+      else showToast('Clipboard unavailable.');
     }
-
-    listenWithdrawals();
-
-    if (typeof auth !== 'undefined') {
-      auth.onAuthStateChanged(user => {
-        if (user) listenWithdrawals();
-      });
+    function updateAdminConnectionStatus(online) {
+      const headerText = document.querySelector('header .text-\\[10px\\].text-gray-400');
+      if (headerText) headerText.textContent = online ? 'Remote Engine Synced' : 'Offline — Reconnecting...';
     }
+    window.addEventListener('online', () => updateAdminConnectionStatus(true));
+    window.addEventListener('offline', () => updateAdminConnectionStatus(false));
+    updateAdminConnectionStatus(navigator.onLine);
+    if (typeof auth !== 'undefined') auth.onAuthStateChanged(user => { if (user) listenWithdrawals(); else if (payoutUnsubscribe) { payoutUnsubscribe(); payoutUnsubscribe = null; } });
   </script>
 </body>
 </html>
