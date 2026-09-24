@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 import '../services/ad_service.dart';
 import '../widgets/unity_banner_widget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -44,9 +43,6 @@ class _WheelItem {
 class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStateMixin {
   // Remote Ads Configuration from Admin Panel
   bool _adsActive = true;
-  String _unityGameId = '5868205';
-  String _rewardedPlacementId = 'BP_Rewarded_Android';
-  bool _unityInitialized = false;
 
   late AnimationController _spinController;
   late Animation<double> _spinAnimation;
@@ -114,7 +110,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 3800),
     );
-    _listenRemoteUnityAds();
     _listenRemoteGameLimits();
   }
 
@@ -123,33 +118,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     _spinController.dispose();
     _audioPlayer.dispose();
     super.dispose();
-  }
-
-  // 📡 Listen to Unity Ads switch and settings from Admin Panel
-  void _listenRemoteUnityAds() {
-    FirebaseFirestore.instance
-        .collection('settings')
-        .doc('unity_ads')
-        .snapshots()
-        .listen((snap) {
-      if (snap.exists && mounted) {
-        final data = snap.data();
-        if (data != null) {
-          setState(() {
-            _adsActive = data['adsActive'] ?? true;
-            if (data['gameId'] != null && data['gameId'].toString().trim().isNotEmpty) {
-              _unityGameId = data['gameId'].toString().trim();
-            }
-            if (data['rewardedId'] != null && data['rewardedId'].toString().trim().isNotEmpty) {
-              _rewardedPlacementId = data['rewardedId'].toString().trim();
-            }
-          });
-          _initUnityAds(data['testMode'] ?? false);
-        }
-      } else {
-        _initUnityAds(false);
-      }
-    });
   }
 
   void _listenRemoteGameLimits() {
@@ -195,25 +163,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         return const Color(0xFFFFD700);
       default:
         return const Color(0xFF00C0FF);
-    }
-  }
-
-  void _initUnityAds(bool testMode) {
-    if (_unityInitialized) return;
-    try {
-      UnityAds.init(
-        gameId: _unityGameId,
-        testMode: testMode,
-        onComplete: () {
-          debugPrint('Unity Ads Initialized Successfully: $_unityGameId');
-          _unityInitialized = true;
-        },
-        onFailed: (error, message) {
-          debugPrint('Unity Ads Init Failed: $error - $message');
-        },
-      );
-    } catch (e) {
-      debugPrint('Unity init exception: $e');
     }
   }
 
@@ -368,7 +317,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     final config = RemoteConfigService.instance;
     try {
       if (await canLaunchUrlString(url)) {
-        if (config.rewardedGameEnabled) {
+        if (config.interstitialEnabled) {
           await AdService.instance.showInterstitialAd(context: context);
         }
         await launchUrlString(url, mode: LaunchMode.externalApplication);
