@@ -219,21 +219,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     final screens = [
-      HomeScreen(
-        coins: coins,
-        onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
-        onOpenWallet: () => switchTab(4),
-        streakClaimed: streakClaimedToday,
-        onClaimStreak: () {
-          if (!streakClaimedToday && currentUid != null) {
-            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-              'streakClaimedToday': true,
-            });
-            _updateCoinsInFirebase(20, 'Daily Streak Day 1');
-          }
-        },
-        onTaskClick: (name, reward) => switchTab(1),
-      ),
+      const HomeScreen(),
       TasksTabScreen(
         onCompleteTask: (name, reward) {
           _updateCoinsInFirebase(reward, 'Completed $name');
@@ -274,10 +260,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         },
       ),
     ];
-
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const SideProfileDrawer(),
+      drawer: const ProfileDrawer(),
       body: screens[_currentIndex],
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
