@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'services/security_service.dart';
 import 'services/ad_service.dart';
 import 'services/remote_config_service.dart';
+import 'services/app_update_service.dart';
 
 // Screens
 import 'screens/splash_login.dart';
@@ -97,6 +98,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.initState();
     _checkVpnStatus();
     _listenToUserData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) AppUpdateService.instance.checkAndPrompt(context);
+      });
+    });
   }
 
   Future<void> _checkVpnStatus() async {
