@@ -373,7 +373,7 @@ async function deleteTask(id) {
 
 // B. Home Banners (Top Carousel)
 function fetchBanners() {
-  firebase.firestore().collection('home_banners').orderBy('createdAt', 'desc').onSnapshot(function(snap) {
+  firebase.firestore().collection('banners').orderBy('createdAt', 'desc').onSnapshot(function(snap) {
     var list = document.getElementById('bannersList');
     list.innerHTML = '';
     if (snap.empty) {
@@ -430,7 +430,7 @@ async function deleteBanner(id) {
 
 // C. Gamezop Mini Games
 function fetchGames() {
-  firebase.firestore().collection('mini_games').onSnapshot(function(snap) {
+  firebase.firestore().collection('games').onSnapshot(function(snap) {
     var list = document.getElementById('gamesList');
     list.innerHTML = '';
     if (snap.empty) {
