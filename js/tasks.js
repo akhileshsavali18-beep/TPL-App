@@ -3,7 +3,7 @@
 // ==========================================
 
 function switchTaskSubTab(sub) {
-  const subs = ['social', 'offer', 'banners', 'games', 'future'];
+  const subs = ['social', 'offerwalls', 'banners', 'games', 'future'];
   subs.forEach(s => {
     const view = document.getElementById('view-task-' + s);
     const btn = document.getElementById('subtab-' + s);
