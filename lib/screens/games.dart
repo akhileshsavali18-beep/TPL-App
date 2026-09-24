@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
+import '../services/ad_service.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -243,27 +244,15 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   void _watchAdAndSpin() {
     if (widget.spinsLeft <= 0 || _isSpinning) return;
-
-    // If Admin paused ads in settings, spin directly
-    if (!_adsActive) {
-      _spinWheel();
+    final config = RemoteConfigService.instance;
+    if (!config.rewardedSpinEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Extra Spin ads are currently disabled.')));
       return;
     }
-
-    UnityAds.showVideoAd(
-      placementId: _rewardedPlacementId,
-      onComplete: (id) => _spinWheel(),
-      onFailed: (id, err, msg) {
-        debugPrint("Ad notice: $err. Spinning directly.");
-        _spinWheel();
-      },
-      onSkipped: (id) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Watch full ad to get your daily spin!')),
-          );
-        }
-      },
+    AdService.instance.showRewardedAd(
+      context: context,
+      onReward: _spinWheel,
+      onFailed: () {},
     );
   }
 
@@ -302,7 +291,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
       if (wonItem.coins > 0) {
         _playWinSound();
-        widget.onSpinWin(wonItem.coins);
+        // Game bonus is not cashable and does not change wallet coins.
       }
 
       showDialog(
@@ -323,7 +312,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
           ),
           content: Text(
             wonItem.coins > 0
-                ? 'You won +${wonItem.coins} Coins in the Lucky Wheel!'
+                ? 'You won a game bonus! Your wallet coins are earned from tasks and offers.'
                 : 'No luck this time. Come back tomorrow for your next spin!',
             style: const TextStyle(fontSize: 14, color: Colors.white70),
           ),
@@ -340,24 +329,15 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   void _watchAdAndScratch() {
     if (_taskProgress < 3 || _scratchRevealed) return;
-
-    // If Admin paused ads, scratch directly
-    if (!_adsActive) {
-      _revealScratchReward();
+    final config = RemoteConfigService.instance;
+    if (!config.rewardedScratchEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Scratch ads are currently disabled.')));
       return;
     }
-
-    UnityAds.showVideoAd(
-      placementId: _rewardedPlacementId,
-      onComplete: (id) => _revealScratchReward(),
-      onFailed: (id, err, msg) => _revealScratchReward(),
-      onSkipped: (id) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Watch full video to scratch!')),
-          );
-        }
-      },
+    AdService.instance.showRewardedAd(
+      context: context,
+      onReward: _revealScratchReward,
+      onFailed: () {},
     );
   }
 
@@ -365,7 +345,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     setState(() => _scratchRevealed = true);
     _playWinSound();
     HapticFeedback.mediumImpact();
-    widget.onScratchWin(6);
+    // Scratch is a gameplay bonus only; it never credits cashable coins.
 
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
@@ -375,7 +355,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('🎉 +6 Coins added! Complete 3 more tasks to unlock another card.'),
+            content: Text('🎉 Bonus scratch completed! Complete 3 more games to unlock another card.'),
             backgroundColor: Color(0xFF00FF87),
           ),
         );
@@ -384,10 +364,13 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   }
 
   Future<void> _playGame(String url, int coins, String title) async {
+    final config = RemoteConfigService.instance;
     try {
       if (await canLaunchUrlString(url)) {
+        if (config.rewardedGameEnabled) {
+          await AdService.instance.showInterstitialAd(context: context);
+        }
         await launchUrlString(url, mode: LaunchMode.externalApplication);
-        widget.onSpinWin(coins);
         if (_taskProgress < 3) {
           setState(() => _taskProgress += 1);
         }
@@ -467,7 +450,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 children: [
                   const Text('Lucky Spin Wheel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  const Text('Win up to 200 Free Coins daily', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text('Play & unlock game bonuses daily', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 20),
 
                   Stack(
@@ -699,7 +682,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '+${game['coins']} Coins & Task +1',
+                              '+1 Game Progress',
                               style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ],
