@@ -219,7 +219,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     final screens = [
-      const HomeScreen(),
+      HomeScreen(
+        onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+      ),
       TasksTabScreen(
         onCompleteTask: (name, reward) {
           _updateCoinsInFirebase(reward, 'Completed $name');
@@ -262,7 +264,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const ProfileDrawer(),
+      drawer: ProfileDrawer(
+        onWalletTap: () => switchTab(4),
+        onReferTap: () => switchTab(3),
+      ),
       body: screens[_currentIndex],
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
