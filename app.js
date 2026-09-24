@@ -413,7 +413,7 @@ async function saveNewBanner() {
   var targetUrl = document.getElementById('bannerTargetUrl').value.trim();
   if (!title || !imageUrl) return alert('Banner title & Image URL required!');
 
-  await firebase.firestore().collection('home_banners').add({
+  await firebase.firestore().collection('banners').add({
     title: title, imageUrl: imageUrl, targetUrl: targetUrl, isActive: true,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
@@ -471,8 +471,8 @@ async function saveNewGame() {
   var gameUrl = document.getElementById('gameUrl').value.trim();
   if (!title || !gameUrl) return alert('Title and Game URL required!');
 
-  await firebase.firestore().collection('mini_games').add({
-    title: title, coins: coins, iconUrl: iconUrl, gameUrl: gameUrl, isActive: true,
+  await firebase.firestore().collection('games').add({
+    title: title, coins: coins, iconUrl: iconUrl, url: gameUrl, gameUrl: gameUrl, isActive: true,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
   closeAddGameModal();
@@ -603,11 +603,15 @@ async function saveP1Config() {
   var maintenanceMode = document.getElementById('p1-maintenanceToggle').checked;
 
   try {
-    await firebase.firestore().collection('app_config').doc('core').set({
+    const data = {
       coinRate: coinRate, referBonus: referBonus, minTask: minTask, minRefer: minRefer,
       announcement: announcement, showAnnouncement: showAnnouncement, maintenanceMode: maintenanceMode,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    await Promise.all([
+      firebase.firestore().collection('settings').doc('economy').set(data, { merge: true }),
+      firebase.firestore().collection('app_config').doc('core').set(data, { merge: true })
+    ]);
     showToast('P1 Core Config Saved!');
   } catch (e) {
     alert('Error: ' + e.message);
@@ -621,10 +625,14 @@ async function saveP2Config() {
   var scratchLimit = parseInt(document.getElementById('p2-scratchLimit').value) || 2;
 
   try {
-    await firebase.firestore().collection('app_config').doc('game').set({
+    const data = {
       wheelSlices: wheelSlices, spinLimit: spinLimit, scratchLimit: scratchLimit,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    await Promise.all([
+      firebase.firestore().collection('settings').doc('game_limits').set(data, { merge: true }),
+      firebase.firestore().collection('app_config').doc('game').set(data, { merge: true })
+    ]);
     showToast('P2 Game Config Saved!');
   } catch (e) {
     alert('Error: ' + e.message);
@@ -637,10 +645,14 @@ async function saveP3Config() {
   var oneDevice = document.getElementById('p3-oneDevice').checked;
 
   try {
-    await firebase.firestore().collection('app_config').doc('security').set({
+    const data = {
       blockVPN: blockVPN, blockRooted: blockRooted, oneDevice: oneDevice,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    await Promise.all([
+      firebase.firestore().collection('settings').doc('security').set(data, { merge: true }),
+      firebase.firestore().collection('app_config').doc('security').set(data, { merge: true })
+    ]);
     showToast('P3 Security Shield Saved!');
   } catch (e) {
     alert('Error: ' + e.message);
