@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 import 'remote_config_service.dart';
 
@@ -9,25 +11,20 @@ class AdService {
   DateTime? _lastAdTime;
   bool _isInitialized = false;
 
-  /// Unity Ads ಇನಿಶಿಯಲೈಸೇಶನ್ (Admin Config ಆಧಾರದಲ್ಲಿ)
   Future<void> init() async {
     final config = RemoteConfigService.instance;
-    if (!config.adsEnabled) {
-      debugPrint('Unity Ads is disabled in Admin Panel.');
-      return;
-    }
-
+    if (!config.adsEnabled) return;
     try {
       await UnityAds.init(
         gameId: config.unityGameId,
         testMode: config.unityTestMode,
         onComplete: () {
           _isInitialized = true;
-          debugPrint('Unity Ads Initialized Successfully with ID: ${config.unityGameId}');
+          debugPrint('Unity Ads initialized: ${config.unityGameId}');
         },
         onFailed: (error, message) {
           _isInitialized = false;
-          debugPrint('Unity Ads Init Failed: $error - $message');
+          debugPrint('Unity Ads init failed: $error - $message');
         },
       );
     } catch (e) {
@@ -35,63 +32,76 @@ class AdService {
     }
   }
 
-  /// ಕೂಲ್‌ಡೌನ್ ಮುಗಿದಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸುವ ವಿಧಾನ
   bool canShowAd() {
     final config = RemoteConfigService.instance;
-    // ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಆಡ್ಸ್ ಆಫ್ ಇದ್ದರೆ ಕೂಲ್‌ಡೌನ್ ಇರುವುದಿಲ್ಲ
-    if (!config.adsEnabled) return true;
+    if (!config.adsEnabled) return false;
     if (_lastAdTime == null) return true;
-
-    final difference = DateTime.now().difference(_lastAdTime!).inSeconds;
-    return difference >= config.adCooldown;
+    return DateTime.now().difference(_lastAdTime!).inSeconds >= config.adCooldown;
   }
 
-  /// ಮುಂದಿನ ಆಡ್ ನೋಡಲು ಬಾಕಿ ಇರುವ ಸೆಕೆಂಡುಗಳು
   int remainingCooldownSeconds() {
     final config = RemoteConfigService.instance;
     if (!config.adsEnabled || _lastAdTime == null) return 0;
-    final elapsed = DateTime.now().difference(_lastAdTime!).inSeconds;
-    final remaining = config.adCooldown - elapsed;
+    final remaining = config.adCooldown - DateTime.now().difference(_lastAdTime!).inSeconds;
     return remaining > 0 ? remaining : 0;
   }
 
-  /// Rewarded Ad ಪ್ರದರ್ಶನ & ರಿವಾರ್ಡ್ ಹ್ಯಾಂಡ್ಲಿಂಗ್
+  Future<bool> _consumeDailyRewardedSlot() async {
+    final config = RemoteConfigService.instance;
+    if (config.rewardedDailyLimit <= 0) return true;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    final ref = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final today = DateTime.now();
+    final key = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    try {
+      var allowed = false;
+      await FirebaseFirestore.instance.runTransaction((tx) async {
+        final snap = await tx.get(ref);
+        final data = snap.data() ?? <String, dynamic>{};
+        final oldDate = data['rewardedAdsDate']?.toString() ?? '';
+        final count = oldDate == key ? ((data['rewardedAdsCount'] as num?)?.toInt() ?? 0) : 0;
+        if (count >= config.rewardedDailyLimit) return;
+        allowed = true;
+        tx.set(ref, {'rewardedAdsDate': key, 'rewardedAdsCount': count + 1}, SetOptions(merge: true));
+      });
+      return allowed;
+    } catch (e) {
+      debugPrint('Rewarded ad daily limit check failed: $e');
+      return false;
+    }
+  }
+
   Future<void> showRewardedAd({
     required BuildContext context,
     required VoidCallback onReward,
     VoidCallback? onFailed,
   }) async {
     final config = RemoteConfigService.instance;
-
-    // 1. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ Ads OFF ಇದ್ದರೆ: ವಿಡಿಯೋ ಇಲ್ಲದೆ ನೇರವಾಗಿ ರಿವಾರ್ಡ್ ನೀಡುವುದು
-    if (!config.adsEnabled) {
-      debugPrint('Ads are turned OFF by Admin. Granting reward directly.');
-      onReward();
-      return;
-    }
-
-    // 2. Cooldown ಚೆಕ್
-    if (!canShowAd()) {
-      final waitSec = remainingCooldownSeconds();
+    if (!config.adsEnabled || !config.rewardedAdsEnabled) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please wait $waitSec seconds before watching another ad!'),
-            backgroundColor: Colors.amber[900],
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rewarded Ads are currently unavailable.')));
       }
-      if (onFailed != null) onFailed();
+      onFailed?.call();
+      return;
+    }
+    if (!canShowAd()) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please wait ${remainingCooldownSeconds()} seconds before another ad.')));
+      }
+      onFailed?.call();
+      return;
+    }
+    if (!_isInitialized) await init();
+    if (!_isInitialized) { onFailed?.call(); return; }
+    if (!await _consumeDailyRewardedSlot()) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Daily rewarded-ad limit reached.')));
+      }
+      onFailed?.call();
       return;
     }
 
-    // 3. Unity Ads ಇನಿಶಿಯಲೈಸ್ ಆಗಿರದಿದ್ದರೆ ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸುವುದು
-    if (!_isInitialized) {
-      await init();
-    }
-
-    // 4. Unity Rewarded Ad ತೋರಿಸುವುದು
     UnityAds.showVideoAd(
       placementId: config.rewardedPlacementId,
       onComplete: (placementId) {
@@ -99,30 +109,27 @@ class AdService {
         onReward();
       },
       onFailed: (placementId, error, message) {
-        debugPrint('Unity Ad Show Failed: $message');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ad loading failed. Please try again.'),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        if (onFailed != null) onFailed();
+        debugPrint('Unity rewarded ad failed: $message');
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ad failed to load. Please try again.')));
+        onFailed?.call();
       },
       onSkipped: (placementId) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Watch full video to claim rewards!'),
-              backgroundColor: Colors.orangeAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        if (onFailed != null) onFailed();
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Watch the full ad to unlock the game benefit.')));
+        onFailed?.call();
       },
+    );
+  }
+
+  Future<void> showInterstitialAd({required BuildContext context, VoidCallback? onFinished}) async {
+    final config = RemoteConfigService.instance;
+    if (!config.adsEnabled || !config.interstitialEnabled) { onFinished?.call(); return; }
+    if (!_isInitialized) await init();
+    if (!_isInitialized) { onFinished?.call(); return; }
+    UnityAds.showVideoAd(
+      placementId: config.interstitialPlacementId,
+      onComplete: (_) { _lastAdTime = DateTime.now(); onFinished?.call(); },
+      onFailed: (_, __, ___) => onFinished?.call(),
+      onSkipped: (_) => onFinished?.call(),
     );
   }
 }
