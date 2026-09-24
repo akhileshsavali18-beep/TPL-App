@@ -5,6 +5,7 @@ import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/remote_config_service.dart';
 
 class GamesScreen extends StatefulWidget {
   final int spinsLeft;
@@ -59,7 +60,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
   bool _scratchRevealed = false;
 
   // Visual Slices (50 & 200 are bait slices)
-  final List<_WheelItem> wheelSlices = [
+  List<_WheelItem> wheelSlices = [
     _WheelItem(label: '1 Coin', coins: 1, color: const Color(0xFF00FF87)),
     _WheelItem(label: '50 Coins', coins: 50, color: const Color(0xFFFF5252), isBait: true),
     _WheelItem(label: '5 Coins', coins: 5, color: const Color(0xFF6C63FF)),
@@ -112,6 +113,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
       duration: const Duration(milliseconds: 3800),
     );
     _listenRemoteUnityAds();
+    _listenRemoteGameLimits();
   }
 
   @override
@@ -148,6 +150,52 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     });
   }
 
+  void _listenRemoteGameLimits() {
+    FirebaseFirestore.instance
+        .collection('settings')
+        .doc('game_limits')
+        .snapshots()
+        .listen((snap) {
+      if (!mounted || !snap.exists || snap.data() == null) return;
+      final rawSlices = snap.data()!['wheelSlices'];
+      if (rawSlices is! List) return;
+
+      final values = rawSlices
+          .map((value) => int.tryParse(value.toString()))
+          .whereType<int>()
+          .toList();
+      if (values.length < 2) return;
+
+      setState(() {
+        wheelSlices = values.map((coins) => _WheelItem(
+          label: coins <= 0 ? 'Better Luck' : '$coins Coins',
+          coins: coins,
+          color: _wheelColor(coins),
+          isBait: coins >= 50,
+        )).toList();
+      });
+    });
+  }
+
+  Color _wheelColor(int coins) {
+    switch (coins) {
+      case 0:
+        return const Color(0xFF374151);
+      case 1:
+        return const Color(0xFF00FF87);
+      case 5:
+        return const Color(0xFF6C63FF);
+      case 12:
+        return const Color(0xFF00C0FF);
+      case 50:
+        return const Color(0xFFFF5252);
+      case 200:
+        return const Color(0xFFFFD700);
+      default:
+        return const Color(0xFF00C0FF);
+    }
+  }
+
   void _initUnityAds(bool testMode) {
     if (_unityInitialized) return;
     try {
@@ -179,18 +227,18 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     } catch (_) {}
   }
 
-  // Safe Probability Selector (Never selects 50 or 200)
+  // Choose only configured low-value outcomes; never assume fixed slice indexes.
   int _pickSafeOutcomeIndex() {
-    final rand = math.Random().nextInt(100);
-    if (rand < 45) {
-      return 0; // 1 Coin (45% chance)
-    } else if (rand < 80) {
-      return 2; // 5 Coins (35% chance)
-    } else if (rand < 95) {
-      return 5; // 12 Coins (15% chance)
-    } else {
-      return 3; // Better Luck (5% chance)
+    final safeIndexes = <int>[];
+    for (var i = 0; i < wheelSlices.length; i++) {
+      if (wheelSlices[i].coins <= 12) safeIndexes.add(i);
     }
+    if (safeIndexes.isEmpty) return 0;
+    if (safeIndexes.length == 1) return safeIndexes.first;
+
+    final rand = math.Random().nextInt(100);
+    if (rand < 45) return safeIndexes.first;
+    return safeIndexes[math.Random().nextInt(safeIndexes.length)];
   }
 
   void _watchAdAndSpin() {
@@ -378,7 +426,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                       children: [
                         const Icon(Icons.rotate_right_rounded, color: Color(0xFF00FF87), size: 20),
                         const SizedBox(width: 8),
-                        Text('Daily Spin: ${widget.spinsLeft}/1', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text('Daily Spin: ${widget.spinsLeft}/${RemoteConfigService.instance.dailySpinLimit}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       ],
                     ),
                   ),
@@ -588,11 +636,11 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                   for (var doc in snapshot.data!.docs) {
                     final d = doc.data() as Map<String, dynamic>;
-                    displayedGames.add({
+                    if (d['isActive'] != false) displayedGames.add({
                       'title': d['title'] ?? 'Mini Game',
                       'category': d['category'] ?? 'Arcade',
                       'coins': d['coins'] is int ? d['coins'] : (int.tryParse(d['coins'].toString()) ?? 2),
-                      'url': d['url'] ?? 'https://www.gamezop.com',
+                      'url': d['url'] ?? d['gameUrl'] ?? 'https://www.gamezop.com',
                       'icon': Icons.sports_esports_rounded,
                       'color': const Color(0xFF00FF87),
                     });
