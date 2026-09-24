@@ -227,6 +227,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screens = [
       HomeScreen(
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        onOpenTasks: () => switchTab(1),
+        onOpenGames: () => switchTab(2),
       ),
       TasksTabScreen(
         onCompleteTask: (name, reward) {
