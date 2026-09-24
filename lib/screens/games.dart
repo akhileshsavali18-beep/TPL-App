@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 import '../services/ad_service.dart';
+import '../widgets/unity_banner_widget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -394,6 +395,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const UnityBannerWidget(),
             Row(
               children: [
                 Expanded(
