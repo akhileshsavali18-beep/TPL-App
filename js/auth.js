@@ -29,6 +29,7 @@ auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('dashboardScreen').classList.remove('hidden');
+    switchTab('dashboard');
     if (typeof fetchAllData === 'function') {
       fetchAllData();
     }
@@ -83,16 +84,16 @@ function switchTab(tab) {
   ['dashboard', 'payouts', 'users', 'tasks', 'settings'].forEach(t => {
     const content = document.getElementById('tabContent-' + t);
     const nav = document.getElementById('nav-' + t);
-    if (content && nav) {
-      if (t === tab) {
-        content.classList.remove('hidden');
-        nav.classList.add('active-nav');
-        nav.classList.remove('text-gray-400');
-      } else {
-        content.classList.add('hidden');
-        nav.classList.remove('active-nav');
-        nav.classList.add('text-gray-400');
-      }
+    if (content) {
+      const active = t === tab;
+      content.classList.toggle('hidden', !active);
+      content.style.display = active ? 'block' : 'none';
+      content.setAttribute('aria-hidden', active ? 'false' : 'true');
+    }
+    if (nav) {
+      const active = t === tab;
+      nav.classList.toggle('active-nav', active);
+      nav.classList.toggle('text-gray-400', !active);
     }
   });
 }
