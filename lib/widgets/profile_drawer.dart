@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'unity_banner_widget.dart';
+import 'transaction_history.dart';
 
 class ProfileDrawer extends StatelessWidget {
   final VoidCallback? onWalletTap;
@@ -22,7 +23,6 @@ class ProfileDrawer extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // User Header Profile Section
             StreamBuilder<DocumentSnapshot>(
               stream: user != null
                   ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots()
@@ -31,11 +31,15 @@ class ProfileDrawer extends StatelessWidget {
                 String name = user?.displayName ?? 'TPL Player';
                 String email = user?.email ?? 'No email';
                 int coins = 0;
+                double cash = 0;
+                double refer = 0;
 
                 if (snapshot.hasData && snapshot.data?.data() != null) {
                   final data = snapshot.data!.data() as Map<String, dynamic>;
-                  name = data['name'] ?? name;
-                  coins = int.tryParse(data['coins']?.toString() ?? '') ?? 0;
+                  name = data['name']?.toString() ?? name;
+                  coins = (data['coins'] as num?)?.toInt() ?? 0;
+                  cash = (data['taskCash'] as num?)?.toDouble() ?? 0;
+                  refer = (data['referCash'] as num?)?.toDouble() ?? 0;
                 }
 
                 return Container(
@@ -43,53 +47,44 @@ class ProfileDrawer extends StatelessWidget {
                   decoration: const BoxDecoration(
                     border: Border(bottom: BorderSide(color: Colors.white10)),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: const Color(0xFF00FF87).withOpacity(0.15),
-                        child: const Icon(Icons.person, color: Color(0xFF00FF87), size: 32),
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: const Color(0xFF00FF87).withOpacity(0.15),
+                            child: const Icon(Icons.person, color: Color(0xFF00FF87), size: 32),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 2),
+                                Text(email, style: const TextStyle(color: Colors.white54, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              email,
-                              style: const TextStyle(color: Colors.white54, fontSize: 11),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '🪙 $coins Coins',
-                                style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _balanceChip('🪙 ' + coins.toString(), Colors.amber),
+                          const SizedBox(width: 6),
+                          _balanceChip('₹' + cash.toStringAsFixed(2), const Color(0xFF00FF87)),
+                          const SizedBox(width: 6),
+                          _balanceChip('₹' + refer.toStringAsFixed(2), Colors.purpleAccent),
+                        ],
                       ),
                     ],
                   ),
                 );
               },
             ),
-
-            // Navigation Items List
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -108,31 +103,31 @@ class ProfileDrawer extends StatelessWidget {
                   }),
                   _buildDrawerItem(Icons.shield_outlined, 'Privacy Policy & Terms', () {
                     Navigator.pop(context);
-                    _showInfoDialog(context, 'Privacy Policy & Terms',
+                    _showInfoDialog(
+                      context,
+                      'Privacy Policy & Terms',
                       'TPL Pro requires a verified account for rewards and withdrawals.\n\n'
                       'Do not use VPN/proxy, automation, fake submissions or multiple accounts to abuse rewards.\n\n'
                       'UPI details are used only for payout processing.\n\n'
-                      'For support, contact A28 TECHNOLOGIES through the official support channel.');
+                      'For support, contact A28 TECHNOLOGIES through the official support channel.',
+                    );
                   }),
                   _buildDrawerItem(Icons.help_outline, 'Help & Support', () {
                     Navigator.pop(context);
-                    _showInfoDialog(context, 'Help & Support',
-                      'Need help with TPL Pro?\n\n'
-                      'For task, reward, wallet or withdrawal issues, keep your registered email and relevant transaction details ready when contacting support.');
+                    _showInfoDialog(
+                      context,
+                      'Help & Support',
+                      'For task, reward, wallet or withdrawal issues, keep your registered email and transaction details ready when contacting support.',
+                    );
                   }),
                 ],
               ),
             ),
-
-            // 📺 Unity Banner Ad Inside Drawer
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: UnityBannerWidget(),
             ),
-
             const SizedBox(height: 6),
-
-            // Logout Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: InkWell(
@@ -165,13 +160,29 @@ class ProfileDrawer extends StatelessWidget {
     );
   }
 
-  void _showInfoDialog(BuildContext context, String title, String message) {
+  static Widget _balanceChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: color.withOpacity(0.18)),
+      ),
+      child: Text(text, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  void _showTransactionHistory(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF151922),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text(message, style: const TextStyle(color: Colors.white70, height: 1.5)),
+        title: const Text('Transaction History', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const SizedBox(
+          width: double.maxFinite,
+          height: 420,
+          child: TransactionHistoryView(),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -182,59 +193,13 @@ class ProfileDrawer extends StatelessWidget {
     );
   }
 
-  void _showTransactionHistory(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
+  void _showInfoDialog(BuildContext context, String title, String message) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF151922),
-        title: const Text('Transaction History', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 360,
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('withdrawals')
-                .where('uid', isEqualTo: user.uid)
-                .orderBy('createdAt', descending: true)
-                .limit(30)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return const Center(child: Text('History could not be loaded.', style: TextStyle(color: Colors.white70)));
-              }
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snapshot.data?.docs ?? [];
-              if (docs.isEmpty) {
-                return const Center(child: Text('No withdrawal transactions yet.', style: TextStyle(color: Colors.white70)));
-              }
-              return ListView.separated(
-                itemCount: docs.length,
-                separatorBuilder: (_, __) => const Divider(color: Colors.white10),
-                itemBuilder: (context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>;
-                  final amount = data['amount']?.toString() ?? '0';
-                  final status = data['status']?.toString() ?? 'pending';
-                  final mode = data['mode']?.toString() ?? 'manual';
-                  return ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      status == 'completed' ? Icons.check_circle : status == 'rejected' ? Icons.cancel : Icons.schedule,
-                      color: status == 'completed' ? const Color(0xFF00FF87) : status == 'rejected' ? Colors.redAccent : Colors.amber,
-                    ),
-                    title: Text('₹' + amount, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    subtitle: Text(status.toUpperCase() + ' • ' + mode.toUpperCase(), style: const TextStyle(color: Colors.white54, fontSize: 11)),
-                  );
-                },
-              );
-            },
-          ),
-        ),
+        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(message, style: const TextStyle(color: Colors.white70, height: 1.5)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -254,4 +219,3 @@ class ProfileDrawer extends StatelessWidget {
     );
   }
 }
-
