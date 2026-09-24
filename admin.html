@@ -129,7 +129,7 @@
         <div class="dark-card p-4 rounded-2xl">
           <div class="text-[11px] text-gray-400 font-medium">Total Paid Out</div>
           <div id="statPaidAmount" class="text-2xl font-black text-purple-400 mt-1">₹0.00</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">Cleared via Manual UPI</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Cleared Payouts</div>
         </div>
       </div>
     </main>
@@ -137,19 +137,9 @@
     <!-- TAB 2: PAYOUTS (PURE MANUAL UPI DESK) -->
     <main id="tabContent-payouts" class="hidden p-4 space-y-4 max-w-xl mx-auto">
       <div>
-        <h2 class="text-xl font-black text-white">Manual UPI Payout Desk</h2>
-        <p class="text-[11px] text-gray-400">Directly pay users via GPay / PhonePe / Paytm & manage status</p>
-      </div>
-
-      <!-- Manual UPI Notice Card -->
-      <div class="dark-card p-4 rounded-2xl border border-blue-500/20 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black text-lg">
-          📲
-        </div>
-        <div>
-          <div class="text-xs font-black text-white uppercase tracking-wider">Manual UPI Mode Active</div>
-          <div class="text-[11px] text-gray-400">Clicking Pay UPI directly launches your UPI app with prefilled amount & ID.</div>
-        </div>
+        <h2 class="text-xl font-black text-white">Payout Desk</h2>
+        <p class="text-[11px] text-gray-400">Pay withdrawal requests and manage payout status</p>
+        <div class="text-[10px] text-gray-500 font-semibold">Current payout method: Manual UPI · Provider selection can be added when Cashfree is connected.</div>
       </div>
 
       <!-- Withdrawals Queue List -->
@@ -316,7 +306,7 @@
       <!-- P1: Core Economy -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
         <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-green-400 uppercase tracking-wider">P1 • Core Economy</h3>
+          <h3 class="text-xs font-black text-green-400 uppercase tracking-wider">Core Economy</h3>
           <span class="text-[10px] text-gray-400 font-bold">Instant Sync</span>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -357,7 +347,7 @@
       <!-- P2: Game Controls -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
         <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-amber-400 uppercase tracking-wider">P2 • Game & Reward Limits</h3>
+          <h3 class="text-xs font-black text-amber-400 uppercase tracking-wider">Game & Reward Limits</h3>
           <span class="text-[10px] text-gray-400 font-bold">Spin & Scratch</span>
         </div>
         <div>
@@ -382,7 +372,7 @@
       <!-- P3: Security Shield -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
         <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-red-400 uppercase tracking-wider">P3 • Anti-Cheat Shield</h3>
+          <h3 class="text-xs font-black text-red-400 uppercase tracking-wider">Security & Anti-Cheat</h3>
           <span class="text-[10px] text-gray-400 font-bold">Bot Protection</span>
         </div>
         <div class="flex items-center justify-between">
@@ -625,9 +615,13 @@
             '<button onclick="openWithdrawalDetails(\'' + safeJsString(w.id) + '\')" class="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-xl text-xs font-bold active:scale-95">👁 View Details</button>' +
           '</div>' +
           '<div class="grid grid-cols-2 gap-2">' +
-            '<select ' + (isPending ? '' : 'disabled') + ' onchange="updateWithdrawalStatus(\'' + safeJsString(w.id) + '\', \'' + safeJsString(w.uid) + '\', ' + amount + ', \'' + safeJsString(w.upiId) + '\', \'' + safeJsString(type) + '\', \'' + safeJsString(rawStatus) + '\', this.value)" class="w-full py-2.5 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none disabled:opacity-70">' +
-              '<option value="pending" ' + (isPending ? 'selected' : '') + '>⏳ Pending</option><option value="completed">✅ Success / Paid</option><option value="rejected">❌ Failed / Refund</option>' +
-            '</select>' +
+            (isPending
+              ? '<select onchange="updateWithdrawalStatus(\'' + safeJsString(w.id) + '\', \'' + safeJsString(w.uid) + '\', ' + amount + ', \'' + safeJsString(w.upiId) + '\', \'' + safeJsString(type) + '\', \'' + safeJsString(rawStatus) + '\', this.value)" class="w-full py-2.5 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">' +
+                  '<option value="pending" selected>⏳ Pending</option><option value="completed">✅ Success / Paid</option><option value="rejected">❌ Failed / Refund</option>' +
+                '</select>'
+              : '<div class="w-full py-2.5 px-2 rounded-xl border text-xs font-black text-center ' + (isSuccess ? 'bg-green-400/10 border-green-400/20 text-green-400' : 'bg-red-400/10 border-red-400/20 text-red-400') + '">' +
+                  (isSuccess ? '✅ Success / Paid' : '❌ Failed / Refunded') +
+                '</div>') +
             '<div class="py-2.5 px-2 rounded-xl bg-black/30 border border-white/5 text-[10px] text-gray-500 font-semibold text-center">Requested<br>' + escapeHtml(formatAdminTimestamp(w.createdAt)) + '</div>' +
           '</div>';
         container.appendChild(div);
