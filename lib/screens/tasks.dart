@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../widgets/unity_banner_widget.dart';
+import '../services/ad_service.dart';
+import '../services/remote_config_service.dart';
 import 'cpalead_offerwall.dart';
 
 class TasksTabScreen extends StatefulWidget {
@@ -15,13 +17,50 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
   final Map<String, bool> _completed = {};
 
   Future<void> _handleTask(String taskId, String title, int coins, String url) async {
+    if (_completed[taskId] ?? false) return;
+
     try {
-      if (url.trim().isNotEmpty && await canLaunchUrlString(url)) await launchUrlString(url.trim(), mode: LaunchMode.externalApplication);
+      if (url.trim().isNotEmpty && await canLaunchUrlString(url)) {
+        await launchUrlString(url.trim(), mode: LaunchMode.externalApplication);
+      }
     } catch (_) {}
-    if (!(_completed[taskId] ?? false)) {
+
+    if (!mounted || (_completed[taskId] ?? false)) return;
+
+    final config = RemoteConfigService.instance;
+    if (config.adsEnabled && config.rewardedAdsEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Watch the full rewarded ad to claim your task coins.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await AdService.instance.showRewardedAd(
+        context: context,
+        onReward: () {
+          if (!mounted || (_completed[taskId] ?? false)) return;
+          widget.onCompleteTask(title, coins);
+          setState(() => _completed[taskId] = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🎉 +$coins Coins added for $title'),
+              backgroundColor: const Color(0xFF00FF87),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        },
+        onFailed: () {},
+      );
+    } else {
       widget.onCompleteTask(title, coins);
       setState(() => _completed[taskId] = true);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('🎉 +' + coins.toString() + ' Coins added for ' + title), backgroundColor: const Color(0xFF00FF87), behavior: SnackBarBehavior.floating));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🎉 +$coins Coins added for $title'),
+          backgroundColor: const Color(0xFF00FF87),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -42,9 +81,9 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
               const Icon(Icons.local_offer_rounded, color: Color(0xFF00FF87), size: 30),
               const SizedBox(width: 12),
               const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Offer', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                Text('Offerwalls', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
                 SizedBox(height: 3),
-                Text('CPAlead app installs, surveys and other offers.', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                Text('CPAlead app installs, surveys and other earning offers.', style: TextStyle(color: Colors.white54, fontSize: 10)),
               ])),
               ElevatedButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CpaleadOfferwallScreen())), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11))), child: const Text('OPEN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10))),
             ]),
