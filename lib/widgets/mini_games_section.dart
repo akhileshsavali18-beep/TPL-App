@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/ad_service.dart';
 
 class MiniGamesSection extends StatelessWidget {
-  final Function(int coins, String reason) onRewardEarned;
-
-  const MiniGamesSection({super.key, required this.onRewardEarned});
+  const MiniGamesSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -80,8 +79,8 @@ class MiniGamesSection extends StatelessWidget {
                     if (gameUrl.trim().isNotEmpty) {
                       final uri = Uri.parse(gameUrl.trim());
                       if (await canLaunchUrl(uri)) {
+                        await AdService.instance.showInterstitialAd(context: context);
                         await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        onRewardEarned(coins, "Played $title");
                       }
                     }
                   },
@@ -127,9 +126,9 @@ class MiniGamesSection extends StatelessWidget {
                           style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 3),
-                        Text(
-                          '+$coins Coins',
-                          style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
+                        const Text(
+                          'Play • Game bonus',
+                          style: TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
