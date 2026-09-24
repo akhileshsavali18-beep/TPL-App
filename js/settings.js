@@ -36,7 +36,18 @@ function loadSettings() {
     }
   });
 
-  // 3. Security Settings Load
+  // 3. Game & Reward Limits Load
+  db.collection('settings').doc('game_limits').onSnapshot(doc => {
+    if (doc.exists) {
+      const d = doc.data();
+      const slices = Array.isArray(d.wheelSlices) ? d.wheelSlices : [1, 50, 5, 0, 200, 12];
+      if (document.getElementById('p2-wheelSlices')) document.getElementById('p2-wheelSlices').value = slices.join(', ');
+      if (document.getElementById('p2-spinLimit')) document.getElementById('p2-spinLimit').value = d.spinLimit ?? 1;
+      if (document.getElementById('p2-scratchLimit')) document.getElementById('p2-scratchLimit').value = d.scratchLimit ?? 1;
+    }
+  });
+
+  // 4. Security Settings Load
   db.collection('settings').doc('security').onSnapshot(doc => {
     if (doc.exists) {
       const d = doc.data();
