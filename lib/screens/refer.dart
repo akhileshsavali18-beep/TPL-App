@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
+import '../widgets/unity_banner_widget.dart';
 
 class ReferScreen extends StatefulWidget {
   final double referCash;
@@ -141,6 +142,7 @@ class _ReferScreenState extends State<ReferScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const UnityBannerWidget(),
                   // Referral Cash Card
                   Container(
                     padding: const EdgeInsets.all(20),
