@@ -442,6 +442,58 @@
     </nav>
   </div>
 
+
+  <!-- ================= ADMIN MODALS ================= -->
+  <div id="editUserModal" class="hidden fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm p-4 flex items-center justify-center">
+    <div class="dark-card w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div><h3 class="text-lg font-black text-white">Edit User</h3><p class="text-[10px] text-gray-500">Update profile, balances and saved UPI</p></div>
+        <button onclick="closeEditUserModal()" class="w-9 h-9 rounded-xl bg-white/5 text-gray-400">✕</button>
+      </div>
+      <input type="hidden" id="editUserId">
+      <div class="space-y-3">
+        <div><label class="text-[10px] text-gray-400 font-bold uppercase">Display Name</label><input id="editUserName" type="text" class="w-full mt-1 px-3 py-2.5 bg-black/50 border border-white/10 rounded-xl text-sm text-white"></div>
+        <div><label class="text-[10px] text-gray-400 font-bold uppercase">Email</label><input id="editUserEmail" type="text" readonly class="w-full mt-1 px-3 py-2.5 bg-black/30 border border-white/5 rounded-xl text-xs text-gray-500"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Coins</label><input id="editUserCoins" type="number" min="0" step="1" class="w-full mt-1 px-3 py-2.5 bg-black/50 border border-white/10 rounded-xl text-sm text-white"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Task Cash ₹</label><input id="editUserTaskCash" type="number" min="0" step="0.01" class="w-full mt-1 px-3 py-2.5 bg-black/50 border border-white/10 rounded-xl text-sm text-white"></div>
+        </div>
+        <div><label class="text-[10px] text-gray-400 font-bold uppercase">Referral Cash ₹</label><input id="editUserReferCash" type="number" min="0" step="0.01" class="w-full mt-1 px-3 py-2.5 bg-black/50 border border-white/10 rounded-xl text-sm text-white"></div>
+        <div><label class="text-[10px] text-gray-400 font-bold uppercase">Saved UPI ID</label><input id="editUserUpi" type="text" placeholder="example@upi" class="w-full mt-1 px-3 py-2.5 bg-black/50 border border-white/10 rounded-xl text-sm text-white"></div>
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeEditUserModal()" class="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-xs font-bold">Cancel</button>
+          <button onclick="saveUserEdit()" class="flex-1 py-2.5 rounded-xl bg-green-400 text-black text-xs font-black">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="notifModal" class="hidden fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm p-4 flex items-center justify-center">
+    <div class="dark-card w-full max-w-md rounded-3xl p-5 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <div><h3 class="text-lg font-black text-white">Send Alert</h3><p class="text-[10px] text-gray-500">To: <span id="modalUserName" class="text-gray-300"></span></p></div>
+        <button onclick="closeNotifModal()" class="w-9 h-9 rounded-xl bg-white/5 text-gray-400">✕</button>
+      </div>
+      <input type="hidden" id="modalUserUid">
+      <div class="space-y-3">
+        <div><label class="text-[10px] text-gray-400 font-bold uppercase">Alert Title</label><input id="notifTitle" type="text" value="📢 TPL Notice" class="w-full mt-1 px-3 py-2.5 bg-black/50 border border-white/10 rounded-xl text-sm text-white"></div>
+        <div><label class="text-[10px] text-gray-400 font-bold uppercase">Message</label><textarea id="notifBody" rows="5" placeholder="Type the alert message..." class="w-full mt-1 px-3 py-2.5 bg-black/50 border border-white/10 rounded-xl text-sm text-white resize-none"></textarea></div>
+        <button onclick="submitUserNotification()" class="w-full py-2.5 rounded-xl bg-green-400 text-black text-xs font-black">🔔 Send Alert</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="withdrawalDetailsModal" class="hidden fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm p-4 flex items-center justify-center">
+    <div class="dark-card w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div><h3 class="text-lg font-black text-white">Withdrawal Details</h3><p id="withdrawalDetailsStatus" class="text-[10px] text-gray-400 mt-0.5"></p></div>
+        <button onclick="closeWithdrawalDetails()" class="w-9 h-9 rounded-xl bg-white/5 text-gray-400">✕</button>
+      </div>
+      <div id="withdrawalDetailsBody" class="space-y-2.5"></div>
+      <button onclick="closeWithdrawalDetails()" class="w-full mt-4 py-2.5 rounded-xl bg-green-400 text-black text-xs font-black">Close</button>
+    </div>
+  </div>
+
   <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-green-400 text-black px-4 py-2 rounded-2xl text-xs font-black shadow-xl hidden z-50"></div>
 
   <!-- Working External Scripts -->
@@ -541,6 +593,10 @@
                 </button>
               ` : ''}
 
+              <button onclick="openWithdrawalDetails('${w.id}')" class="flex-1 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-xl text-xs font-bold active:scale-95">
+                👁 View Details
+              </button>
+
               <select onchange="updateWithdrawalStatus('${w.id}', '${w.uid}', ${w.amount || 0}, '${w.upiId || ''}', '${w.type || 'Cash'}', '${st}', this.value)" class="${isPending ? 'flex-1' : 'w-full'} py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white font-bold focus:outline-none">
                 <option value="pending" ${isPending ? 'selected' : ''}>⏳ Pending</option>
                 <option value="completed" ${isSuccess ? 'selected' : ''}>✅ Paid (Success)</option>
@@ -553,6 +609,59 @@
       }, err => {
         if (container) container.innerHTML = `<div class="text-center py-6 text-red-400 text-xs font-bold">Firestore Error: ${err.message}</div>`;
       });
+    }
+
+
+    function closeWithdrawalDetails() {
+      const modal = document.getElementById('withdrawalDetailsModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function formatAdminTimestamp(value) {
+      if (!value) return '—';
+      try {
+        if (value.toDate) return value.toDate().toLocaleString();
+        if (value.seconds) return new Date(value.seconds * 1000).toLocaleString();
+        return new Date(value).toLocaleString();
+      } catch (e) { return '—'; }
+    }
+
+    function withdrawalDetailRow(label, value) {
+      return '<div class="flex justify-between gap-4 p-3 rounded-xl bg-black/30 border border-white/5">' +
+        '<span class="text-[10px] text-gray-500 font-bold uppercase">' + label + '</span>' +
+        '<span class="text-xs text-gray-200 font-semibold text-right break-all">' + (value || '—') + '</span>' +
+      '</div>';
+    }
+
+    function openWithdrawalDetails(reqId) {
+      const w = cachedWithdrawals.find(item => item.id === reqId);
+      if (!w) return alert('Withdrawal request not found!');
+
+      const status = (w.status || 'pending').toLowerCase();
+      const statusLabel = ['completed','success','settled','paid'].includes(status)
+        ? '✅ Paid / Success'
+        : status === 'rejected'
+          ? '❌ Rejected / Refunded'
+          : '⏳ Pending';
+
+      document.getElementById('withdrawalDetailsStatus').innerText =
+        statusLabel + ' • Updated ' + formatAdminTimestamp(w.updatedAt || w.createdAt);
+
+      document.getElementById('withdrawalDetailsBody').innerHTML = [
+        withdrawalDetailRow('User', w.userName || 'TPL Player'),
+        withdrawalDetailRow('Email', w.email || '—'),
+        withdrawalDetailRow('User ID', w.uid || '—'),
+        withdrawalDetailRow('UPI ID', w.upiId || '—'),
+        withdrawalDetailRow('Amount', '₹' + (parseFloat(w.amount) || 0).toFixed(2)),
+        withdrawalDetailRow('Type', w.type || 'Cash Balance'),
+        withdrawalDetailRow('Status', statusLabel),
+        withdrawalDetailRow('Mode', w.mode || 'manual'),
+        withdrawalDetailRow('Requested', formatAdminTimestamp(w.createdAt)),
+        withdrawalDetailRow('Last Updated', formatAdminTimestamp(w.updatedAt)),
+        withdrawalDetailRow('Paid At', formatAdminTimestamp(w.paidAt))
+      ].join('');
+
+      document.getElementById('withdrawalDetailsModal').classList.remove('hidden');
     }
 
     function payViaUPI(upiId, amount, reqId) {
