@@ -8,15 +8,15 @@ import '../widgets/mini_games_section.dart';
 import '../widgets/unity_banner_widget.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onOpenDrawer;
+
+  const HomeScreen({super.key, this.onOpenDrawer});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   void _creditCoins(int coins, String reason) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -43,15 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: const Color(0xFF080B10),
-      drawer: const ProfileDrawer(),
       appBar: AppBar(
         backgroundColor: const Color(0xFF080B10),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          onPressed: () => widget.onOpenDrawer?.call(),
         ),
         title: const Text(
           'TPL ARENA',
