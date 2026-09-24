@@ -105,33 +105,22 @@
 
     <!-- TAB 1: OVERVIEW -->
     <main id="tabContent-dashboard" class="p-4 space-y-4 max-w-xl mx-auto">
-      <div>
-        <h2 class="text-xl font-black text-white">App Overview</h2>
-        <p class="text-xs text-gray-400">Live app performance & financial metrics</p>
-      </div>
-
+      <div><h2 class="text-xl font-black text-white">App Overview</h2><p class="text-xs text-gray-400">Live users, earning activity and payout health</p></div>
       <div class="grid grid-cols-2 gap-3">
-        <div class="dark-card p-4 rounded-2xl">
-          <div class="text-[11px] text-gray-400 font-medium">Total Installs</div>
-          <div id="statTotalUsers" class="text-2xl font-black text-blue-400 mt-1">0</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">Active profiles</div>
-        </div>
-        <div class="dark-card p-4 rounded-2xl">
-          <div class="text-[11px] text-gray-400 font-medium">Pending Payouts</div>
-          <div id="statPendingCount" class="text-2xl font-black text-amber-400 mt-1">0</div>
-          <div class="text-[10px] text-amber-500/80 mt-0.5">In payout queue</div>
-        </div>
-        <div class="dark-card p-4 rounded-2xl">
-          <div class="text-[11px] text-gray-400 font-medium">Pending Amount</div>
-          <div id="statPendingAmount" class="text-2xl font-black text-green-400 mt-1">₹0.00</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">Amount to pay</div>
-        </div>
-        <div class="dark-card p-4 rounded-2xl">
-          <div class="text-[11px] text-gray-400 font-medium">Total Paid Out</div>
-          <div id="statPaidAmount" class="text-2xl font-black text-purple-400 mt-1">₹0.00</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">Cleared Payouts</div>
+        <div class="dark-card p-4 rounded-2xl"><div class="text-[11px] text-gray-400">Total Users</div><div id="statTotalUsers" class="text-2xl font-black text-blue-400 mt-1">0</div></div>
+        <div class="dark-card p-4 rounded-2xl"><div class="text-[11px] text-gray-400">New Users Today</div><div id="statNewUsersToday" class="text-2xl font-black text-cyan-400 mt-1">0</div></div>
+        <div class="dark-card p-4 rounded-2xl"><div class="text-[11px] text-gray-400">Pending Payouts</div><div id="statPendingCount" class="text-2xl font-black text-amber-400 mt-1">0</div></div>
+        <div class="dark-card p-4 rounded-2xl"><div class="text-[11px] text-gray-400">Pending Amount</div><div id="statPendingAmount" class="text-2xl font-black text-green-400 mt-1">₹0.00</div></div>
+      </div>
+      <div class="dark-card p-4 rounded-2xl space-y-3"><div class="text-sm font-black text-white">Money Overview</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Total Paid Out</div><div id="statPaidAmount" class="text-lg font-black text-purple-400 mt-1">₹0.00</div></div>
+          <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Today Paid Out</div><div id="statTodayPaidAmount" class="text-lg font-black text-green-400 mt-1">₹0.00</div></div>
+          <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Cash Liability</div><div id="statCashLiability" class="text-lg font-black text-amber-400 mt-1">₹0.00</div></div>
+          <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Referral Liability</div><div id="statReferLiability" class="text-lg font-black text-pink-400 mt-1">₹0.00</div></div>
         </div>
       </div>
+      <div class="dark-card p-4 rounded-2xl"><div class="flex items-center justify-between"><div><div class="text-sm font-black text-white">Pending payout alert</div><div class="text-[10px] text-gray-500 mt-1">Review and pay pending requests.</div></div><button onclick="switchTab('payouts')" class="px-3 py-2 rounded-xl bg-green-400 text-black text-[10px] font-black">View Payouts</button></div></div>
     </main>
 
     <!-- TAB 2: PAYOUTS (PURE MANUAL UPI DESK) -->
@@ -139,7 +128,6 @@
       <div>
         <h2 class="text-xl font-black text-white">Payout Desk</h2>
         <p class="text-[11px] text-gray-400">Pay withdrawal requests and manage payout status</p>
-        <div class="text-[10px] text-gray-500 font-semibold">Current payout method: Manual UPI · Provider selection can be added when Cashfree is connected.</div>
       </div>
 
       <!-- Withdrawals Queue List -->
@@ -167,86 +155,19 @@
 
     <!-- TAB 4: TASKS HUB -->
     <main id="tabContent-tasks" class="hidden p-4 space-y-4 max-w-xl mx-auto">
-      <div>
-        <h2 class="text-xl font-black text-white">Content & Tasks Hub</h2>
-        <p class="text-[11px] text-gray-400">Manage all app earning activities remotely</p>
-      </div>
-
-      <!-- Sub-Tabs Selector -->
+      <div><h2 class="text-xl font-black text-white">Tasks</h2><p class="text-[11px] text-gray-400">Manage social tasks, offers and future earning activities</p></div>
       <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs">
         <button onclick="switchTaskSubTab('social')" id="subtab-social" class="px-3 py-1.5 rounded-xl subtab-active whitespace-nowrap">Social Tasks</button>
-        <button onclick="switchTaskSubTab('banners')" id="subtab-banners" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">🖼️ Home Banners</button>
-        <button onclick="switchTaskSubTab('games')" id="subtab-games" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">🎮 Gamezop Games</button>
-        <button onclick="switchTaskSubTab('offerwalls')" id="subtab-offerwalls" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">💼 Offerwalls</button>
+        <button onclick="switchTaskSubTab('offer')" id="subtab-offer" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">Offer</button>
+        <button onclick="switchTaskSubTab('banners')" id="subtab-banners" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">Home Banners</button>
+        <button onclick="switchTaskSubTab('games')" id="subtab-games" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">Gamezop Games</button>
+        <button onclick="switchTaskSubTab('future')" id="subtab-future" class="px-3 py-1.5 rounded-xl bg-white/5 text-gray-400 whitespace-nowrap">Future Earning</button>
       </div>
-
-      <!-- SUBTAB 1: SOCIAL TASKS -->
-      <div id="view-task-social" class="space-y-3">
-        <div class="flex justify-between items-center">
-          <span class="text-xs text-gray-400 font-bold">Social Media & App Tasks</span>
-          <button onclick="openAddTaskModal()" class="px-3 py-1 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-xl active:scale-95">+ Add Task</button>
-        </div>
-        <div id="tasksList" class="space-y-3">
-          <div class="text-center py-6 text-gray-500 text-xs">Loading tasks...</div>
-        </div>
-      </div>
-
-      <!-- SUBTAB 2: HOME TOP BANNERS -->
-      <div id="view-task-banners" class="hidden space-y-3">
-        <div class="flex justify-between items-center">
-          <span class="text-xs text-gray-400 font-bold">Top Carousel Banners</span>
-          <button onclick="openAddBannerModal()" class="px-3 py-1 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-xl active:scale-95">+ Add Banner</button>
-        </div>
-        <div id="bannersList" class="space-y-3">
-          <div class="text-center py-6 text-gray-500 text-xs">Loading banners...</div>
-        </div>
-      </div>
-
-      <!-- SUBTAB 3: GAMEZOP MINI GAMES -->
-      <div id="view-task-games" class="hidden space-y-3">
-        <div class="flex justify-between items-center">
-          <span class="text-xs text-gray-400 font-bold">WinZO Style Instant Games</span>
-          <button onclick="openAddGameModal()" class="px-3 py-1 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-xl active:scale-95">+ Add Game</button>
-        </div>
-        <div id="gamesList" class="space-y-3">
-          <div class="text-center py-6 text-gray-500 text-xs">Loading games...</div>
-        </div>
-      </div>
-
-      <!-- SUBTAB 4: OFFERWALLS (CPALEAD + EARNKARO) -->
-      <div id="view-task-offerwalls" class="hidden space-y-4">
-        <div class="dark-card p-4 rounded-2xl space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-black text-green-400 uppercase">CPAlead Mega Offerwall</h3>
-            <label class="flex items-center gap-2 text-xs">
-              <span>Enable</span>
-              <input type="checkbox" id="cpaleadEnabled" class="w-4 h-4 accent-green-400" checked>
-            </label>
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">CPAlead Offerwall URL</label>
-            <input type="text" id="cpaleadUrlInput" value="https://fasttrk.net/offers?id=cpalead_tpl" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-        </div>
-
-        <div class="dark-card p-4 rounded-2xl space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-black text-amber-400 uppercase">EarnKaro Deals & Store</h3>
-            <label class="flex items-center gap-2 text-xs">
-              <span>Enable</span>
-              <input type="checkbox" id="earnkaroEnabled" class="w-4 h-4 accent-green-400" checked>
-            </label>
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">EarnKaro Affiliate URL</label>
-            <input type="text" id="earnkaroUrl" value="https://earningshub.co/Akhilesh-17901502844466" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-        </div>
-
-        <button onclick="saveOfferwallsConfig()" class="w-full py-2.5 bg-green-400 hover:bg-green-300 text-black font-black text-xs rounded-xl shadow active:scale-95">
-          Save Offerwalls Configuration
-        </button>
-      </div>
+      <div id="view-task-social" class="space-y-3"><div class="flex justify-between items-center"><span class="text-xs text-gray-400 font-bold">Social Media Tasks</span><button onclick="openAddTaskModal()" class="px-3 py-1 bg-green-400 text-black font-black text-xs rounded-xl">+ Add Task</button></div><div id="tasksList" class="space-y-3"><div class="text-center py-6 text-gray-500 text-xs">Loading tasks...</div></div></div>
+      <div id="view-task-offer" class="hidden"><div class="dark-card p-5 rounded-2xl space-y-3"><div class="text-lg font-black text-green-400">CPAlead Offerwall</div><p class="text-xs text-gray-400">CPAlead configuration and tracking URL belong in Settings. Users see the offerwall first on the app Home.</p><button onclick="switchTab('settings')" class="w-full py-2.5 bg-green-400 text-black rounded-xl text-xs font-black">Open Offerwall Settings</button></div><div class="dark-card p-5 rounded-2xl mt-3 border border-amber-400/10"><div class="text-sm font-black text-amber-400">EarnKaro</div><p class="text-xs text-gray-500 mt-1">Integration is intentionally postponed until its tracking/commission flow is finalized.</p></div></div>
+      <div id="view-task-banners" class="hidden space-y-3"><div class="flex justify-between items-center"><span class="text-xs text-gray-400 font-bold">Home Carousel Banners</span><button onclick="openAddBannerModal()" class="px-3 py-1 bg-green-400 text-black font-black text-xs rounded-xl">+ Add Banner</button></div><div id="bannersList" class="space-y-3"><div class="text-center py-6 text-gray-500 text-xs">Loading banners...</div></div></div>
+      <div id="view-task-games" class="hidden space-y-3"><div class="flex justify-between items-center"><span class="text-xs text-gray-400 font-bold">Gamezop Games</span><button onclick="openAddGameModal()" class="px-3 py-1 bg-green-400 text-black font-black text-xs rounded-xl">+ Add Game</button></div><div id="gamesList" class="space-y-3"><div class="text-center py-6 text-gray-500 text-xs">Loading games...</div></div></div>
+      <div id="view-task-future" class="hidden"><div class="dark-card p-5 rounded-2xl"><div class="text-sm font-black text-white">Future Earning Activities</div><p class="text-xs text-gray-500 mt-2">New offerwalls, surveys, app tasks or partner earning sources can be added here later without changing the main app navigation.</p></div></div>
     </main>
 
     <!-- TAB 5: SETTINGS -->
@@ -276,138 +197,73 @@
           </div>
         </div>
       
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Unity Game ID (Android)</label>
-            <input type="text" id="ads-gameId" value="5868205" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Ad Cooldown (Seconds)</label>
-            <input type="number" id="ads-cooldown" value="60" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Rewarded Ad Unit ID</label>
-            <input type="text" id="ads-rewardedId" value="BP_Rewarded_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Interstitial Ad Unit ID</label>
-            <input type="text" id="ads-interstitialId" value="Interstitial_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-        </div>
-        <div class="flex items-center justify-between pt-1">
-          <span class="text-xs text-gray-300">Test Mode (Keep OFF for real earning)</span>
-          <input type="checkbox" id="ads-testMode" class="w-4 h-4 accent-yellow-400">
-        </div>
-        <button onclick="saveUnityAdsConfig()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl active:scale-95">
-          Save Unity Ads Settings
-        </button>
-      </div>
-
-      <!-- P1: Core Economy -->
+        <div class="grid grid-cols-2 ga    <!-- TAB 5: SETTINGS -->
+    <main id="tabContent-settings" class="hidden p-4 space-y-4 max-w-xl mx-auto">
+      <div><h2 class="text-xl font-black text-white">Settings</h2><p class="text-[11px] text-gray-400">All app configuration lives here</p></div>
       <div class="dark-card p-4 rounded-2xl space-y-3">
-        <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-green-400 uppercase tracking-wider">Core Economy</h3>
-          <span class="text-[10px] text-gray-400 font-bold">Instant Sync</span>
-        </div>
+        <div class="flex items-center justify-between border-b border-white/5 pb-2"><h3 class="text-xs font-black text-indigo-300 uppercase">Unity Ads</h3><span id="adsStatusLabel" class="text-green-400 font-bold text-[10px]">Ads Active</span></div>
+        <div class="flex items-center justify-between"><span class="text-xs text-gray-300">Enable Ads</span><input type="checkbox" id="ads-enabledToggle" class="w-4 h-4 accent-green-400" checked onchange="toggleAdsLabel(this.checked)"></div>
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Coin Rate (Coins = ₹1)</label>
-            <input type="number" id="p1-coinRate" value="100" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Referral Bonus (₹)</label>
-            <input type="number" id="p1-referBonus" value="5" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Min Task Cash (₹)</label>
-            <input type="number" id="p1-minTask" value="25" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Min Refer Cash (₹)</label>
-            <input type="number" id="p1-minRefer" value="50" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Game ID</label><input id="ads-gameId" value="5868205" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Cooldown (sec)</label><input type="number" id="ads-cooldown" value="60" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Rewarded Placement</label><input id="ads-rewardedId" value="BP_Rewarded_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Interstitial Placement</label><input id="ads-interstitialId" value="Interstitial_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Banner Placement</label><input id="ads-bannerId" value="Banner_Android" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
         </div>
-        <div>
-          <label class="text-[10px] text-gray-400 font-bold uppercase">Announcement Banner Text</label>
-          <input type="text" id="p1-announcement" placeholder="e.g. Daily payouts sent at 8 PM" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-gray-300">Show Announcement Banner</span>
-          <input type="checkbox" id="p1-announcementToggle" class="w-4 h-4 accent-green-400">
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-gray-300">Maintenance Mode (Block App)</span>
-          <input type="checkbox" id="p1-maintenanceToggle" class="w-4 h-4 accent-red-500">
-        </div>
-        <button onclick="saveP1Config()" class="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-green-400 font-bold text-xs rounded-xl active:scale-95">
-          Save Core Controls
-        </button>
+        <div class="flex items-center justify-between"><span class="text-xs text-gray-300">Unity Test Mode</span><input type="checkbox" id="ads-testMode" class="w-4 h-4 accent-yellow-400" checked></div>
+        <button onclick="saveUnityAdsConfig()" class="w-full py-2.5 bg-indigo-600 text-white font-black text-xs rounded-xl">Save Unity Ads</button>
       </div>
-
-      <!-- P2: Game Controls -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
-        <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-amber-400 uppercase tracking-wider">Game & Reward Limits</h3>
-          <span class="text-[10px] text-gray-400 font-bold">Spin & Scratch</span>
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-400 font-bold uppercase">Wheel Numbers (Comma separated)</label>
-          <input type="text" id="p2-wheelSlices" value="1, 50, 5, 0, 200, 12" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-        </div>
+        <div class="flex items-center justify-between border-b border-white/5 pb-2"><h3 class="text-xs font-black text-emerald-300 uppercase">Rewarded Ads — Game Benefits Only</h3><span class="text-[10px] text-gray-500">No cashable coins</span></div>
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Daily Spin Limit</label>
-            <input type="number" id="p2-spinLimit" value="1" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-400 font-bold uppercase">Daily Scratch Limit</label>
-            <input type="number" id="p2-scratchLimit" value="1" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-          </div>
+          <label class="flex items-center justify-between gap-2 text-xs text-gray-300">Rewarded Ads <input type="checkbox" id="rewarded-enabled" class="w-4 h-4 accent-green-400"></label>
+          <label class="flex items-center justify-between gap-2 text-xs text-gray-300">Interstitial <input type="checkbox" id="interstitial-enabled" class="w-4 h-4 accent-green-400"></label>
+          <label class="flex items-center justify-between gap-2 text-xs text-gray-300">Spin Extra <input type="checkbox" id="rewarded-spin" class="w-4 h-4 accent-green-400"></label>
+          <label class="flex items-center justify-between gap-2 text-xs text-gray-300">Scratch Extra <input type="checkbox" id="rewarded-scratch" class="w-4 h-4 accent-green-400"></label>
+          <label class="flex items-center justify-between gap-2 text-xs text-gray-300">Game Ads <input type="checkbox" id="rewarded-game" class="w-4 h-4 accent-green-400"></label>
         </div>
-        <button onclick="saveP2Config()" class="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-amber-400 font-bold text-xs rounded-xl active:scale-95">
-          Save Game Controls
-        </button>
+        <div><label class="text-[10px] text-gray-400 font-bold uppercase">Daily Rewarded Ads Limit</label><input type="number" id="rewarded-daily-limit" min="0" value="10" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
+        <p class="text-[10px] text-gray-500">Task/social/CPAlead rewards are never granted by Unity rewarded ads.</p>
+        <button onclick="saveRewardedAdsConfig()" class="w-full py-2.5 bg-white/5 border border-white/10 text-green-400 font-black text-xs rounded-xl">Save Rewarded Ad Controls</button>
       </div>
-
-      <!-- P3: Security Shield -->
       <div class="dark-card p-4 rounded-2xl space-y-3">
-        <div class="flex items-center justify-between border-b border-white/5 pb-2">
-          <h3 class="text-xs font-black text-red-400 uppercase tracking-wider">Security & Anti-Cheat</h3>
-          <span class="text-[10px] text-gray-400 font-bold">Bot Protection</span>
+        <div class="flex items-center justify-between border-b border-white/5 pb-2"><h3 class="text-xs font-black text-green-400 uppercase">Core Economy</h3><span class="text-[10px] text-gray-400">Instant Sync</span></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Coins = ₹1</label><input type="number" id="p1-coinRate" value="100" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Referral Bonus ₹</label><input type="number" id="p1-referBonus" value="5" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Min Cash ₹</label><input type="number" id="p1-minTask" value="25" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">Min Refer ₹</label><input type="number" id="p1-minRefer" value="50" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white"></div>
         </div>
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-gray-300">Block VPN & Proxy</span>
-          <input type="checkbox" id="p3-blockVPN" class="w-4 h-4 accent-red-500">
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-gray-300">Block Rooted Devices</span>
-          <input type="checkbox" id="p3-blockRooted" class="w-4 h-4 accent-red-500">
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-gray-300">One Device - One Account Rule</span>
-          <input type="checkbox" id="p3-oneDevice" class="w-4 h-4 accent-red-500">
-        </div>
-        <button onclick="saveP3Config()" class="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-red-400 font-bold text-xs rounded-xl active:scale-95">
-          Save Security Settings
-        </button>
+        <input type="text" id="p1-announcement" placeholder="Announcement text" class="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <div class="flex items-center justify-between"><span class="text-xs text-gray-300">Show Announcement</span><input type="checkbox" id="p1-announcementToggle" class="w-4 h-4 accent-green-400"></div>
+        <div class="flex items-center justify-between"><span class="text-xs text-gray-300">Maintenance Mode</span><input type="checkbox" id="p1-maintenanceToggle" class="w-4 h-4 accent-red-500"></div>
+        <button onclick="saveP1Config()" class="w-full py-2.5 bg-white/5 border border-white/10 text-green-400 font-black text-xs rounded-xl">Save Core Economy</button>
       </div>
-
-      <!-- GPLinks Referral Settings -->
-      <div class="dark-card p-5 rounded-2xl border border-white/10 space-y-3">
-        <h3 class="text-xs font-black text-white uppercase tracking-wider">🔗 GPLinks Referral Settings</h3>
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-gray-300 font-medium">Enable GPLinks Shortener for Referrals</span>
-          <input type="checkbox" id="gplinksToggle" class="w-4 h-4 accent-green-400 rounded cursor-pointer" checked>
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-400 font-bold uppercase">GPLinks API Key</label>
-          <input type="text" id="gplinksKeyInput" value="" class="w-full mt-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-green-400">
-        </div>
-        <button type="button" onclick="saveGplinksConfig()" class="w-full py-2.5 bg-green-400 hover:bg-green-300 text-black font-black rounded-xl text-xs transition-all shadow-lg active:scale-95">
-          Save Referral Settings
-        </button>
+      <div class="dark-card p-4 rounded-2xl space-y-3">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2"><h3 class="text-xs font-black text-amber-400 uppercase">Game & Reward Limits</h3><span class="text-[10px] text-gray-400">Spin & Scratch</span></div>
+        <input type="text" id="p2-wheelSlices" value="1, 50, 5, 0, 200, 12" class="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <div class="grid grid-cols-2 gap-3"><input type="number" id="p2-spinLimit" value="1" class="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white" placeholder="Daily spin"><input type="number" id="p2-scratchLimit" value="1" class="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white" placeholder="Daily scratch"></div>
+        <button onclick="saveP2Config()" class="w-full py-2.5 bg-white/5 border border-white/10 text-amber-400 font-black text-xs rounded-xl">Save Game Limits</button>
       </div>
-
+      <div class="dark-card p-4 rounded-2xl space-y-3">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2"><h3 class="text-xs font-black text-red-400 uppercase">Security</h3><span class="text-[10px] text-gray-500">Anti-cheat controls</span></div>
+        <div class="flex items-center justify-between"><span class="text-xs text-gray-300">Block VPN & Proxy</span><input type="checkbox" id="p3-blockVPN" class="w-4 h-4 accent-red-500"></div>
+        <div class="flex items-center justify-between"><span class="text-xs text-gray-300">Block Rooted Devices</span><input type="checkbox" id="p3-blockRooted" class="w-4 h-4 accent-red-500"></div>
+        <div class="flex items-center justify-between"><span class="text-xs text-gray-300">One Device / Account</span><input type="checkbox" id="p3-oneDevice" class="w-4 h-4 accent-red-500"></div>
+        <button onclick="saveP3Config()" class="w-full py-2.5 bg-white/5 border border-white/10 text-red-400 font-black text-xs rounded-xl">Save Security</button>
+      </div>
+      <div class="dark-card p-4 rounded-2xl space-y-3">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2"><h3 class="text-xs font-black text-green-300 uppercase">CPAlead Offerwall</h3><span class="text-[10px] text-gray-500">Home priority</span></div>
+        <div class="flex items-center justify-between"><span class="text-xs text-gray-300">Enable CPAlead</span><input type="checkbox" id="cpaleadEnabled" class="w-4 h-4 accent-green-400"></div>
+        <label class="text-[10px] text-gray-400 font-bold uppercase">Offerwall URL Template</label>
+        <input id="cpaleadUrlInput" placeholder="https://www.cpalead.com/wall/YOUR_SLUG?subid={uid}" class="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <p class="text-[10px] text-gray-500">Use {uid} where TPL should insert the logged-in user's Firebase UID as subid.</p>
+        <label class="text-[10px] text-gray-400 font-bold uppercase">Postback Receiver URL</label>
+        <input id="cpaleadPostbackUrl" placeholder="https://your-secure-server/postback/cpalead" class="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <p class="text-[10px] text-amber-400/80">Automatic coin credit requires a secure server-side CPAlead postback that validates lead_id/subid.</p>
+        <button onclick="saveCpaleadConfig()" class="w-full py-2.5 bg-green-400 text-black font-black text-xs rounded-xl">Save CPAlead Settings</button>
+      </div>
+      <div class="dark-card p-5 rounded-2xl space-y-3"><h3 class="text-xs font-black text-white uppercase">GPLinks Referral Settings</h3><div class="flex items-center justify-between"><span class="text-xs text-gray-300">Enable GPLinks</span><input type="checkbox" id="gplinksToggle" class="w-4 h-4 accent-green-400"></div><label class="text-[10px] text-gray-400 font-bold uppercase">GPLinks API Key</label><input type="text" id="gplinksKeyInput" value="" class="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-white text-xs"><button type="button" onclick="saveGplinksConfig()" class="w-full py-2.5 bg-green-400 text-black font-black rounded-xl text-xs">Save GPLinks</button></div>
     </main>
 
     <!-- ================= BOTTOM NAVIGATION ================= -->
@@ -430,7 +286,7 @@
         </button>
         <button onclick="switchTab('tasks')" id="nav-tasks" class="flex flex-col items-center gap-1 text-gray-400 transition py-1">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          <span class="text-[9px] font-bold">Tasks Hub</span>
+          <span class="text-[9px] font-bold">Tasks</span>
         </button>
         <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 text-gray-400 transition py-1">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -505,6 +361,11 @@
     console.log("TPL Manual UPI Payout Desk running...");
     let cachedWithdrawals = [];
     let payoutFilter = 'all';
+    let payoutTypeFilter = 'all';
+    let payoutDateFilter = 'all';
+    let payoutSort = 'newest';
+    let payoutSearch = '';
+    let payoutNeedsAction = false;
     let payoutUnsubscribe = null;
     const SUCCESS_STATUSES = ['completed', 'success', 'settled', 'paid'];
     const FAILED_STATUSES = ['rejected', 'failed', 'cancelled'];
@@ -538,19 +399,18 @@
       if (!container || document.getElementById('payoutFilterBar')) return;
       const bar = document.createElement('div');
       bar.id = 'payoutFilterBar';
-      bar.className = 'dark-card p-2 rounded-2xl grid grid-cols-4 gap-1.5 sticky top-16 z-20';
-      bar.innerHTML = '<button class="payout-filter-btn active" data-filter="all">All <span data-count="all">0</span></button>' +
-        '<button class="payout-filter-btn" data-filter="pending">Pending <span data-count="pending">0</span></button>' +
-        '<button class="payout-filter-btn" data-filter="success">Success <span data-count="success">0</span></button>' +
-        '<button class="payout-filter-btn" data-filter="failed">Failed <span data-count="failed">0</span></button>';
-      bar.querySelectorAll('.payout-filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          payoutFilter = btn.dataset.filter || 'all';
-          bar.querySelectorAll('.payout-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
-          renderPayoutQueue();
-        });
-      });
+      bar.className = 'dark-card p-3 rounded-2xl space-y-2 sticky top-16 z-20';
+      bar.innerHTML = '<input id="payoutSearch" placeholder="Search user name, email, or UPI..." class="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-white">' +
+        '<div class="grid grid-cols-2 gap-2"><select id="payoutTypeFilter" class="py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white"><option value="all">All Types</option><option value="cash">Cash</option><option value="refer">Referral</option></select><select id="payoutDateFilter" class="py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white"><option value="all">All Dates</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7">Last 7 Days</option><option value="30">Last 30 Days</option></select></div>' +
+        '<div class="grid grid-cols-2 gap-2"><select id="payoutSort" class="py-2 px-2 bg-black/60 border border-white/10 rounded-xl text-xs text-white"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="high">Amount High → Low</option><option value="low">Amount Low → High</option></select><label class="flex items-center gap-2 py-2 px-2 bg-black/30 border border-white/10 rounded-xl text-xs text-gray-300"><input id="payoutNeedsAction" type="checkbox" class="accent-green-400"> Needs Action</label></div>' +
+        '<div class="grid grid-cols-4 gap-1.5"><button class="payout-filter-btn active" data-filter="all">All <span data-count="all">0</span></button><button class="payout-filter-btn" data-filter="pending">Pending <span data-count="pending">0</span></button><button class="payout-filter-btn" data-filter="success">Success <span data-count="success">0</span></button><button class="payout-filter-btn" data-filter="failed">Failed <span data-count="failed">0</span></button></div>';
       container.parentElement.insertBefore(bar, container);
+      document.getElementById('payoutSearch').addEventListener('input',e=>{payoutSearch=e.target.value.toLowerCase().trim();renderPayoutQueue();});
+      document.getElementById('payoutTypeFilter').addEventListener('change',e=>{payoutTypeFilter=e.target.value;renderPayoutQueue();});
+      document.getElementById('payoutDateFilter').addEventListener('change',e=>{payoutDateFilter=e.target.value;renderPayoutQueue();});
+      document.getElementById('payoutSort').addEventListener('change',e=>{payoutSort=e.target.value;renderPayoutQueue();});
+      document.getElementById('payoutNeedsAction').addEventListener('change',e=>{payoutNeedsAction=e.target.checked;renderPayoutQueue();});
+      bar.querySelectorAll('.payout-filter-btn').forEach(btn=>btn.addEventListener('click',()=>{payoutFilter=btn.dataset.filter||'all';bar.querySelectorAll('.payout-filter-btn').forEach(b=>b.classList.toggle('active',b===btn));renderPayoutQueue();}));
     }
     function updatePayoutCounts() {
       const counts = { all: cachedWithdrawals.length, pending: 0, success: 0, failed: 0 };
@@ -561,13 +421,16 @@
       });
     }
     function updateOverviewStats() {
-      let pendingCount = 0, pendingAmount = 0, totalPaid = 0;
+      let pendingCount = 0, pendingAmount = 0, totalPaid = 0, todayPaid = 0;
+      const start = new Date(); start.setHours(0,0,0,0);
       cachedWithdrawals.forEach(w => {
-        const amount = Number(w.amount) || 0;
-        const status = normalizePayoutStatus(w.status);
+        const amount = Number(w.amount) || 0, status = normalizePayoutStatus(w.status);
         if (status === 'pending') { pendingCount++; pendingAmount += amount; }
-        else if (status === 'success') totalPaid += amount;
+        else if (status === 'success') { totalPaid += amount; const d=w.paidAt?.toDate ? w.paidAt.toDate() : (w.paidAt?.seconds ? new Date(w.paidAt.seconds*1000) : null); if(d && d>=start) todayPaid+=amount; }
       });
+      let cashLiability=0, referLiability=0, newUsersToday=0;
+      const todayKey=start.toDateString();
+      (typeof cachedUsers !== 'undefined' ? cachedUsers : []).forEach(u=>{ cashLiability+=Number(u.taskCash)||0; referLiability+=Number(u.referCash)||0; const d=u.createdAt?.toDate ? u.createdAt.toDate() : (u.createdAt?.seconds ? new Date(u.createdAt.seconds*1000) : null); if(d && d.toDateString()===todayKey) newUsersToday++; });
       const pCountEl = document.getElementById('statPendingCount');
       const pAmtEl = document.getElementById('statPendingAmount');
       const paidAmtEl = document.getElementById('statPaidAmount');
@@ -575,13 +438,37 @@
       if (pCountEl) pCountEl.innerText = pendingCount;
       if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
       if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
+      const todayPaidEl=document.getElementById('statTodayPaidAmount'); if(todayPaidEl) todayPaidEl.innerText='₹'+todayPaid.toFixed(2);
+      const cashEl=document.getElementById('statCashLiability'); if(cashEl) cashEl.innerText='₹'+cashLiability.toFixed(2);
+      const referEl=document.getElementById('statReferLiability'); if(referEl) referEl.innerText='₹'+referLiability.toFixed(2);
+      const newUsersEl=document.getElementById('statNewUsersToday'); if(newUsersEl) newUsersEl.innerText=newUsersToday;
       if (badgeEl) { badgeEl.innerText = pendingCount; badgeEl.classList.toggle('hidden', pendingCount === 0); }
     }
     function renderPayoutQueue() {
       const container = document.getElementById('withdrawalsList');
       if (!container) return;
       ensurePayoutToolbar();
-      const visible = payoutFilter === 'all' ? cachedWithdrawals : cachedWithdrawals.filter(w => normalizePayoutStatus(w.status) === payoutFilter);
+      const now = new Date();
+      let visible = cachedWithdrawals.filter(w => {
+        const status = normalizePayoutStatus(w.status);
+        if (payoutFilter !== 'all' && status !== payoutFilter) return false;
+        if (payoutNeedsAction && status !== 'pending') return false;
+        const type = String(w.type || '').toLowerCase();
+        if (payoutTypeFilter === 'cash' && !type.includes('cash')) return false;
+        if (payoutTypeFilter === 'refer' && !type.includes('refer')) return false;
+        const hay = ((w.userName || '') + ' ' + (w.userEmail || w.email || '') + ' ' + (w.upiId || '')).toLowerCase();
+        if (payoutSearch && !hay.includes(payoutSearch)) return false;
+        const created = w.createdAt?.toDate ? w.createdAt.toDate() : (w.createdAt?.seconds ? new Date(w.createdAt.seconds * 1000) : null);
+        if (created && payoutDateFilter !== 'all') {
+          const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          if (payoutDateFilter === 'today' && created < start) return false;
+          if (payoutDateFilter === 'yesterday') { const yStart = new Date(start); yStart.setDate(yStart.getDate()-1); if (created < yStart || created >= start) return false; }
+          if (payoutDateFilter === '7' && created < new Date(start.getTime()-6*86400000)) return false;
+          if (payoutDateFilter === '30' && created < new Date(start.getTime()-29*86400000)) return false;
+        }
+        return true;
+      });
+      visible.sort((a,b)=>{ const aa=Number(a.amount)||0, bb=Number(b.amount)||0, ad=a.createdAt?.seconds||0, bd=b.createdAt?.seconds||0; if(payoutSort==='oldest') return ad-bd; if(payoutSort==='high') return bb-aa; if(payoutSort==='low') return aa-bb; return bd-ad; });
       if (!visible.length) {
         container.innerHTML = '<div class="text-center py-10 text-gray-500 text-xs font-bold">No ' + escapeHtml(payoutFilter === 'all' ? '' : payoutFilter + ' ') + 'withdrawal requests found.</div>';
         return;
