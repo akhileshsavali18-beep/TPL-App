@@ -151,7 +151,10 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
                   );
                 }
 
-                final tasks = snapshot.data!.docs;
+                final tasks = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return data['isActive'] != false;
+                }).toList();
 
                 return ListView.separated(
                   itemCount: tasks.length,
