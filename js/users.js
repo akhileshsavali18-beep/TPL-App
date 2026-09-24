@@ -80,6 +80,7 @@ function openEditUserModal(uid) {
 
   document.getElementById('editUserId').value = uid;
   document.getElementById('editUserName').value = u.displayName || '';
+  document.getElementById('editUserEmail').value = u.email || '';
   document.getElementById('editUserCoins').value = u.coins || 0;
   document.getElementById('editUserTaskCash').value = u.taskCash || 0;
   document.getElementById('editUserReferCash').value = u.referCash || 0;
@@ -115,8 +116,12 @@ async function saveUserEdit() {
 }
 
 // 5. In-App Alert Notice Modal & Send
-function openNotifModal(uid, name) {
+function openNotifModal(uid) {
+  const u = cachedUsers.find(user => user.id === uid);
+  if (!u) return alert('User not found!');
+
   document.getElementById('modalUserUid').value = uid;
+  document.getElementById('modalUserName').innerText = u.displayName || u.email || 'Player';
   document.getElementById('notifTitle').value = '📢 TPL Notice';
   document.getElementById('notifBody').value = '';
   document.getElementById('notifModal').classList.remove('hidden');
