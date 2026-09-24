@@ -21,6 +21,8 @@ dependencies:
   url_launcher: ^6.3.0
   share_plus: ^10.0.2
   http: ^1.2.2
+  path_provider: ^2.1.4
+  open_filex: ^4.7.0
 
   # Sound Effects (Spin & Win)
   audioplayers: ^6.1.0
