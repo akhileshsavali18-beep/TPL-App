@@ -75,7 +75,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> {
                       const Icon(Icons.task_alt_rounded, color: Color(0xFF00FF87)), const SizedBox(width: 11),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 3), Text(subtitle, style: const TextStyle(color: Colors.white45, fontSize: 10)),
+                        const SizedBox(height: 3), Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 10)),
                       ])),
                       ElevatedButton(onPressed: done ? null : () => _handleTask(doc.id, title, coins, url), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black, disabledBackgroundColor: Colors.white10, disabledForegroundColor: Colors.white30, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8)), child: Text(done ? 'DONE' : '+' + coins.toString(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11))),
                     ]),
