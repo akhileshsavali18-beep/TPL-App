@@ -103,3 +103,77 @@ class _CpaleadOfferwallScreenState extends State<CpaleadOfferwallScreen> {
     );
   }
 }
+
+
+class CpaleadOfferwallPanel extends StatefulWidget {
+  final double height;
+  const CpaleadOfferwallPanel({super.key, this.height = 620});
+
+  @override
+  State<CpaleadOfferwallPanel> createState() => _CpaleadOfferwallPanelState();
+}
+
+class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
+  WebViewController? _controller;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('Please sign in again.');
+      final snap = await FirebaseFirestore.instance.collection('settings').doc('offerwalls').get();
+      final data = snap.data() ?? <String, dynamic>{};
+      if (data['cpaleadActive'] == false) throw Exception('CPAlead Offerwall is disabled.');
+      final template = (data['cpaleadUrlTemplate'] ?? data['cpaleadUrl'] ?? '').toString().trim();
+      if (template.isEmpty) throw Exception('CPAlead Offerwall is not configured in Admin Settings.');
+      if (!template.startsWith('https://')) throw Exception('Offerwall URL must use HTTPS.');
+
+      var url = template.replaceAll('{uid}', Uri.encodeComponent(user.uid));
+      if (!template.contains('{uid}')) {
+        url = url + (url.contains('?') ? '&' : '?') + 'subid=' + Uri.encodeComponent(user.uid);
+      }
+
+      final controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0xFF080B10))
+        ..setNavigationDelegate(NavigationDelegate(
+          onPageStarted: (_) { if (mounted) setState(() => _loading = true); },
+          onPageFinished: (_) { if (mounted) setState(() => _loading = false); },
+          onWebResourceError: (e) { if (mounted) setState(() { _loading = false; _error = e.description; }); },
+        ))
+        ..loadRequest(Uri.parse(url));
+
+      if (mounted) setState(() { _controller = controller; _loading = true; });
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = e.toString().replaceFirst('Exception: ', ''); });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: widget.height,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(color: const Color(0xFF111622), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.22))),
+      child: Stack(children: [
+        if (_controller != null) WebViewWidget(controller: _controller!),
+        if (_error != null) Center(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.local_offer_outlined, color: Color(0xFF00FF87), size: 38),
+          const SizedBox(height: 8),
+          Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+          const SizedBox(height: 10),
+          ElevatedButton(onPressed: _load, child: const Text('Retry')),
+        ]))),
+        if (_loading && _error == null) const Center(child: CircularProgressIndicator(color: Color(0xFF00FF87))),
+      ]),
+    );
+  }
+}
