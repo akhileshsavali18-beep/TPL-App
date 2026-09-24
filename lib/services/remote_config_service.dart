@@ -32,7 +32,13 @@ class RemoteConfigService {
   String rewardedPlacementId = 'BP_Rewarded_Android';
   String interstitialPlacementId = 'Interstitial_Android';
   String bannerPlacementId = 'Banner_Android';
-  bool unityTestMode = true; // ಟೆಸ್ಟಿಂಗ್ ಸಮಯದಲ್ಲಿ True ಇರಲೇಬೇಕು!
+  bool unityTestMode = true;
+  bool rewardedAdsEnabled = true;
+  bool interstitialEnabled = true;
+  bool rewardedSpinEnabled = true;
+  bool rewardedScratchEnabled = true;
+  bool rewardedGameEnabled = true;
+  int rewardedDailyLimit = 10;
 
   Future<void> init() async {
     try {
@@ -85,6 +91,12 @@ class RemoteConfigService {
           interstitialPlacementId = data['interstitialId']?.toString() ?? 'Interstitial_Android';
           bannerPlacementId = data['bannerId']?.toString() ?? 'Banner_Android';
           unityTestMode = data['testMode'] ?? true;
+          rewardedAdsEnabled = data['rewardedAdsEnabled'] ?? true;
+          interstitialEnabled = data['interstitialEnabled'] ?? true;
+          rewardedSpinEnabled = data['rewardedSpinEnabled'] ?? true;
+          rewardedScratchEnabled = data['rewardedScratchEnabled'] ?? true;
+          rewardedGameEnabled = data['rewardedGameEnabled'] ?? true;
+          rewardedDailyLimit = int.tryParse(data['rewardedDailyLimit']?.toString() ?? '') ?? 10;
         }
       });
     } catch (e) {
