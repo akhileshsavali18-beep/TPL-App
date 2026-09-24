@@ -60,7 +60,21 @@ class RemoteConfigService {
         }
       });
 
-      // 3. Unity Ads Remote Switcher
+      // 3. Game & Reward Limits
+      _firestore.collection('settings').doc('game_limits').snapshots().listen((snap) {
+        if (snap.exists && snap.data() != null) {
+          final data = snap.data()!;
+          final rawSlices = data['wheelSlices'];
+          if (rawSlices is List) {
+            final parsed = rawSlices.map((value) => int.tryParse(value.toString())).whereType<int>().toList();
+            if (parsed.length >= 2) wheelSlices = parsed;
+          }
+          dailySpinLimit = int.tryParse(data['spinLimit']?.toString() ?? '') ?? 1;
+          dailyScratchLimit = int.tryParse(data['scratchLimit']?.toString() ?? '') ?? 1;
+        }
+      });
+
+      // 4. Unity Ads Remote Switcher
       _firestore.collection('settings').doc('unity_ads').snapshots().listen((snap) {
         if (snap.exists && snap.data() != null) {
           final data = snap.data()!;
