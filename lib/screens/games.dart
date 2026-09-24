@@ -62,12 +62,12 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
   // Visual Slices (50 & 200 are bait slices)
   List<_WheelItem> wheelSlices = [
-    _WheelItem(label: '1 Coin', coins: 1, color: const Color(0xFF00FF87)),
-    _WheelItem(label: '50 Coins', coins: 50, color: const Color(0xFFFF5252), isBait: true),
-    _WheelItem(label: '5 Coins', coins: 5, color: const Color(0xFF6C63FF)),
+    _WheelItem(label: '1 Bonus', coins: 1, color: const Color(0xFF00FF87)),
+    _WheelItem(label: '50 Bonus', coins: 50, color: const Color(0xFFFF5252), isBait: true),
+    _WheelItem(label: '5 Bonus', coins: 5, color: const Color(0xFF6C63FF)),
     _WheelItem(label: 'Better Luck', coins: 0, color: const Color(0xFF374151)),
-    _WheelItem(label: '200 Coins', coins: 200, color: const Color(0xFFFFD700), isBait: true),
-    _WheelItem(label: '12 Coins', coins: 12, color: const Color(0xFF00C0FF)),
+    _WheelItem(label: '200 Bonus', coins: 200, color: const Color(0xFFFFD700), isBait: true),
+    _WheelItem(label: '12 Bonus', coins: 12, color: const Color(0xFF00C0FF)),
   ];
 
   // Default Fallback Instant Games
@@ -169,7 +169,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
 
       setState(() {
         wheelSlices = values.map((coins) => _WheelItem(
-          label: coins <= 0 ? 'Better Luck' : '$coins Coins',
+          label: coins <= 0 ? 'Better Luck' : '$coins Bonus',
           coins: coins,
           color: _wheelColor(coins),
           isBait: coins >= 50,
@@ -570,7 +570,7 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                                   Icon(Icons.check_circle_rounded, color: Color(0xFF00FF87), size: 30),
                                   SizedBox(height: 4),
                                   Text(
-                                    '+6 COINS WON!',
+                                    'BONUS UNLOCKED!',
                                     style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF00FF87), fontSize: 16),
                                   ),
                                 ],
