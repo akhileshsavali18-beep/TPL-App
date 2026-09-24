@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/transaction_history.dart';
+import '../widgets/unity_banner_widget.dart';
 
 class WalletScreen extends StatefulWidget {
   final int coins;
@@ -468,6 +469,7 @@ class _WalletScreenState extends State<WalletScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const UnityBannerWidget(),
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
