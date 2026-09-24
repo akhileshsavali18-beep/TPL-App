@@ -1,5 +1,8 @@
 name: Build TPL Pro APK
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -61,12 +64,27 @@ jobs:
       - name: Generate App Icons
         run: dart run flutter_launcher_icons
 
+      - name: Set build number
+        run: echo "BUILD_NUMBER=${{ github.run_number }}" >> "$GITHUB_ENV"
+
       - name: Build Android Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-name=1.0.0 --build-number=$BUILD_NUMBER --dart-define=APP_BUILD_NUMBER=$BUILD_NUMBER
+
+      - name: Prepare Release APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-build.${{ github.run_number }}
+          name: TPL Pro Build ${{ github.run_number }}
+          generate_release_notes: false
+          make_latest: true
+          files: build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
 
       - name: Upload APK to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: TPL-Pro-Release-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
           
