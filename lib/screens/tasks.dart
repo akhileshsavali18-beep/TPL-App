@@ -325,7 +325,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
         const Text('Watch ad & reveal', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 10)),
         const SizedBox(height: 16),
         GestureDetector(
-          onPanUpdate: unlocked ? (_) {} : null,
+          onPanUpdate: canScratch ? (_) {} : null,
           onTap: canScratch ? _unlockScratch : null,
           child: Container(
             height: 118,
