@@ -130,18 +130,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         .listen((doc) {
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
+        final now = DateTime.now();
+        final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        final dailyDate = data['dailyBonusDate']?.toString() ?? '';
+        final isToday = dailyDate == todayKey;
         setState(() {
           coins = data['coins'] ?? 50;
           taskCash = (data['taskCash'] ?? 0.0).toDouble();
           referCash = (data['referCash'] ?? 0.0).toDouble();
           savedUpiId = data['upiId'];
-          spinsLeft = data['spinsLeft'] ?? 0;
-          scratchLeft = data['scratchLeft'] ?? 0;
+          spinsLeft = isToday ? (data['spinsLeft'] ?? 0) : 0;
+          scratchLeft = isToday ? (data['scratchLeft'] ?? 0) : 0;
           streakClaimedToday = data['streakClaimedToday'] ?? false;
           hasConvertedToday = data['hasConvertedToday'] ?? false;
           hasTaskWithdrawnToday = data['hasTaskWithdrawnToday'] ?? false;
           hasReferWithdrawnToday = data['hasReferWithdrawnToday'] ?? false;
         });
+        if (!isToday) {
+          FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+            'dailyBonusDate': todayKey,
+            'dailyTaskProgress': 0,
+            'spinsLeft': 0,
+            'scratchLeft': 0,
+          }, SetOptions(merge: true));
+        }
       }
     });
   }
