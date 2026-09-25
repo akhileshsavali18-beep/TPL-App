@@ -541,8 +541,8 @@ class _WalletScreenState extends State<WalletScreen> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => const Scaffold(
-                            backgroundColor: Color(0xFF080B10),
+                          builder: (_) => Scaffold(
+                            backgroundColor: const Color(0xFF080B10),
                             appBar: AppBar(
                               backgroundColor: Colors.transparent,
                               elevation: 0,
