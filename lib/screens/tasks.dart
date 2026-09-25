@@ -380,6 +380,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                       SizedBox(height: 4),
                       Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('TAP TO WATCH & SCRATCH', textAlign: TextAlign.center, style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w900, fontSize: 11))),
                     ]),
+              ),
             ),
           ),
         ),
