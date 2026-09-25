@@ -201,75 +201,254 @@ function ensureBannerModal() {
   wrap.innerHTML = `
     <div class="dark-card w-full max-w-md rounded-3xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between">
-        <div><div id="bannerModalTitle" class="text-lg font-black text-white">Add Banner</div><div class="text-[10px] text-gray-500">Use a direct public image URL</div></div>
+        <div>
+          <div id="bannerModalTitle" class="text-lg font-black text-white">Add Banner</div>
+          <div class="text-[10px] text-gray-500">Upload the banner image directly from your phone or computer.</div>
+        </div>
         <button onclick="closeAddBannerModal()" class="text-gray-400 text-xl">×</button>
       </div>
+
       <input type="hidden" id="bannerEditId">
+      <input type="hidden" id="bannerCurrentImageUrl">
+      <input type="hidden" id="bannerCurrentStoragePath">
+
       <input id="bannerTitle" placeholder="Banner title" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-      <input id="bannerSub" placeholder="Short subtitle" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-      <input id="bannerImageUrl" placeholder="Banner image URL (https://...)" oninput="previewBannerImage()" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
-      <div id="bannerImagePreview" class="hidden rounded-2xl overflow-hidden border border-white/10 bg-black/30 aspect-video"><img id="bannerPreviewImg" class="w-full h-full object-cover"></div>
+
+      <input id="bannerSub" placeholder="Short subtitle (optional)" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+
+      <div class="space-y-2">
+        <label class="block text-[10px] text-gray-400 font-bold uppercase">Banner Image</label>
+        <label class="flex items-center justify-center gap-2 w-full px-3 py-4 bg-blue-500/10 border border-blue-400/30 border-dashed rounded-2xl text-xs text-blue-300 font-black cursor-pointer active:scale-[0.99]">
+          <span>📤 Choose Image</span>
+          <input id="bannerImageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" onchange="handleBannerImageSelected(event)">
+        </label>
+        <div id="bannerUploadName" class="text-[10px] text-gray-500 text-center">No new image selected</div>
+        <div id="bannerImagePreview" class="hidden rounded-2xl overflow-hidden border border-white/10 bg-black/30 aspect-video">
+          <img id="bannerPreviewImg" class="w-full h-full object-cover">
+        </div>
+      </div>
+
       <input id="bannerTargetUrl" placeholder="Click target URL (optional)" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+
       <div class="grid grid-cols-2 gap-3">
         <input type="number" id="bannerOrder" min="0" value="1" placeholder="Order" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
         <label class="flex items-center justify-between px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-gray-300">Active <input type="checkbox" id="bannerActive" checked class="w-4 h-4 accent-green-400"></label>
       </div>
-      <button onclick="saveNewBanner()" class="w-full py-3 bg-green-400 text-black font-black text-xs rounded-xl">Save Banner</button>
+
+      <div id="bannerUploadProgress" class="hidden space-y-1">
+        <div class="flex justify-between text-[10px] text-gray-400"><span>Uploading...</span><span id="bannerUploadPercent">0%</span></div>
+        <div class="h-1.5 rounded-full bg-white/10 overflow-hidden"><div id="bannerUploadBar" class="h-full bg-blue-400 transition-all" style="width:0%"></div></div>
+      </div>
+
+      <button id="saveBannerBtn" onclick="saveNewBanner()" class="w-full py-3 bg-green-400 text-black font-black text-xs rounded-xl">Save Banner</button>
     </div>`;
   document.body.appendChild(wrap);
 }
+
 function openAddBannerModal() {
   ensureBannerModal();
   document.getElementById('bannerModalTitle').textContent = 'Add Banner';
   document.getElementById('bannerEditId').value = '';
+  document.getElementById('bannerCurrentImageUrl').value = '';
+  document.getElementById('bannerCurrentStoragePath').value = '';
   document.getElementById('bannerTitle').value = '';
   document.getElementById('bannerSub').value = '';
-  document.getElementById('bannerImageUrl').value = '';
   document.getElementById('bannerTargetUrl').value = '';
   document.getElementById('bannerOrder').value = '1';
   document.getElementById('bannerActive').checked = true;
-  previewBannerImage();
+  document.getElementById('bannerImageFile').value = '';
+  document.getElementById('bannerUploadName').textContent = 'No new image selected';
+  document.getElementById('bannerImagePreview').classList.add('hidden');
+  document.getElementById('bannerUploadProgress').classList.add('hidden');
+  document.getElementById('saveBannerBtn').disabled = false;
+  document.getElementById('saveBannerBtn').textContent = 'Save Banner';
   document.getElementById('bannerModal').classList.remove('hidden');
 }
-function closeAddBannerModal() { const m=document.getElementById('bannerModal'); if(m) m.classList.add('hidden'); }
-function previewBannerImage() {
-  const url=(document.getElementById('bannerImageUrl')?.value || '').trim();
-  const box=document.getElementById('bannerImagePreview'), img=document.getElementById('bannerPreviewImg');
-  if(!box||!img) return;
-  if(url){ img.src=url; box.classList.remove('hidden'); } else { img.removeAttribute('src'); box.classList.add('hidden'); }
+
+function closeAddBannerModal() {
+  const m = document.getElementById('bannerModal');
+  if (m) m.classList.add('hidden');
 }
+
+function handleBannerImageSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  const name = document.getElementById('bannerUploadName');
+  const box = document.getElementById('bannerImagePreview');
+  const img = document.getElementById('bannerPreviewImg');
+
+  if (!file) {
+    if (name) name.textContent = 'No new image selected';
+    if (box) box.classList.add('hidden');
+    return;
+  }
+
+  if (!file.type.startsWith('image/')) {
+    event.target.value = '';
+    if (name) name.textContent = 'Invalid file type';
+    if (box) box.classList.add('hidden');
+    return alert('Please select an image file.');
+  }
+
+  if (file.size > 8 * 1024 * 1024) {
+    event.target.value = '';
+    if (name) name.textContent = 'File is too large';
+    if (box) box.classList.add('hidden');
+    return alert('Banner image must be 8 MB or smaller.');
+  }
+
+  if (name) name.textContent = file.name + ' • ' + (file.size / 1024 / 1024).toFixed(2) + ' MB';
+  if (img && box) {
+    img.src = URL.createObjectURL(file);
+    box.classList.remove('hidden');
+  }
+}
+
+function setBannerUploadProgress(percent) {
+  const wrap = document.getElementById('bannerUploadProgress');
+  const label = document.getElementById('bannerUploadPercent');
+  const bar = document.getElementById('bannerUploadBar');
+  if (wrap) wrap.classList.remove('hidden');
+  if (label) label.textContent = Math.round(percent) + '%';
+  if (bar) bar.style.width = Math.max(0, Math.min(100, percent)) + '%';
+}
+
+function uploadBannerImage(file, storagePath) {
+  return new Promise((resolve, reject) => {
+    if (!firebase.storage) {
+      reject(new Error('Firebase Storage SDK is not loaded.'));
+      return;
+    }
+
+    const safeName = (file.name || 'banner').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const ref = firebase.storage().ref().child(storagePath + '_' + safeName);
+    const task = ref.put(file, { contentType: file.type || 'image/jpeg' });
+
+    task.on('state_changed',
+      snapshot => {
+        const progress = snapshot.totalBytes ? (snapshot.bytesTransferred / snapshot.totalBytes) * 100 : 0;
+        setBannerUploadProgress(progress);
+      },
+      error => reject(error),
+      async () => {
+        try {
+          const url = await task.snapshot.ref.getDownloadURL();
+          resolve({ url: url, path: task.snapshot.ref.fullPath });
+        } catch (e) {
+          reject(e);
+        }
+      }
+    );
+  });
+}
+
 async function saveNewBanner() {
-  const id=document.getElementById('bannerEditId').value.trim();
-  const title=document.getElementById('bannerTitle').value.trim();
-  const sub=document.getElementById('bannerSub').value.trim();
-  const imageUrl=document.getElementById('bannerImageUrl').value.trim();
-  const targetUrl=document.getElementById('bannerTargetUrl').value.trim();
-  const order=Math.max(0, Number(document.getElementById('bannerOrder').value)||0);
-  const isActive=document.getElementById('bannerActive').checked;
-  if(!title) return alert('Enter banner title!');
-  if(!imageUrl) return alert('Add a banner image URL!');
-  const payload={title,sub,imageUrl,targetUrl,isActive,order,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
-  if(id) await db.collection('banners').doc(id).set(payload,{merge:true});
-  else await db.collection('banners').add({...payload,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  showToast(id ? 'Banner Updated!' : 'Banner Saved!');
-  closeAddBannerModal();
+  const btn = document.getElementById('saveBannerBtn');
+  const id = document.getElementById('bannerEditId').value.trim();
+  const title = document.getElementById('bannerTitle').value.trim();
+  const sub = document.getElementById('bannerSub').value.trim();
+  const targetUrl = document.getElementById('bannerTargetUrl').value.trim();
+  const order = Math.max(0, Number(document.getElementById('bannerOrder').value) || 0);
+  const isActive = document.getElementById('bannerActive').checked;
+  const fileInput = document.getElementById('bannerImageFile');
+  const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+  const currentImageUrl = document.getElementById('bannerCurrentImageUrl').value.trim();
+  const currentStoragePath = document.getElementById('bannerCurrentStoragePath').value.trim();
+
+  if (!title) return alert('Enter banner title!');
+  if (!id && !file) return alert('Choose a banner image first.');
+  if (file && (!file.type.startsWith('image/') || file.size > 8 * 1024 * 1024)) {
+    return alert('Please choose an image up to 8 MB.');
+  }
+
+  try {
+    btn.disabled = true;
+    btn.textContent = file ? 'Uploading...' : 'Saving...';
+
+    // Generate the Firestore document ID before upload so the Storage path is stable.
+    const docRef = id ? db.collection('banners').doc(id) : db.collection('banners').doc();
+    let imageUrl = currentImageUrl;
+    let storagePath = currentStoragePath;
+
+    if (file) {
+      setBannerUploadProgress(0);
+      const uploaded = await uploadBannerImage(file, 'banners/' + docRef.id + '/' + Date.now());
+      imageUrl = uploaded.url;
+      storagePath = uploaded.path;
+    }
+
+    const payload = {
+      title,
+      sub,
+      imageUrl,
+      targetUrl,
+      isActive,
+      order,
+      storagePath,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (id) {
+      await docRef.set(payload, { merge: true });
+    } else {
+      await docRef.set({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+
+    // Remove the previous uploaded file after the new banner is safely saved.
+    if (file && currentStoragePath && currentStoragePath !== storagePath) {
+      try {
+        await firebase.storage().ref().child(currentStoragePath).delete();
+      } catch (cleanupError) {
+        console.warn('Old banner cleanup skipped:', cleanupError);
+      }
+    }
+
+    showToast(id ? 'Banner Updated!' : 'Banner Uploaded & Saved!');
+    closeAddBannerModal();
+  } catch (e) {
+    console.error('Banner upload/save error:', e);
+    alert('Banner upload failed: ' + (e.message || e));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Banner';
+    const progress = document.getElementById('bannerUploadProgress');
+    if (progress) progress.classList.add('hidden');
+  }
 }
+
 async function editBanner(id) {
   ensureBannerModal();
-  const snap=await db.collection('banners').doc(id).get();
-  if(!snap.exists) return alert('Banner not found.');
-  const b=snap.data()||{};
-  document.getElementById('bannerModalTitle').textContent='Edit Banner';
-  document.getElementById('bannerEditId').value=id;
-  document.getElementById('bannerTitle').value=b.title||'';
-  document.getElementById('bannerSub').value=b.sub||'';
-  document.getElementById('bannerImageUrl').value=b.imageUrl||b.image||'';
-  document.getElementById('bannerTargetUrl').value=b.targetUrl||b.url||b.link||'';
-  document.getElementById('bannerOrder').value=String(b.order??1);
-  document.getElementById('bannerActive').checked=b.isActive!==false;
-  previewBannerImage();
+  const snap = await db.collection('banners').doc(id).get();
+  if (!snap.exists) return alert('Banner not found.');
+  const b = snap.data() || {};
+
+  document.getElementById('bannerModalTitle').textContent = 'Edit Banner';
+  document.getElementById('bannerEditId').value = id;
+  document.getElementById('bannerCurrentImageUrl').value = b.imageUrl || b.image || '';
+  document.getElementById('bannerCurrentStoragePath').value = b.storagePath || '';
+  document.getElementById('bannerTitle').value = b.title || '';
+  document.getElementById('bannerSub').value = b.sub || '';
+  document.getElementById('bannerTargetUrl').value = b.targetUrl || b.url || b.link || '';
+  document.getElementById('bannerOrder').value = String(b.order ?? 1);
+  document.getElementById('bannerActive').checked = b.isActive !== false;
+  document.getElementById('bannerImageFile').value = '';
+  document.getElementById('bannerUploadName').textContent = 'Keep current image or choose a new one';
+  document.getElementById('bannerUploadProgress').classList.add('hidden');
+
+  const currentImage = b.imageUrl || b.image || '';
+  const preview = document.getElementById('bannerImagePreview');
+  const img = document.getElementById('bannerPreviewImg');
+  if (currentImage) {
+    img.src = currentImage;
+    preview.classList.remove('hidden');
+  } else {
+    preview.classList.add('hidden');
+  }
+
+  document.getElementById('saveBannerBtn').disabled = false;
+  document.getElementById('saveBannerBtn').textContent = 'Save Banner';
   document.getElementById('bannerModal').classList.remove('hidden');
 }
+
 async function toggleBannerActive(id, active) {
   await db.collection('banners').doc(id).set({isActive:!active,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
   showToast(!active ? 'Banner Activated!' : 'Banner Deactivated!');
