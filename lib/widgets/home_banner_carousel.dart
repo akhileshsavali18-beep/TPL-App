@@ -66,7 +66,7 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
           return data['isActive'] != false;
         }).toList();
 
-        if (banners.isEmpty) {
+        banners.sort((a, b) {\n          final ad = a.data() as Map<String, dynamic>;\n          final bd = b.data() as Map<String, dynamic>;\n          return (ad['order'] as num? ?? 0).compareTo(bd['order'] as num? ?? 0);\n        });\n\n        if (banners.isEmpty) {
           return const SizedBox.shrink();
         }
 
