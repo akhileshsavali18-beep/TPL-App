@@ -147,10 +147,10 @@ async function seedDefaultBanners() {
 
 async function seedDefaultGames() {
   const games = [
-    { title: 'Cricket Gunda', coins: 2, category: 'Sports', url: 'https://www.gamezop.com/g/r1W50d89?id=tpl_cricket' },
-    { title: 'Fruit Chop', coins: 2, category: 'Arcade', url: 'https://www.gamezop.com/g/rkXG0O85?id=tpl_fruit' },
-    { title: 'Bottle Shoot', coins: 2, category: 'Action', url: 'https://www.gamezop.com/g/B1w5CdL5?id=tpl_bottle' },
-    { title: 'Bubble Wipeout', coins: 2, category: 'Puzzle', url: 'https://www.gamezop.com/g/SkWG0u8q?id=tpl_bubble' }
+    { title: 'Cricket Gunda', category: 'Sports', url: 'https://www.gamezop.com/g/r1W50d89?id=tpl_cricket' },
+    { title: 'Fruit Chop', category: 'Arcade', url: 'https://www.gamezop.com/g/rkXG0O85?id=tpl_fruit' },
+    { title: 'Bottle Shoot', category: 'Action', url: 'https://www.gamezop.com/g/B1w5CdL5?id=tpl_bottle' },
+    { title: 'Bubble Wipeout', category: 'Puzzle', url: 'https://www.gamezop.com/g/SkWG0u8q?id=tpl_bubble' }
   ];
   for (let g of games) {
     await db.collection('games').add({ ...g, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
