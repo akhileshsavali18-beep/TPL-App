@@ -536,15 +536,69 @@ class _WalletScreenState extends State<WalletScreen> {
                     style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 10),
-                  Container(
-                    height: 420,
-                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111622),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white10),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const Scaffold(
+                            backgroundColor: Color(0xFF080B10),
+                            appBar: AppBar(
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
+                              title: Text(
+                                'Transaction History',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            body: Padding(
+                              padding: EdgeInsets.fromLTRB(8, 4, 8, 16),
+                              child: TransactionHistoryView(),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 110,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF111622),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.receipt_long, color: Color(0xFF00FF87), size: 28),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'View Transaction History',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                SizedBox(height: 5),
+                                Text(
+                                  'Coins • Cash • Refer • All',
+                                  style: TextStyle(color: Colors.white54, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, color: Colors.white54),
+                        ],
+                      ),
                     ),
-                    child: const TransactionHistoryView(),
                   ),
                 ],
               ),
