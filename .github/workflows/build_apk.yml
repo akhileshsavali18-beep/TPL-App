@@ -122,6 +122,16 @@ jobs:
       - name: Build Android Release APK
         run: flutter build apk --release --build-name=1.0.0 --build-number=$BUILD_NUMBER --dart-define=APP_BUILD_NUMBER=$BUILD_NUMBER
 
+      - name: Verify APK package and signing
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          echo "=== APK SHA256 ==="
+          sha256sum "$APK"
+          echo "=== APK package/version ==="
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -E "package:|sdkVersion:"
+          echo "=== APK signing certificates ==="
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
+
       - name: Prepare Release APK
         run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
 
