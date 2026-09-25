@@ -38,23 +38,23 @@ function loadTasksHub() {
         platform.includes('telegram') ? 'https://cdn.simpleicons.org/telegram/26A5E4' : '';
       const div = document.createElement('div');
       div.className = 'dark-card p-3 rounded-2xl space-y-3';
-      div.innerHTML = \`
+      div.innerHTML = `
         <div class="flex items-center gap-3">
           <div class="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-            \${logo ? '<img src="' + logo + '" class="w-7 h-7 object-contain">' : '<span class="text-lg">🌐</span>'}
+            ${logo ? '<img src="' + logo + '" class="w-7 h-7 object-contain">' : '<span class="text-lg">🌐</span>'}
           </div>
           <div class="min-w-0 flex-1">
-            <div class="text-xs font-bold text-white truncate">\${t.title || 'Social Task'}</div>
-            <div class="text-[10px] text-gray-400 truncate">\${t.subtitle || t.description || 'Complete social task'} • +\${Number(t.coins || 25)} Coins</div>
-            <div class="text-[9px] \${active ? 'text-green-400' : 'text-gray-500'} mt-1">\${active ? 'ACTIVE' : 'INACTIVE'} • \${platform}</div>
+            <div class="text-xs font-bold text-white truncate">${t.title || 'Social Task'}</div>
+            <div class="text-[10px] text-gray-400 truncate">${t.subtitle || t.description || 'Complete social task'} • +${Number(t.coins || 25)} Coins</div>
+            <div class="text-[9px] ${active ? 'text-green-400' : 'text-gray-500'} mt-1">${active ? 'ACTIVE' : 'INACTIVE'} • ${platform}</div>
           </div>
-          <button onclick="toggleTaskActive('\${doc.id}', \${active})" class="px-2 py-1 rounded-lg text-[9px] font-black \${active ? 'bg-green-400/10 text-green-400' : 'bg-white/5 text-gray-500'}">\${active ? 'ON' : 'OFF'}</button>
+          <button onclick="toggleTaskActive('${doc.id}', ${active})" class="px-2 py-1 rounded-lg text-[9px] font-black ${active ? 'bg-green-400/10 text-green-400' : 'bg-white/5 text-gray-500'}">${active ? 'ON' : 'OFF'}</button>
         </div>
         <div class="flex gap-2">
-          <button onclick="editSocialTask('\${doc.id}')" class="flex-1 px-2 py-2 bg-white/5 border border-white/10 text-white text-[10px] font-black rounded-xl">Edit</button>
-          <button onclick="deleteDoc('tasks', '\${doc.id}')" class="px-3 py-2 bg-red-500/10 text-red-400 text-[10px] font-black rounded-xl">Delete</button>
+          <button onclick="editSocialTask('${doc.id}')" class="flex-1 px-2 py-2 bg-white/5 border border-white/10 text-white text-[10px] font-black rounded-xl">Edit</button>
+          <button onclick="deleteDoc('tasks', '${doc.id}')" class="px-3 py-2 bg-red-500/10 text-red-400 text-[10px] font-black rounded-xl">Delete</button>
         </div>
-      \`;
+      `;
       c.appendChild(div);
     });
   });
@@ -164,7 +164,7 @@ function ensureTaskModal() {
   const wrap = document.createElement('div');
   wrap.id = 'taskModal';
   wrap.className = 'hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm p-4 flex items-end sm:items-center justify-center';
-  wrap.innerHTML = \`
+  wrap.innerHTML = `
     <div class="dark-card w-full max-w-md rounded-3xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between">
         <div><div id="taskModalTitle" class="text-lg font-black text-white">Add Social Task</div><div class="text-[10px] text-gray-500">Add the exact social profile/channel link.</div></div>
@@ -183,7 +183,7 @@ function ensureTaskModal() {
       <input id="taskUrl" placeholder="Exact Instagram / YouTube / Telegram URL" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
       <label class="flex items-center justify-between px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-gray-300">Active <input type="checkbox" id="taskActive" checked class="w-4 h-4 accent-green-400"></label>
       <button onclick="saveNewTask()" class="w-full py-3 bg-green-400 text-black font-black text-xs rounded-xl">Save Task</button>
-    </div>\`;
+    </div>`;
   document.body.appendChild(wrap);
 }
 function openAddTaskModal() {
