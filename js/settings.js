@@ -4,67 +4,62 @@ function loadSettings() {
   if (typeof db === 'undefined') return;
   loadOfferwallSettings();
 
-  // 1. Unity Ads Settings Load
   db.collection('settings').doc('unity_ads').onSnapshot(doc => {
-    if (doc.exists) {
-      const d = doc.data();
-      const enabled = d.adsActive ?? d.adsEnabled ?? true;
-      const toggle = document.getElementById('ads-enabledToggle');
-      if (toggle) {
-        toggle.checked = enabled;
-        toggleAdsLabel(enabled);
-      }
-      if (document.getElementById('ads-gameId')) document.getElementById('ads-gameId').value = d.gameId || '5868205';
-      if (document.getElementById('ads-cooldown')) document.getElementById('ads-cooldown').value = d.cooldown || 60;
-      if (document.getElementById('ads-rewardedId')) document.getElementById('ads-rewardedId').value = d.rewardedId || 'Rewarded_Android';
-      if (document.getElementById('ads-interstitialId')) document.getElementById('ads-interstitialId').value = d.interstitialId || 'Interstitial_Android';
-      if (document.getElementById('ads-bannerId')) document.getElementById('ads-bannerId').value = d.bannerId || 'Banner_Android';
-      if (document.getElementById('ads-testMode')) document.getElementById('ads-testMode').checked = d.testMode ?? true;
-      if (document.getElementById('rewarded-enabled')) document.getElementById('rewarded-enabled').checked = d.rewardedAdsEnabled ?? true;
-      if (document.getElementById('interstitial-enabled')) document.getElementById('interstitial-enabled').checked = d.interstitialEnabled ?? true;
-      if (document.getElementById('rewarded-spin')) document.getElementById('rewarded-spin').checked = d.rewardedSpinEnabled ?? true;
-      if (document.getElementById('rewarded-scratch')) document.getElementById('rewarded-scratch').checked = d.rewardedScratchEnabled ?? true;
-      if (document.getElementById('rewarded-game')) document.getElementById('rewarded-game').checked = d.rewardedGameEnabled ?? true;
-      if (document.getElementById('rewarded-daily-limit')) document.getElementById('rewarded-daily-limit').value = d.rewardedDailyLimit ?? 10;
-    }
+    const d = doc.exists ? doc.data() : {};
+    const enabled = d.adsActive ?? d.adsEnabled ?? true;
+    const toggle = document.getElementById('ads-enabledToggle');
+    if (toggle) { toggle.checked = enabled; toggleAdsLabel(enabled); }
+    const set = (id, value) => { const el=document.getElementById(id); if(el && value !== undefined && value !== null) el.value=value; };
+    const check = (id, value) => { const el=document.getElementById(id); if(el && value !== undefined) el.checked=!!value; };
+    set('ads-gameId', d.gameId || '5868205');
+    set('ads-cooldown', d.cooldown ?? 60);
+    set('ads-rewardedId', d.rewardedId || 'Rewarded_Android');
+    set('ads-interstitialId', d.interstitialId || 'Interstitial_Android');
+    set('ads-bannerId', d.bannerId || 'Banner_Android');
+    set('rewarded-daily-limit', d.rewardedDailyLimit ?? 10);
+    check('ads-testMode', d.testMode ?? true);
+    check('rewarded-enabled', d.rewardedAdsEnabled ?? true);
+    check('interstitial-enabled', d.interstitialEnabled ?? true);
+    check('rewarded-spin', d.rewardedSpinEnabled ?? true);
+    check('rewarded-scratch', d.rewardedScratchEnabled ?? true);
+    check('rewarded-game', d.rewardedGameEnabled ?? true);
   });
 
-  // 2. Economy Settings Load
   db.collection('settings').doc('economy').onSnapshot(doc => {
-    if (doc.exists) {
-      const d = doc.data();
-      if (document.getElementById('p1-coinRate')) document.getElementById('p1-coinRate').value = d.coinRate || 100;
-      if (document.getElementById('p1-referBonus')) document.getElementById('p1-referBonus').value = d.referBonus || 5;
-      if (document.getElementById('p1-minTask')) document.getElementById('p1-minTask').value = d.minTask || 25;
-      if (document.getElementById('p1-minRefer')) document.getElementById('p1-minRefer').value = d.minRefer || 50;
-      if (document.getElementById('p1-announcement')) document.getElementById('p1-announcement').value = d.announcement || '';
-      if (document.getElementById('p1-announcementToggle')) document.getElementById('p1-announcementToggle').checked = d.showAnnouncement || false;
-      if (document.getElementById('p1-maintenanceToggle')) document.getElementById('p1-maintenanceToggle').checked = d.maintenanceMode || false;
-    }
+    const d = doc.exists ? doc.data() : {};
+    const set=(id,v)=>{const el=document.getElementById(id); if(el && v!==undefined && v!==null) el.value=v;};
+    const check=(id,v)=>{const el=document.getElementById(id); if(el && v!==undefined) el.checked=!!v;};
+    set('p1-coinRate', d.coinRate ?? 100);
+    set('p1-referBonus', d.referBonus ?? 5);
+    set('withdraw-first-min', d.firstCashMin ?? 25);
+    set('withdraw-next-min', d.nextCashMin ?? 50);
+    set('withdraw-refer-min', d.minRefer ?? 50);
+    set('withdraw-coin-rate', d.coinRate ?? 100);
+    set('ref-required-tasks', d.refRequiredTasks ?? 2);
+    check('ref-enabled', d.referralEnabled ?? true);
+    set('p1-announcement', d.announcement || '');
+    check('p1-announcementToggle', d.showAnnouncement ?? false);
+    check('p1-maintenanceToggle', d.maintenanceMode ?? false);
+    check('app-earning-enabled', d.appEarningEnabled ?? true);
   });
 
-  // 3. Game & Reward Limits Load
-  db.collection('settings').doc('game_limits').onSnapshot(doc => {
-    if (doc.exists) {
-      const d = doc.data();
-      const slices = Array.isArray(d.wheelSlices) ? d.wheelSlices : [1, 50, 5, 0, 200, 12];
-      if (document.getElementById('p2-wheelSlices')) document.getElementById('p2-wheelSlices').value = slices.join(', ');
-      if (document.getElementById('p2-spinLimit')) document.getElementById('p2-spinLimit').value = d.spinLimit ?? 1;
-      if (document.getElementById('p2-scratchLimit')) document.getElementById('p2-scratchLimit').value = d.scratchLimit ?? 1;
-    }
+  db.collection('settings').doc('task_rewards').onSnapshot(doc => {
+    const d = doc.exists ? doc.data() : {};
+    const set=(id,v)=>{const el=document.getElementById(id); if(el && v!==undefined && v!==null) el.value=Array.isArray(v)?v.join(', '):v;};
+    const check=(id,v)=>{const el=document.getElementById(id); if(el && v!==undefined) el.checked=!!v;};
+    set('task-cpalead-share', d.cpaleadUserShare ?? 50);
+    set('task-spin-unlock', d.spinUnlockTasks ?? 2);
+    set('task-scratch-unlock', d.scratchUnlockTasks ?? 3);
+    set('task-spin-rewards', d.spinRewards ?? [1,2,5,0,3,1]);
+    set('task-scratch-rewards', d.scratchRewards ?? [1,2,5]);
+    check('task-daily-reset', d.dailyReset ?? true);
   });
 
-  // 4. Security Settings Load
-  db.collection('settings').doc('security').onSnapshot(doc => {
-    if (doc.exists) {
-      const d = doc.data();
-      if (document.getElementById('p3-blockVPN')) document.getElementById('p3-blockVPN').checked = d.blockVPN || false;
-      if (document.getElementById('p3-blockRooted')) document.getElementById('p3-blockRooted').checked = d.blockRooted || false;
-      if (document.getElementById('p3-oneDevice')) document.getElementById('p3-oneDevice').checked = d.oneDevice || false;
-    }
+  db.collection('app_config').doc('withdrawal_settings').onSnapshot(doc => {
+    const d=doc.exists?doc.data():{};
+    const el=document.getElementById('withdraw-upi-enabled'); if(el) el.checked=d.upiEnabled ?? true;
   });
 }
-
 function toggleAdsLabel(isChecked) {
   const lbl = document.getElementById('adsStatusLabel');
   if (!lbl) return;
@@ -143,13 +138,70 @@ async function saveRewardedAdsConfig() {
 async function saveCpaleadConfig() {
   const cpaleadActive = document.getElementById('cpaleadEnabled')?.checked ?? false;
   const cpaleadPublisherId = document.getElementById('cpaleadPublisherId')?.value.trim() || '';
-  const cpaleadUrlTemplate = document.getElementById('cpaleadUrlInput')?.value.trim() || '';
   const cpaleadPostbackUrl = document.getElementById('cpaleadPostbackUrl')?.value.trim() || '';
-  await db.collection('settings').doc('offerwalls').set({cpaleadActive, cpaleadPublisherId, cpaleadUrlTemplate, cpaleadUrl: cpaleadUrlTemplate, cpaleadPostbackUrl, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
-  showToast('CPAlead settings saved live!');
+  const userShare = parseInt(document.getElementById('cpalead-user-share')?.value || '50') || 50;
+  const coinRate = parseInt(document.getElementById('cpalead-coin-rate')?.value || '100') || 100;
+  await db.collection('settings').doc('offerwalls').set({
+    cpaleadActive, cpaleadPublisherId, cpaleadPostbackUrl,
+    cpaleadUserShare: userShare, cpaleadCoinRate: coinRate,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge:true});
+  showToast('CPAlead Backend settings saved live!');
 }
 
+async function saveTaskRewardRules() {
+  const parseList = id => (document.getElementById(id)?.value || '').split(',').map(v=>parseInt(v.trim())).filter(v=>!Number.isNaN(v));
+  const data = {
+    cpaleadUserShare: parseInt(document.getElementById('task-cpalead-share')?.value || '50') || 50,
+    spinUnlockTasks: Math.max(1, parseInt(document.getElementById('task-spin-unlock')?.value || '2') || 2),
+    scratchUnlockTasks: Math.max(1, parseInt(document.getElementById('task-scratch-unlock')?.value || '3') || 3),
+    spinRewards: parseList('task-spin-rewards'),
+    scratchRewards: parseList('task-scratch-rewards'),
+    dailyReset: document.getElementById('task-daily-reset')?.checked ?? true,
+    coinRate: parseInt(document.getElementById('p1-coinRate')?.value || '100') || 100,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  await db.collection('settings').doc('task_rewards').set(data,{merge:true});
+  await db.collection('settings').doc('economy').set({coinRate:data.coinRate,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  showToast('Task & Reward Rules saved live!');
+}
 
+async function saveWithdrawalRules() {
+  const data = {
+    firstCashMin: Math.max(0, Number(document.getElementById('withdraw-first-min')?.value || 25)),
+    nextCashMin: Math.max(0, Number(document.getElementById('withdraw-next-min')?.value || 50)),
+    minRefer: Math.max(0, Number(document.getElementById('withdraw-refer-min')?.value || 50)),
+    coinRate: Math.max(1, Number(document.getElementById('withdraw-coin-rate')?.value || 100)),
+    upiEnabled: document.getElementById('withdraw-upi-enabled')?.checked ?? true,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  await db.collection('app_config').doc('withdrawal_settings').set(data,{merge:true});
+  await db.collection('settings').doc('economy').set({coinRate:data.coinRate,minRefer:data.minRefer,firstCashMin:data.firstCashMin,nextCashMin:data.nextCashMin,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  showToast('Withdrawal Rules saved live!');
+}
+
+async function saveReferralRules() {
+  const data = {
+    referBonus: Math.max(0, Number(document.getElementById('p1-referBonus')?.value || 5)),
+    refRequiredTasks: Math.max(1, Number(document.getElementById('ref-required-tasks')?.value || 2)),
+    referralEnabled: document.getElementById('ref-enabled')?.checked ?? true,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  await db.collection('settings').doc('economy').set(data,{merge:true});
+  showToast('Referral settings saved live!');
+}
+
+async function saveAppControls() {
+  const data = {
+    announcement: document.getElementById('p1-announcement')?.value.trim() || '',
+    showAnnouncement: document.getElementById('p1-announcementToggle')?.checked ?? false,
+    maintenanceMode: document.getElementById('p1-maintenanceToggle')?.checked ?? false,
+    appEarningEnabled: document.getElementById('app-earning-enabled')?.checked ?? true,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  await db.collection('settings').doc('economy').set(data,{merge:true});
+  showToast('App Controls saved live!');
+}
 
 function loadOfferwallSettings() {
   if (typeof db === 'undefined') return;
@@ -157,7 +209,8 @@ function loadOfferwallSettings() {
     const d = doc.exists ? doc.data() : {};
     const active=document.getElementById('cpaleadEnabled'); if(active) active.checked=d.cpaleadActive !== false;
     const publisher=document.getElementById('cpaleadPublisherId'); if(publisher) publisher.value=d.cpaleadPublisherId || '';
-    const url=document.getElementById('cpaleadUrlInput'); if(url) url.value=d.cpaleadUrlTemplate || d.cpaleadUrl || '';
     const post=document.getElementById('cpaleadPostbackUrl'); if(post) post.value=d.cpaleadPostbackUrl || '';
+    const share=document.getElementById('cpalead-user-share'); if(share) share.value=d.cpaleadUserShare ?? 50;
+    const rate=document.getElementById('cpalead-coin-rate'); if(rate) rate.value=d.cpaleadCoinRate ?? 100;
   });
 }
