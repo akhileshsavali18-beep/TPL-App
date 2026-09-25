@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -80,13 +81,34 @@ class CpaleadOfferwallPanel extends StatefulWidget {
   @override State<CpaleadOfferwallPanel> createState() => _CpaleadOfferwallPanelState();
 }
 
-class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
+class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> with WidgetsBindingObserver {
   List<CpaleadOffer> _offers = [];
   bool _loading = true;
   String? _error;
   String _filter = 'All';
+  Timer? _refreshTimer;
 
-  @override void initState() { super.initState(); _load(); }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _load();
+    // CPAlead inventory changes by country/device/offer availability. Refresh
+    // periodically and whenever the user returns to the app.
+    _refreshTimer = Timer.periodic(const Duration(minutes: 5), (_) => _load());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _load();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   Future<void> _load() async {
     if (mounted) setState(() { _loading = true; _error = null; });
