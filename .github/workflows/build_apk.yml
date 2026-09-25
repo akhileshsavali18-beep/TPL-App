@@ -78,6 +78,8 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path("android/app/build.gradle")
           s = p.read_text()
 
@@ -88,17 +90,15 @@ jobs:
           }
 
           """
-          # The Gradle plugins {} block must remain first. Insert signing
-          # properties immediately before android {}, after plugins {}.
+
+          # Keep plugins {} first, then add keystore properties immediately
+          # before android {}.
           if "def keystoreProperties = new Properties()" not in s:
               s = s.replace("android {", signing + "android {", 1)
 
-          # Always configure the release signing object. flutter create can generate
-          # a signingConfigs block already, so do not condition this on the block
-          # being absent. A second signingConfigs closure safely configures the same
-          # release signing object and prevents fallback to the runner debug key.
-          s = s.replace("android {", """android {
-              signingConfigs {
+          # Force an explicit release signing config regardless of the
+          # Flutter-generated template.
+          release_config = """signingConfigs {
                   release {
                       keyAlias keystoreProperties['keyAlias']
                       keyPassword keystoreProperties['keyPassword']
@@ -107,11 +107,43 @@ jobs:
                       storeType keystoreProperties['storeType'] ?: 'PKCS12'
                   }
               }
-          """, 1)
 
-          s = s.replace("signingConfig signingConfigs.debug", "signingConfig signingConfigs.release")
+          """
+
+          if "keyAlias keystoreProperties['keyAlias']" not in s:
+              s = s.replace("android {", "android {\n              " + release_config, 1)
+
+          # Flutter templates can spell the release signer in different ways.
+          # Replace every debug signer reference inside release configuration.
+          s = re.sub(
+              r"signingConfig\\s*(?:=\\s*)?signingConfigs\\.debug",
+              "signingConfig signingConfigs.release",
+              s,
+          )
+          s = re.sub(
+              r"signingConfig\\s*=\\s*signingConfigs\\.getByName\\([\\\"']debug[\\\"']\\)",
+              "signingConfig signingConfigs.release",
+              s,
+          )
+
+          # If the template has a release buildType but no signer reference,
+          # inject the persistent release signer into that block.
+          if "buildTypes" in s and "signingConfig signingConfigs.release" not in s:
+              s = re.sub(
+                  r"(buildTypes\\s*\\{\\s*release\\s*\\{)",
+                  r"\\1\\n              signingConfig signingConfigs.release",
+                  s,
+                  count=1,
+              )
+
           p.write_text(s)
+
+          print("=== Final Android signing references ===")
+          for i, line in enumerate(s.splitlines(), 1):
+              if "signingConfig" in line or "keyAlias" in line or "storeFile" in line:
+                  print(f"{i}: {line}")
           PY
+PY
 
       - name: Install Flutter Dependencies
         run: flutter pub get
