@@ -513,7 +513,7 @@ async function saveOfferwallsConfig() {
 async function fetchConfigs() {
   try {
     // 1. Unity Ads Config
-    var adsSnap = await firebase.firestore().collection('app_config').doc('ads').get();
+    var adsSnap = await firebase.firestore().collection('settings').doc('unity_ads').get();
     if (adsSnap.exists) {
       var a = adsSnap.data();
       document.getElementById('ads-enabledToggle').checked = a.adsEnabled !== false;
@@ -522,6 +522,13 @@ async function fetchConfigs() {
       document.getElementById('ads-rewardedId').value = a.rewardedId || 'Rewarded_Android';
       document.getElementById('ads-interstitialId').value = a.interstitialId || 'Interstitial_Android';
       document.getElementById('ads-testMode').checked = a.testMode === true;
+      document.getElementById('ads-bannerId').value = a.bannerId || 'Banner_Android';
+      document.getElementById('rewarded-enabled').checked = a.rewardedAdsEnabled !== false;
+      document.getElementById('interstitial-enabled').checked = a.interstitialEnabled !== false;
+      document.getElementById('rewarded-spin').checked = a.rewardedSpinEnabled !== false;
+      document.getElementById('rewarded-scratch').checked = a.rewardedScratchEnabled !== false;
+      document.getElementById('rewarded-game').checked = a.rewardedGameEnabled !== false;
+      document.getElementById('rewarded-daily-limit').value = a.rewardedDailyLimit ?? 10;
     }
 
     // 2. Offerwalls Config
@@ -575,24 +582,38 @@ async function saveUnityAdsConfig() {
   var cooldown = parseInt(document.getElementById('ads-cooldown').value) || 60;
   var rewardedId = document.getElementById('ads-rewardedId').value.trim();
   var interstitialId = document.getElementById('ads-interstitialId').value.trim();
+  var bannerId = document.getElementById('ads-bannerId').value.trim();
   var testMode = document.getElementById('ads-testMode').checked;
+  var rewardedAdsEnabled = document.getElementById('rewarded-enabled').checked;
+  var interstitialEnabled = document.getElementById('interstitial-enabled').checked;
+  var rewardedSpinEnabled = document.getElementById('rewarded-spin').checked;
+  var rewardedScratchEnabled = document.getElementById('rewarded-scratch').checked;
+  var rewardedGameEnabled = document.getElementById('rewarded-game').checked;
+  var rewardedDailyLimit = parseInt(document.getElementById('rewarded-daily-limit').value) || 10;
 
   try {
-    await firebase.firestore().collection('app_config').doc('ads').set({
+    await firebase.firestore().collection('settings').doc('unity_ads').set({
+      adsActive: adsEnabled,
       adsEnabled: adsEnabled,
       gameId: gameId,
       cooldown: cooldown,
       rewardedId: rewardedId,
       interstitialId: interstitialId,
+      bannerId: bannerId,
       testMode: testMode,
+      rewardedAdsEnabled: rewardedAdsEnabled,
+      interstitialEnabled: interstitialEnabled,
+      rewardedSpinEnabled: rewardedSpinEnabled,
+      rewardedScratchEnabled: rewardedScratchEnabled,
+      rewardedGameEnabled: rewardedGameEnabled,
+      rewardedDailyLimit: rewardedDailyLimit,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    showToast('Unity Ads Settings Saved!');
+    }, { merge: true });
+    showToast(testMode ? 'Unity Ads saved in TEST mode.' : 'Unity Ads saved in LIVE mode.');
   } catch (e) {
     alert('Error: ' + e.message);
   }
 }
-
 async function saveP1Config() {
   var coinRate = parseInt(document.getElementById('p1-coinRate').value) || 100;
   var referBonus = parseInt(document.getElementById('p1-referBonus').value) || 5;
