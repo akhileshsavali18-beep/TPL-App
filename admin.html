@@ -115,7 +115,7 @@
       <div class="dark-card p-4 rounded-2xl space-y-3"><div class="text-sm font-black text-white">Money Overview</div>
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Total Paid Out</div><div id="statPaidAmount" class="text-lg font-black text-purple-400 mt-1">₹0.00</div></div>
-          <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Today Paid Out</div><div id="statTodayPaidAmount" class="text-lg font-black text-green-400 mt-1">₹0.00</div></div>
+          <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Total Withdrawals</div><div id="statTotalWithdrawals" class="text-lg font-black text-green-400 mt-1">0</div></div>
           <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Cash Liability</div><div id="statCashLiability" class="text-lg font-black text-amber-400 mt-1">₹0.00</div></div>
           <div class="bg-black/20 rounded-xl p-3"><div class="text-[10px] text-gray-500">Referral Liability</div><div id="statReferLiability" class="text-lg font-black text-pink-400 mt-1">₹0.00</div></div>
         </div>
@@ -395,12 +395,12 @@
       });
     }
     function updateOverviewStats() {
-      let pendingCount = 0, pendingAmount = 0, totalPaid = 0, todayPaid = 0;
+      let pendingCount = 0, pendingAmount = 0, totalPaid = 0, totalWithdrawals = 0;
       const start = new Date(); start.setHours(0,0,0,0);
       cachedWithdrawals.forEach(w => {
-        const amount = Number(w.amount) || 0, status = normalizePayoutStatus(w.status);
+        totalWithdrawals++; const amount = Number(w.amount) || 0, status = normalizePayoutStatus(w.status);
         if (status === 'pending') { pendingCount++; pendingAmount += amount; }
-        else if (status === 'success') { totalPaid += amount; const d=w.paidAt?.toDate ? w.paidAt.toDate() : (w.paidAt?.seconds ? new Date(w.paidAt.seconds*1000) : null); if(d && d>=start) todayPaid+=amount; }
+        else if (status === 'success') { totalPaid += amount; }
       });
       let cashLiability=0, referLiability=0, newUsersToday=0;
       const todayKey=start.toDateString();
@@ -412,7 +412,7 @@
       if (pCountEl) pCountEl.innerText = pendingCount;
       if (pAmtEl) pAmtEl.innerText = '₹' + pendingAmount.toFixed(2);
       if (paidAmtEl) paidAmtEl.innerText = '₹' + totalPaid.toFixed(2);
-      const todayPaidEl=document.getElementById('statTodayPaidAmount'); if(todayPaidEl) todayPaidEl.innerText='₹'+todayPaid.toFixed(2);
+      const totalWithdrawalsEl=document.getElementById('statTotalWithdrawals'); if(totalWithdrawalsEl) totalWithdrawalsEl.innerText=totalWithdrawals;
       const cashEl=document.getElementById('statCashLiability'); if(cashEl) cashEl.innerText='₹'+cashLiability.toFixed(2);
       const referEl=document.getElementById('statReferLiability'); if(referEl) referEl.innerText='₹'+referLiability.toFixed(2);
       const newUsersEl=document.getElementById('statNewUsersToday'); if(newUsersEl) newUsersEl.innerText=newUsersToday;
