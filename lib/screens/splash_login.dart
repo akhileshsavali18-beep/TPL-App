@@ -37,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       final data = await Clipboard.getData(Clipboard.kTextPlain);
       final text = data?.text?.trim().toUpperCase() ?? '';
-      if (!mounted || text.isEmpty || _isLoginMode) return;
+      if (!mounted || text.isEmpty) return;
       if (RegExp(r'^TPL[A-Z0-9]{5,}
 
   @override
