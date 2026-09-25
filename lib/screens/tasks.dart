@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -94,11 +93,19 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   Future<void> _handleTask(String taskId, String title, int coins, String url) async {
     if (_completed[taskId] ?? false) return;
 
-    final adDone = Completer<void>();
     final config = RemoteConfigService.instance;
+    // Social-task flow: LIVE interstitial must finish before the external
+    // Instagram/YouTube/Telegram task opens.
     if (config.interstitialEnabled && config.adsEnabled) {
-      await AdService.instance.showInterstitialAd(context: context, onFinished: () { if (!adDone.isCompleted) adDone.complete(); });
-      if (!adDone.isCompleted) await adDone.future.timeout(const Duration(seconds: 35), onTimeout: () {});
+      final adShown = await AdService.instance.showInterstitialAd(context: context);
+      if (!adShown) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Live ad is not available right now. Please try again.'),
+          ));
+        }
+        return;
+      }
     }
 
     if (url.trim().isNotEmpty) {
