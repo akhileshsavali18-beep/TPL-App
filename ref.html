@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TPL PRO — Join & Earn</title>
+<style>
+body{margin:0;background:#080b10;color:#fff;font-family:Arial,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center}
+.card{width:min(92%,430px);background:#111722;border:1px solid #00ff8738;border-radius:24px;padding:28px;box-sizing:border-box;text-align:center;box-shadow:0 20px 60px #0008}
+.logo{width:76px;height:76px;border-radius:20px;margin:auto auto 16px;object-fit:cover}
+h1{margin:0 0 8px;font-size:28px}p{color:#9ca3af;line-height:1.5}
+.code{margin:20px 0;padding:15px;border-radius:14px;background:#080b10;border:1px solid #00ff8750;color:#00ff87;font-size:24px;font-weight:900;letter-spacing:3px}
+.btn{display:block;text-decoration:none;background:#00ff87;color:#06110b;padding:15px;border-radius:14px;font-weight:900;margin-top:14px}
+.note{font-size:12px;color:#6b7280;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="card">
+<img class="logo" src="assets/images/logo.png" alt="TPL PRO">
+<h1>Join TPL PRO</h1>
+<p>Complete eligible tasks, earn coins and withdraw rewards.</p>
+<div id="codeBox" class="code">TPL</div>
+<a class="btn" href="https://github.com/akhileshsavali18-beep/TPL-App/releases/latest">DOWNLOAD LATEST TPL PRO</a>
+<p class="note">After installing TPL PRO, enter the invite code shown above during signup if it is not filled automatically.</p>
+</div>
+<script>
+const params=new URLSearchParams(location.search);
+const ref=(params.get('ref')||'').trim().toUpperCase();
+document.getElementById('codeBox').textContent=ref||'NO CODE';
+if(ref){document.title='TPL PRO — Invite '+ref;}
+</script>
+</body>
+</html>
