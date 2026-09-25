@@ -1,14 +1,14 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
 bool _isAllowedOfferwallHost(String host) {
   return host == 'cpalead.com' ||
       host.endsWith('.cpalead.com') ||
       host == 'cdnflair.com' ||
       host.endsWith('.cdnflair.com');
 }
-
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class CpaleadOfferwallScreen extends StatefulWidget {
   const CpaleadOfferwallScreen({super.key});
