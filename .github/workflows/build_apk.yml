@@ -88,10 +88,10 @@ jobs:
           }
 
           """
-          # keystoreProperties must be declared before the android { block
-          # because signingConfigs is evaluated while the android block is configured.
+          # The Gradle plugins {} block must remain first. Insert signing
+          # properties immediately before android {}, after plugins {}.
           if "def keystoreProperties = new Properties()" not in s:
-              s = signing + s
+              s = s.replace("android {", signing + "android {", 1)
 
           if "signingConfigs {" not in s:
               s = s.replace("android {", """android {
