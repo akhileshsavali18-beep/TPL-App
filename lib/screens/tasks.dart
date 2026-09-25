@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../widgets/unity_banner_widget.dart';
 import '../services/ad_service.dart';
@@ -34,6 +35,8 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   int _scratchProgress = 0;
   bool _scratchRevealed = false;
   final List<int> _wheelRewards = [1, 2, 5, 0, 3, 1];
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  int _lastTickSlice = -1;
 
   @override
   void initState() {
@@ -44,6 +47,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   @override
   void dispose() {
     _spinController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -73,6 +77,18 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     );
   }
 
+  void _playTickSound() {
+    try {
+      _audioPlayer.play(AssetSource('sounds/ticktick.mp3'), mode: PlayerMode.lowLatency);
+    } catch (_) {}
+  }
+
+  void _playWinSound() {
+    try {
+      _audioPlayer.play(AssetSource('sounds/win.mp3'));
+    } catch (_) {}
+  }
+
   void _watchAdAndSpin() {
     if (widget.spinsLeft <= 0 || _spinning) return;
     if (!RemoteConfigService.instance.rewardedSpinEnabled) {
@@ -99,6 +115,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
         _wheelAngle = target % (math.pi * 2);
         final reward = _wheelRewards[index];
         setState(() => _spinning = false);
+        _playWinSound();
         widget.onSpinUsed?.call();
         showDialog(
           context: context,
@@ -125,6 +142,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
       onReward: () {
         if (!mounted) return;
         setState(() => _scratchRevealed = true);
+        _playWinSound();
         widget.onScratchUsed?.call();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('🎉 Scratch bonus unlocked!'),
@@ -240,8 +258,23 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
             AnimatedBuilder(
               animation: _spinController,
               builder: (_, __) {
-                final angle = _spinning ? _wheelAngle + (math.pi * 2 * 5) * Curves.easeOut.transform(_spinController.value) : _wheelAngle;
-                return Transform.rotate(angle: angle, child: CustomPaint(size: const Size(128, 128), painter: _MiniWheelPainter(_wheelRewards)));
+                final angle = _spinning
+                    ? _wheelAngle + (math.pi * 2 * 5) * Curves.easeOut.transform(_spinController.value)
+                    : _wheelAngle;
+                if (_spinning) {
+                  final slice = 2 * math.pi / _wheelRewards.length;
+                  final tickSlice = ((angle / slice).floor()) % _wheelRewards.length;
+                  if (tickSlice != _lastTickSlice) {
+                    _lastTickSlice = tickSlice;
+                    _playTickSound();
+                  }
+                } else {
+                  _lastTickSlice = -1;
+                }
+                return Transform.rotate(
+                  angle: angle,
+                  child: CustomPaint(size: const Size(128, 128), painter: _MiniWheelPainter(_wheelRewards)),
+                );
               },
             ),
             const Align(alignment: Alignment.topCenter, child: Icon(Icons.arrow_drop_down_rounded, color: Colors.white, size: 28)),
