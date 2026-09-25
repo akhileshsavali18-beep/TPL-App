@@ -80,7 +80,7 @@ jobs:
           from pathlib import Path
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          marker = "def flutterVersionCode = localProperties.getProperty('flutter.versionCode')"
+
           signing = """def keystoreProperties = new Properties()
           def keystorePropertiesFile = rootProject.file('key.properties')
           if (keystorePropertiesFile.exists()) {
@@ -88,8 +88,11 @@ jobs:
           }
 
           """
+          # keystoreProperties must be declared before the android { block
+          # because signingConfigs is evaluated while the android block is configured.
           if "def keystoreProperties = new Properties()" not in s:
-              s = s.replace(marker, signing + marker, 1)
+              s = signing + s
+
           if "signingConfigs {" not in s:
               s = s.replace("android {", """android {
               signingConfigs {
@@ -102,6 +105,7 @@ jobs:
                   }
               }
           """, 1)
+
           s = s.replace("signingConfig signingConfigs.debug", "signingConfig signingConfigs.release")
           p.write_text(s)
           PY
