@@ -143,7 +143,6 @@ jobs:
               if "signingConfig" in line or "keyAlias" in line or "storeFile" in line:
                   print(f"{i}: {line}")
           PY
-PY
 
       - name: Install Flutter Dependencies
         run: flutter pub get
