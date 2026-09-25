@@ -61,16 +61,29 @@ function loadTasksHub() {
       return;
     }
     c.innerHTML = '';
-    snap.forEach(doc => {
+    const docs = snap.docs.sort((a, b) => Number(a.data().order ?? 0) - Number(b.data().order ?? 0));
+    docs.forEach(doc => {
       const b = doc.data();
+      const image = (b.imageUrl || b.image || '').toString();
+      const active = b.isActive !== false;
       const div = document.createElement('div');
-      div.className = 'dark-card p-3 rounded-2xl flex justify-between items-center';
+      div.className = 'dark-card p-3 rounded-2xl space-y-3';
       div.innerHTML = `
-        <div>
-          <div class="text-xs font-bold text-white">${b.title || 'Banner'}</div>
-          <div class="text-[10px] text-gray-400">${b.sub || 'Carousel Banner'}</div>
+        <div class="flex items-center gap-3">
+          <div class="w-20 h-12 rounded-xl overflow-hidden bg-black/30 border border-white/10 flex-shrink-0">
+            ${image ? '<img src="' + image.replace(/"/g, '&quot;') + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">' : '<div class="w-full h-full flex items-center justify-center text-gray-600 text-[10px]">No image</div>'}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-bold text-white truncate">${b.title || 'Banner'}</div>
+            <div class="text-[10px] text-gray-400 truncate">${b.sub || 'Carousel Banner'}</div>
+            <div class="text-[9px] ${active ? 'text-green-400' : 'text-gray-500'} mt-1">${active ? 'ACTIVE' : 'INACTIVE'} • Order ${Number(b.order ?? 0)}</div>
+          </div>
+          <button onclick="toggleBannerActive('${doc.id}', ${active})" class="px-2 py-1 rounded-lg text-[9px] font-black ${active ? 'bg-green-400/10 text-green-400' : 'bg-white/5 text-gray-500'}">${active ? 'ON' : 'OFF'}</button>
         </div>
-        <button onclick="deleteDoc('banners', '${doc.id}')" class="text-red-400 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg active:scale-95">Delete</button>
+        <div class="flex gap-2">
+          <button onclick="editBanner('${doc.id}')" class="flex-1 px-2 py-2 bg-white/5 border border-white/10 text-white text-[10px] font-black rounded-xl">Edit</button>
+          <button onclick="deleteDoc('banners', '${doc.id}')" class="px-3 py-2 bg-red-500/10 text-red-400 text-[10px] font-black rounded-xl">Delete</button>
+        </div>
       `;
       c.appendChild(div);
     });
@@ -121,9 +134,9 @@ async function seedDefaultTasks() {
 
 async function seedDefaultBanners() {
   const banners = [
-    { title: 'CPAlead Mega Offerwall', sub: 'Complete app installs & earn coins', targetUrl: '' },
-    { title: 'Instant UPI Withdrawals', sub: 'Safe & direct cash payouts to bank account', targetUrl: '' },
-    { title: 'Lucky Spin & Win', sub: 'Spin the wheel daily to grab bonus coins', targetUrl: '' }
+    { title: 'Complete Tasks & Earn Coins', sub: 'Finish tasks and grow your TPL wallet', targetUrl: '', imageUrl: '', isActive: true, order: 1 },
+    { title: 'Fast & Easy Withdrawals', sub: 'Withdraw your available balance', targetUrl: '', imageUrl: '', isActive: true, order: 2 },
+    { title: 'Daily Bonus', sub: 'Spin and scratch for extra coins', targetUrl: '', imageUrl: '', isActive: true, order: 3 }
   ];
   for (let b of banners) {
     await db.collection('banners').add({ ...b, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
@@ -160,18 +173,86 @@ async function saveNewTask() {
   closeTaskModal();
 }
 
-function openAddBannerModal() { document.getElementById('bannerModal').classList.remove('hidden'); }
-function closeAddBannerModal() { document.getElementById('bannerModal').classList.add('hidden'); }
-
+function ensureBannerModal() {
+  if (document.getElementById('bannerModal')) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'bannerModal';
+  wrap.className = 'hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm p-4 flex items-end sm:items-center justify-center';
+  wrap.innerHTML = `
+    <div class="dark-card w-full max-w-md rounded-3xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <div><div id="bannerModalTitle" class="text-lg font-black text-white">Add Banner</div><div class="text-[10px] text-gray-500">Use a direct public image URL</div></div>
+        <button onclick="closeAddBannerModal()" class="text-gray-400 text-xl">×</button>
+      </div>
+      <input type="hidden" id="bannerEditId">
+      <input id="bannerTitle" placeholder="Banner title" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      <input id="bannerSub" placeholder="Short subtitle" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      <input id="bannerImageUrl" placeholder="Banner image URL (https://...)" oninput="previewBannerImage()" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      <div id="bannerImagePreview" class="hidden rounded-2xl overflow-hidden border border-white/10 bg-black/30 aspect-video"><img id="bannerPreviewImg" class="w-full h-full object-cover"></div>
+      <input id="bannerTargetUrl" placeholder="Click target URL (optional)" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+      <div class="grid grid-cols-2 gap-3">
+        <input type="number" id="bannerOrder" min="0" value="1" placeholder="Order" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white">
+        <label class="flex items-center justify-between px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-gray-300">Active <input type="checkbox" id="bannerActive" checked class="w-4 h-4 accent-green-400"></label>
+      </div>
+      <button onclick="saveNewBanner()" class="w-full py-3 bg-green-400 text-black font-black text-xs rounded-xl">Save Banner</button>
+    </div>`;
+  document.body.appendChild(wrap);
+}
+function openAddBannerModal() {
+  ensureBannerModal();
+  document.getElementById('bannerModalTitle').textContent = 'Add Banner';
+  document.getElementById('bannerEditId').value = '';
+  document.getElementById('bannerTitle').value = '';
+  document.getElementById('bannerSub').value = '';
+  document.getElementById('bannerImageUrl').value = '';
+  document.getElementById('bannerTargetUrl').value = '';
+  document.getElementById('bannerOrder').value = '1';
+  document.getElementById('bannerActive').checked = true;
+  previewBannerImage();
+  document.getElementById('bannerModal').classList.remove('hidden');
+}
+function closeAddBannerModal() { const m=document.getElementById('bannerModal'); if(m) m.classList.add('hidden'); }
+function previewBannerImage() {
+  const url=(document.getElementById('bannerImageUrl')?.value || '').trim();
+  const box=document.getElementById('bannerImagePreview'), img=document.getElementById('bannerPreviewImg');
+  if(!box||!img) return;
+  if(url){ img.src=url; box.classList.remove('hidden'); } else { img.removeAttribute('src'); box.classList.add('hidden'); }
+}
 async function saveNewBanner() {
-  const title = document.getElementById('bannerTitle').value.trim();
-  const sub = document.getElementById('bannerSub').value.trim();
-  const url = document.getElementById('bannerTargetUrl').value.trim();
-  if (!title) return alert('Enter title!');
-
-  await db.collection('banners').add({ title, sub, targetUrl: url, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-  showToast('Banner Saved!');
+  const id=document.getElementById('bannerEditId').value.trim();
+  const title=document.getElementById('bannerTitle').value.trim();
+  const sub=document.getElementById('bannerSub').value.trim();
+  const imageUrl=document.getElementById('bannerImageUrl').value.trim();
+  const targetUrl=document.getElementById('bannerTargetUrl').value.trim();
+  const order=Math.max(0, Number(document.getElementById('bannerOrder').value)||0);
+  const isActive=document.getElementById('bannerActive').checked;
+  if(!title) return alert('Enter banner title!');
+  if(!imageUrl) return alert('Add a banner image URL!');
+  const payload={title,sub,imageUrl,targetUrl,isActive,order,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+  if(id) await db.collection('banners').doc(id).set(payload,{merge:true});
+  else await db.collection('banners').add({...payload,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  showToast(id ? 'Banner Updated!' : 'Banner Saved!');
   closeAddBannerModal();
+}
+async function editBanner(id) {
+  ensureBannerModal();
+  const snap=await db.collection('banners').doc(id).get();
+  if(!snap.exists) return alert('Banner not found.');
+  const b=snap.data()||{};
+  document.getElementById('bannerModalTitle').textContent='Edit Banner';
+  document.getElementById('bannerEditId').value=id;
+  document.getElementById('bannerTitle').value=b.title||'';
+  document.getElementById('bannerSub').value=b.sub||'';
+  document.getElementById('bannerImageUrl').value=b.imageUrl||b.image||'';
+  document.getElementById('bannerTargetUrl').value=b.targetUrl||b.url||b.link||'';
+  document.getElementById('bannerOrder').value=String(b.order??1);
+  document.getElementById('bannerActive').checked=b.isActive!==false;
+  previewBannerImage();
+  document.getElementById('bannerModal').classList.remove('hidden');
+}
+async function toggleBannerActive(id, active) {
+  await db.collection('banners').doc(id).set({isActive:!active,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  showToast(!active ? 'Banner Activated!' : 'Banner Deactivated!');
 }
 
 function openAddGameModal() { document.getElementById('gameModal').classList.remove('hidden'); }
