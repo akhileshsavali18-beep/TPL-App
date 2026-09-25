@@ -66,7 +66,7 @@ class _ReferScreenState extends State<ReferScreen> {
           (doc.data()['referrerUid'] ?? '').toString() == user.uid).toList();
 
       final friends = <Map<String, dynamic>>[];
-      for (final log in logs.docs) {
+      for (final log in logs) {
         final logData = log.data();
         final referredUid = (logData['referredUid'] ?? '').toString();
         Map<String, dynamic> referredData = {};
