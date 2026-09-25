@@ -47,6 +47,29 @@ class AdService {
     return remaining > 0 ? remaining : 0;
   }
 
+  Future<bool> _loadPlacement(String placementId) async {
+    if (placementId.trim().isEmpty) return false;
+    final completer = Completer<bool>();
+    try {
+      await UnityAds.load(
+        placementId: placementId,
+        onComplete: (_) {
+          if (!completer.isCompleted) completer.complete(true);
+        },
+        onFailed: (_, __, ___) {
+          if (!completer.isCompleted) completer.complete(false);
+        },
+      );
+      return await completer.future.timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => false,
+      );
+    } catch (e) {
+      debugPrint('Unity ad load exception: $e');
+      return false;
+    }
+  }
+
   Future<bool> _consumeDailyRewardedSlot() async {
     final config = RemoteConfigService.instance;
     if (config.rewardedDailyLimit <= 0) return true;
