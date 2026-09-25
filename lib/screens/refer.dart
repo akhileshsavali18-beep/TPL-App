@@ -70,7 +70,7 @@ class _ReferScreenState extends State<ReferScreen> {
         final bonus = (logData['bonusGiven'] as num?)?.toDouble() ?? 5.0;
         final email = (referredData['email'] ?? logData['referredEmail'] ?? 'Anonymous').toString();
         final at = email.indexOf('@');
-        final maskedEmail = at > 0 ? '${email.substring(0, at).take(3).join()}***@${email.substring(at + 1)}' : email;
+        final maskedEmail = at > 0 ? '${email.substring(0, at).substring(0, at >= 3 ? 3 : at)}***@${email.substring(at + 1)}' : email;
         friends.add({
           'name': referredData['displayName'] ?? 'TPL Player',
           'email': maskedEmail,
