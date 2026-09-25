@@ -335,254 +335,49 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
     return Scaffold(
       backgroundColor: const Color(0xFF0B0E14),
       appBar: AppBar(
-        title: const Text('Games & Lucky Zone', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+        title: const Text('Games', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const UnityBannerWidget(),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF151922),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.rotate_right_rounded, color: Color(0xFF00FF87), size: 20),
-                        const SizedBox(width: 8),
-                        Text('Daily Spin: ${widget.spinsLeft}/${RemoteConfigService.instance.dailySpinLimit}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF151922),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.card_giftcard_rounded, color: Color(0xFFFFD700), size: 20),
-                        const SizedBox(width: 8),
-                        Text('Task Progress: $_taskProgress/3', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // 1. Lucky Spin Wheel Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF151922),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withOpacity(0.08)),
-              ),
-              child: Column(
-                children: [
-                  const Text('Lucky Spin Wheel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  const Text('Play & unlock game bonuses daily', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  const SizedBox(height: 20),
-
-                  Stack(
-                    alignment: Alignment.topCenter,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 14),
-                        child: Transform.rotate(
-                          angle: _isSpinning ? _spinAnimation.value : _currentAngle,
-                          child: CustomPaint(
-                            size: const Size(220, 220),
-                            painter: StylizedWheelPainter(wheelSlices),
-                          ),
-                        ),
-                      ),
-                      const Icon(Icons.arrow_drop_down, size: 42, color: Colors.white),
-                    ],
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  SizedBox(
-                    width: 190,
-                    height: 46,
-                    child: ElevatedButton.icon(
-                      onPressed: (_isSpinning || widget.spinsLeft <= 0) ? null : _watchAdAndSpin,
-                      icon: const Icon(Icons.play_circle_fill, size: 20),
-                      label: Text(
-                        _isSpinning ? 'SPINNING...' : (widget.spinsLeft > 0 ? 'SPIN NOW' : 'DAILY OVER'),
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00FF87),
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 22),
-
-            // 2. PhonePe Style Scratch Card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xFF151922),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.amber.withOpacity(0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('PhonePe Gold Scratch Card', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '$_taskProgress/3 Tasks',
-                          style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 11),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _taskProgress >= 3
-                        ? '🎉 Card Unlocked! Tap to watch ad & scratch.'
-                        : 'Play mini games or complete tasks to unlock (${3 - _taskProgress} remaining)',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 14),
-
-                  GestureDetector(
-                    onTap: _taskProgress >= 3 ? _watchAdAndScratch : null,
-                    child: Container(
-                      height: 105,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: _scratchRevealed
-                            ? const LinearGradient(colors: [Color(0xFF1E2638), Color(0xFF111622)])
-                            : LinearGradient(
-                                colors: _taskProgress >= 3
-                                    ? [const Color(0xFFFFD700), const Color(0xFFFFA000), const Color(0xFFFF8F00)]
-                                    : [const Color(0xFF262B3A), const Color(0xFF181C26)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _taskProgress >= 3 ? const Color(0xFFFFD700) : Colors.white12,
-                          width: 1.5,
-                        ),
-                        boxShadow: _taskProgress >= 3
-                            ? [
-                                BoxShadow(
-                                  color: const Color(0xFFFFD700).withOpacity(0.3),
-                                  blurRadius: 12,
-                                  spreadRadius: 2,
-                                )
-                              ]
-                            : [],
-                      ),
-                      child: Center(
-                        child: _scratchRevealed
-                            ? const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.check_circle_rounded, color: Color(0xFF00FF87), size: 30),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'BONUS UNLOCKED!',
-                                    style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF00FF87), fontSize: 16),
-                                  ),
-                                ],
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    _taskProgress >= 3 ? Icons.touch_app_rounded : Icons.lock_outline_rounded,
-                                    color: _taskProgress >= 3 ? Colors.black87 : Colors.white38,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _taskProgress >= 3 ? 'TAP TO WATCH & SCRATCH' : 'LOCKED: COMPLETE 3 TASKS',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      color: _taskProgress >= 3 ? Colors.black87 : Colors.white38,
-                                      fontSize: 13,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // 3. Gamezop Mini Games (Live Stream from Admin Panel with Default Fallback)
-            const Text(
-              '🎮 Play Instant Games (Gives Progress)',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 12),
-
+            const SizedBox(height: 18),
+            const Text('🎮 Gamezop Games', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 5),
+            const Text('Play instant games for entertainment. Games do not give wallet coins.', style: TextStyle(color: Colors.white54, fontSize: 11)),
+            const SizedBox(height: 14),
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance.collection('games').snapshots(),
               builder: (context, snapshot) {
                 List<Map<String, dynamic>> displayedGames = [];
-
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                  for (var doc in snapshot.data!.docs) {
+                  for (final doc in snapshot.data!.docs) {
                     final d = doc.data() as Map<String, dynamic>;
-                    if (d['isActive'] != false) displayedGames.add({
-                      'title': d['title'] ?? 'Mini Game',
-                      'category': d['category'] ?? 'Arcade',
-                      'coins': d['coins'] is int ? d['coins'] : (int.tryParse(d['coins'].toString()) ?? 2),
-                      'url': d['url'] ?? d['gameUrl'] ?? 'https://www.gamezop.com',
-                      'icon': Icons.sports_esports_rounded,
-                      'color': const Color(0xFF00FF87),
-                    });
+                    if (d['isActive'] != false) {
+                      displayedGames.add({
+                        'title': d['title'] ?? 'Game',
+                        'category': d['category'] ?? 'Arcade',
+                        'url': d['url'] ?? d['gameUrl'] ?? 'https://www.gamezop.com',
+                        'icon': Icons.sports_esports_rounded,
+                        'color': const Color(0xFF00FF87),
+                      });
+                    }
                   }
                 } else {
                   displayedGames = gamezopGames;
                 }
-
+                if (displayedGames.isEmpty) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(color: const Color(0xFF151922), borderRadius: BorderRadius.circular(18)),
+                    child: const Text('No games available right now.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38)),
+                  );
+                }
                 return GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
@@ -590,52 +385,38 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                     crossAxisCount: 2,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 1.25,
+                    childAspectRatio: 1.05,
                   ),
                   itemCount: displayedGames.length,
                   itemBuilder: (context, index) {
                     final game = displayedGames[index];
                     return InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () => _playGame(
-                        game['url'],
-                        game['coins'] as int,
-                        game['title'],
-                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () => _playGame(game['url'], 0, game['title']),
                       child: Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: const Color(0xFF151922),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withOpacity(0.08)),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: Colors.white.withOpacity(.08)),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              width: 58, height: 58,
                               decoration: BoxDecoration(
-                                color: ((game['color'] as Color?) ?? const Color(0xFF00FF87)).withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(12),
+                                color: (game['color'] as Color).withOpacity(.12),
+                                borderRadius: BorderRadius.circular(17),
                               ),
-                              child: Icon(
-                                (game['icon'] as IconData?) ?? Icons.sports_esports_rounded,
-                                color: (game['color'] as Color?) ?? const Color(0xFF00FF87),
-                                size: 28,
-                              ),
+                              child: Icon(game['icon'] as IconData, color: game['color'] as Color, size: 32),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              game['title'] ?? '',
-                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '+1 Game Progress',
-                              style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.bold),
-                            ),
+                            const SizedBox(height: 10),
+                            Text(game['title'], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                            const SizedBox(height: 3),
+                            Text(game['category'], style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                            const SizedBox(height: 5),
+                            const Text('PLAY', style: TextStyle(color: Color(0xFF00FF87), fontSize: 10, fontWeight: FontWeight.w900)),
                           ],
                         ),
                       ),
@@ -644,8 +425,6 @@ class _GamesScreenState extends State<GamesScreen> with SingleTickerProviderStat
                 );
               },
             ),
-
-            const SizedBox(height: 20),
           ],
         ),
       ),
