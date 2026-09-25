@@ -56,9 +56,9 @@ class CpaleadApiService {
       'fields': 'id,title,description,long_description,link,amount,payout_currency,payout_type,device,countries,creatives,events,offer_rank,conversion,conversion_mode',
     };
     final response = await http.get(Uri.https('www.cpalead.com', '/api/offers', query)).timeout(const Duration(seconds: 15));
-    if (response.statusCode != 200) throw Exception('CPAlead API returned HTTP ${response.statusCode}.');
+    if (response.statusCode != 200) throw Exception('Task service returned HTTP ${response.statusCode}.');
     final decoded = jsonDecode(response.body);
-    if (decoded is! Map) throw Exception('Invalid CPAlead API response.');
+    if (decoded is! Map) throw Exception('Invalid task service response.');
     final rawOffers = decoded['offers'];
     if (rawOffers is! List) return [];
     final offers = <CpaleadOffer>[];
@@ -93,9 +93,9 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
       if (user == null) throw Exception('Please sign in again.');
       final snap = await FirebaseFirestore.instance.collection('settings').doc('offerwalls').get();
       final data = snap.data() ?? <String, dynamic>{};
-      if (data['cpaleadActive'] == false) throw Exception('CPAlead offers are temporarily unavailable.');
+      if (data['cpaleadActive'] == false) throw Exception('Tasks are temporarily unavailable.');
       final publisherId = (data['cpaleadPublisherId'] ?? '').toString().trim();
-      if (publisherId.isEmpty) throw Exception('CPAlead Publisher ID is not configured in Admin Settings.');
+      if (publisherId.isEmpty) throw Exception('Tasks are not configured yet. Please try again later.');
       final offers = await CpaleadApiService.fetchOffers(publisherId: publisherId, uid: user.uid);
       if (mounted) setState(() { _offers = offers; _loading = false; });
     } catch (e) {
