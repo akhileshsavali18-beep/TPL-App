@@ -116,7 +116,7 @@ jobs:
           # Flutter templates can spell the release signer in different ways.
           # Replace every debug signer reference inside release configuration.
           s = re.sub(
-              r"signingConfig\\s*(?:=\\s*)?signingConfigs\\.debug",
+              r"signingConfig\s*(?:=\s*)?signingConfigs\.debug",
               "signingConfig signingConfigs.release",
               s,
           )
@@ -130,8 +130,8 @@ jobs:
           # inject the persistent release signer into that block.
           if "buildTypes" in s and "signingConfig signingConfigs.release" not in s:
               s = re.sub(
-                  r"(buildTypes\\s*\\{\\s*release\\s*\\{)",
-                  r"\\1\\n              signingConfig signingConfigs.release",
+                  r"(buildTypes\s*\{\s*release\s*\{)",
+                  r"\1\n              signingConfig signingConfigs.release",
                   s,
                   count=1,
               )
