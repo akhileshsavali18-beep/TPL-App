@@ -177,7 +177,14 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                     final subtitle = (data['subtitle'] ?? data['description'] ?? 'Complete the social task').toString();
                     final coins = (data['coins'] as num?)?.toInt() ?? 25;
                     final url = (data['url'] ?? data['link'] ?? '').toString();
-                    final platform = (data['platform'] ?? data['category'] ?? 'social').toString().toLowerCase();
+                    final rawPlatform = (data['platform'] ?? '').toString().toLowerCase();
+                    final lowerTitle = title.toLowerCase();
+                    final platform = rawPlatform.isNotEmpty && rawPlatform != 'social'
+                        ? rawPlatform
+                        : lowerTitle.contains('instagram') || lowerTitle.contains('follow') ? 'instagram'
+                        : lowerTitle.contains('youtube') || lowerTitle.contains('subscribe') ? 'youtube'
+                        : lowerTitle.contains('telegram') || lowerTitle.contains('join') ? 'telegram'
+                        : 'social';
                     final done = _completed[doc.id] == true;
                     return _socialCard(doc.id, title, subtitle, coins, url, platform, done);
                   },
