@@ -121,11 +121,13 @@ class AdService {
     );
   }
 
-  Future<void> showInterstitialAd({required BuildContext context, VoidCallback? onFinished}) async {
+  Future<bool> showInterstitialAd({required BuildContext context, VoidCallback? onFinished}) async {
     final config = RemoteConfigService.instance;
-    if (!config.adsEnabled || !config.interstitialEnabled) { onFinished?.call(); return; }
+    if (!config.adsEnabled || !config.interstitialEnabled) { onFinished?.call(); return false; }
     if (!_isInitialized) await init();
-    if (!_isInitialized) { onFinished?.call(); return; }
+    if (!_isInitialized) { onFinished?.call(); return false; }
+    final loaded = await _loadPlacement(config.interstitialPlacementId);
+    if (!loaded) { onFinished?.call(); return false; }
     UnityAds.showVideoAd(
       placementId: config.interstitialPlacementId,
       onComplete: (_) { _lastAdTime = DateTime.now(); onFinished?.call(); },
