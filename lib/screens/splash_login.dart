@@ -110,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('🎉 Valid Code! You get ₹5 Cash Bonus.'),
+              content: Text('🎉 Valid Code! ₹5 bonus unlocks after 2 qualified tasks.'),
               backgroundColor: Color(0xFF00FF87),
             ),
           );
