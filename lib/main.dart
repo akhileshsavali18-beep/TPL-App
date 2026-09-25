@@ -135,8 +135,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           taskCash = (data['taskCash'] ?? 0.0).toDouble();
           referCash = (data['referCash'] ?? 0.0).toDouble();
           savedUpiId = data['upiId'];
-          spinsLeft = data['spinsLeft'] ?? 3;
-          scratchLeft = data['scratchLeft'] ?? 2;
+          spinsLeft = data['spinsLeft'] ?? 0;
+          scratchLeft = data['scratchLeft'] ?? 0;
           streakClaimedToday = data['streakClaimedToday'] ?? false;
           hasConvertedToday = data['hasConvertedToday'] ?? false;
           hasTaskWithdrawnToday = data['hasTaskWithdrawnToday'] ?? false;
@@ -157,6 +157,43 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       });
     } catch (e) {
       debugPrint("Error updating coins: $e");
+    }
+  }
+
+  Future<void> _completeSocialTask(String name, int reward) async {
+    if (currentUid == null) return;
+    final ref = FirebaseFirestore.instance.collection('users').doc(currentUid);
+    final now = DateTime.now();
+    final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    try {
+      await FirebaseFirestore.instance.runTransaction((tx) async {
+        final snap = await tx.get(ref);
+        final data = snap.data() ?? <String, dynamic>{};
+        final oldDate = data['dailyBonusDate']?.toString() ?? '';
+        final oldProgress = oldDate == todayKey ? ((data['dailyTaskProgress'] as num?)?.toInt() ?? 0) : 0;
+        final oldSpins = oldDate == todayKey ? ((data['spinsLeft'] as num?)?.toInt() ?? 0) : 0;
+        final oldScratch = oldDate == todayKey ? ((data['scratchLeft'] as num?)?.toInt() ?? 0) : 0;
+        final nextProgress = oldProgress + 1;
+        final nextSpins = oldSpins < 1 ? 1 : oldSpins;
+        final nextScratch = nextProgress >= 3 && oldScratch < 1 ? 1 : oldScratch;
+
+        tx.set(ref, {
+          'coins': FieldValue.increment(reward),
+          'dailyBonusDate': todayKey,
+          'dailyTaskProgress': nextProgress,
+          'spinsLeft': nextSpins,
+          'scratchLeft': nextScratch,
+        }, SetOptions(merge: true));
+      });
+
+      if (mounted) {
+        setState(() {
+          coinHistory.insert(0, '+$reward Coins - Completed $name');
+        });
+      }
+    } catch (e) {
+      debugPrint('Task completion error: $e');
     }
   }
 
@@ -234,7 +271,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         spinsLeft: spinsLeft,
         scratchLeft: scratchLeft,
         onCompleteTask: (name, reward) {
-          _updateCoinsInFirebase(reward, 'Completed $name');
+          _completeSocialTask(name, reward);
         },
         onSpinUsed: () {
           if (currentUid != null) {
