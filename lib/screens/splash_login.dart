@@ -146,7 +146,28 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!_isLoginMode &&
         (username.length < 3 ||
             username.length > 20 ||
-            !RegExp(r'^[a-zA-Z0-9_]+
+            !RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username must be 3–20 characters (letters, numbers, underscore).')),
+      );
+      return;
+    }
+
+    if (_isLoginMode) {
+      if (loginIdentifier.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter your email or username.')),
+        );
+        return;
+      }
+    } else if (loginIdentifier.isEmpty || !loginIdentifier.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address!')),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Password must be at least 6 characters!')),
       );
