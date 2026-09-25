@@ -42,7 +42,7 @@ class CpaleadOffer {
     );
   }
 
-  int get estimatedCoins => ((double.tryParse(amount) ?? 0) * 100).round();
+  // `estimatedCoins` is the calculated rupee reward value (1 = ₹1).\n  // TPL displays rewards as coins, using the fixed rule ₹1 = 100 coins.\n  int get estimatedCoins => ((double.tryParse(amount) ?? 0)).round();\n  int get displayCoins => estimatedCoins * 100;
 }
 
 class CpaleadApiService {
@@ -160,7 +160,7 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
           const SizedBox(height: 8),
           Row(children: [
             Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFF00FF87).withOpacity(.12), borderRadius: BorderRadius.circular(8)),
-              child: Text('+${offer.estimatedCoins} Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.w900))),
+              child: Text('+${offer.displayCoins} Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.w900))),
             const Spacer(), const Icon(Icons.chevron_right_rounded, color: Colors.white38),
           ]),
         ])),
@@ -294,7 +294,7 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
                   ),
                 ),
                 child: Text(
-                  '+${task.estimatedCoins} Coins',
+                  '+${task.displayCoins} Coins',
                   style: const TextStyle(
                     color: Color(0xFF00FF87),
                     fontSize: 20,
