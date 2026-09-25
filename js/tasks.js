@@ -3,7 +3,7 @@
 // ==========================================
 
 function switchTaskSubTab(sub) {
-  const subs = ['social', 'banners', 'games', 'future'];
+  const subs = ['social', 'banners', 'future'];
   subs.forEach(s => {
     const view = document.getElementById('view-task-' + s);
     const btn = document.getElementById('subtab-' + s);
@@ -100,34 +100,6 @@ function loadTasksHub() {
     });
   });
 
-  // 3. Games Stream
-  db.collection('games').onSnapshot(snap => {
-    const c = document.getElementById('gamesList');
-    if (!c) return;
-    if (snap.empty) {
-      c.innerHTML = `
-        <div class="text-center py-6 space-y-2">
-          <p class="text-gray-500 text-xs">No games in database.</p>
-          <button onclick="seedDefaultGames()" class="px-3 py-1.5 bg-purple-600/30 border border-purple-500/40 text-purple-400 text-xs font-bold rounded-xl active:scale-95">⚡ Load 4 Gamezop Games</button>
-        </div>`;
-      return;
-    }
-    c.innerHTML = '';
-    snap.forEach(doc => {
-      const g = doc.data();
-      const div = document.createElement('div');
-      div.className = 'dark-card p-3 rounded-2xl flex justify-between items-center';
-      div.innerHTML = `
-        <div>
-          <div class="text-xs font-bold text-white">${g.title || 'Game'}</div>
-          <div class="text-[10px] text-gray-400">${g.category || 'Arcade'} • No coin reward</div>
-        </div>
-        <button onclick="deleteDoc('games', '${doc.id}')" class="text-red-400 text-xs font-bold px-2 py-1 bg-red-500/10 rounded-lg active:scale-95">Delete</button>
-      `;
-      c.appendChild(div);
-    });
-  });
-
 }
 
 // ⚡ 1-Click Sync Defaults from App to Firebase
@@ -143,19 +115,6 @@ async function seedDefaultBanners() {
     await db.collection('banners').add({ ...b, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
   }
   showToast('Default Banners Synced to Database!');
-}
-
-async function seedDefaultGames() {
-  const games = [
-    { title: 'Cricket Gunda', category: 'Sports', url: 'https://www.gamezop.com/g/r1W50d89?id=tpl_cricket' },
-    { title: 'Fruit Chop', category: 'Arcade', url: 'https://www.gamezop.com/g/rkXG0O85?id=tpl_fruit' },
-    { title: 'Bottle Shoot', category: 'Action', url: 'https://www.gamezop.com/g/B1w5CdL5?id=tpl_bottle' },
-    { title: 'Bubble Wipeout', category: 'Puzzle', url: 'https://www.gamezop.com/g/SkWG0u8q?id=tpl_bubble' }
-  ];
-  for (let g of games) {
-    await db.collection('games').add({ ...g, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-  }
-  showToast('Default Games Synced to Database!');
 }
 
 // Modals Trigger
@@ -314,21 +273,6 @@ async function editBanner(id) {
 async function toggleBannerActive(id, active) {
   await db.collection('banners').doc(id).set({isActive:!active,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
   showToast(!active ? 'Banner Activated!' : 'Banner Deactivated!');
-}
-
-function openAddGameModal() { document.getElementById('gameModal').classList.remove('hidden'); }
-function closeAddGameModal() { document.getElementById('gameModal').classList.add('hidden'); }
-
-async function saveNewGame() {
-  const title = document.getElementById('gameTitle').value.trim();
-  const coins = 0;
-  const category = document.getElementById('gameCategory').value.trim() || 'Arcade';
-  const url = document.getElementById('gameUrl').value.trim();
-  if (!title || !url) return alert('Enter Title & URL!');
-
-  await db.collection('games').add({ title, coins, category, url, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-  showToast('Game Saved!');
-  closeAddGameModal();
 }
 
 async function saveOfferwallsConfig() {
