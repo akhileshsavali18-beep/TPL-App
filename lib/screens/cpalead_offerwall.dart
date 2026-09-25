@@ -106,7 +106,7 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
   List<CpaleadOffer> get _filtered {
     if (_filter == 'All') return _offers;
     return _offers.where((o) {
-      final value = '\${o.category} \${o.payoutType} \${o.title} \${o.description}'.toLowerCase();
+      final value = '${o.category} ${o.payoutType} ${o.title} ${o.description}'.toLowerCase();
       if (_filter == 'App Tasks') return value.contains('app') || value.contains('install') || value.contains('cpi');
       if (_filter == 'Surveys') return value.contains('survey');
       return !value.contains('survey');
@@ -160,7 +160,7 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
           const SizedBox(height: 8),
           Row(children: [
             Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: const Color(0xFF00FF87).withOpacity(.12), borderRadius: BorderRadius.circular(8)),
-              child: Text('+\${offer.estimatedCoins} Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.w900))),
+              child: Text('+${offer.estimatedCoins} Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.w900))),
             const Spacer(), const Icon(Icons.chevron_right_rounded, color: Colors.white38),
           ]),
         ])),
@@ -188,13 +188,13 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
         const SizedBox(height: 18),
         Row(children: [_offerImage(offer), const SizedBox(width: 12), Expanded(child: Text(offer.title, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)))]),
         const SizedBox(height: 14),
-        Container(width: double.infinity, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFF00FF87).withOpacity(.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF00FF87).withOpacity(.16))), child: Text('+\${offer.estimatedCoins} Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 20, fontWeight: FontWeight.w900))),
+        Container(width: double.infinity, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFF00FF87).withOpacity(.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF00FF87).withOpacity(.16))), child: Text('+${offer.estimatedCoins} Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 20, fontWeight: FontWeight.w900))),
         const SizedBox(height: 12), Text(offer.description, style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
         if (offer.events.isNotEmpty) ...[
           const SizedBox(height: 14), const Text('Task Steps', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)), const SizedBox(height: 8),
           ...offer.events.take(4).map((event) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(children: [
             const Icon(Icons.check_circle_outline, color: Color(0xFF00FF87), size: 17), const SizedBox(width: 8),
-            Expanded(child: Text('\${event['name'] ?? event['description'] ?? 'Complete this step'}  +\${event['amount'] ?? ''}', style: const TextStyle(color: Colors.white60, fontSize: 12))),
+            Expanded(child: Text('${event['name'] ?? event['description'] ?? 'Complete this step'}  +${event['amount'] ?? ''}', style: const TextStyle(color: Colors.white60, fontSize: 12))),
           ]))),
         ],
         const SizedBox(height: 18),
