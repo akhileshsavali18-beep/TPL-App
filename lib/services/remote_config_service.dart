@@ -25,14 +25,14 @@ class RemoteConfigService {
   bool blockRooted = false;
   bool oneDeviceRule = false;
 
-  // Unity Ads Configuration (Test Mode ON for 100% Fill Rate)
+  // Unity Ads Configuration (LIVE by default; admin Firestore config can override)
   bool adsEnabled = true;
   String unityGameId = '5868205';
   int adCooldown = 60;
   String rewardedPlacementId = 'BP_Rewarded_Android';
   String interstitialPlacementId = 'Interstitial_Android';
   String bannerPlacementId = 'Banner_Android';
-  bool unityTestMode = true;
+  bool unityTestMode = false;
   bool rewardedAdsEnabled = true;
   bool interstitialEnabled = true;
   bool rewardedSpinEnabled = true;
@@ -81,27 +81,35 @@ class RemoteConfigService {
       });
 
       // 4. Unity Ads Remote Switcher
+      // Read once before subscribing so AdService.init() does NOT start with stale
+      // testMode=true defaults. This fixes the "admin turned test ads OFF but app
+      // still shows test ads" race condition.
+      final unitySnap = await _firestore.collection('settings').doc('unity_ads').get();
+      _applyUnityAdsConfig(unitySnap.data());
+
       _firestore.collection('settings').doc('unity_ads').snapshots().listen((snap) {
-        if (snap.exists && snap.data() != null) {
-          final data = snap.data()!;
-          adsEnabled = data['adsActive'] ?? data['adsEnabled'] ?? true;
-          unityGameId = data['gameId']?.toString() ?? '5868205';
-          adCooldown = int.tryParse(data['cooldown']?.toString() ?? '') ?? 60;
-          rewardedPlacementId = data['rewardedId']?.toString() ?? 'BP_Rewarded_Android';
-          interstitialPlacementId = data['interstitialId']?.toString() ?? 'Interstitial_Android';
-          bannerPlacementId = data['bannerId']?.toString() ?? 'Banner_Android';
-          unityTestMode = data['testMode'] ?? true;
-          rewardedAdsEnabled = data['rewardedAdsEnabled'] ?? true;
-          interstitialEnabled = data['interstitialEnabled'] ?? true;
-          rewardedSpinEnabled = data['rewardedSpinEnabled'] ?? true;
-          rewardedScratchEnabled = data['rewardedScratchEnabled'] ?? true;
-          rewardedGameEnabled = data['rewardedGameEnabled'] ?? true;
-          rewardedDailyLimit = int.tryParse(data['rewardedDailyLimit']?.toString() ?? '') ?? 10;
-        }
+        _applyUnityAdsConfig(snap.data());
       });
     } catch (e) {
       // Fallback
     }
+  }
+
+  void _applyUnityAdsConfig(Map<String, dynamic>? data) {
+    if (data == null) return;
+    adsEnabled = data['adsActive'] ?? data['adsEnabled'] ?? true;
+    unityGameId = data['gameId']?.toString() ?? '5868205';
+    adCooldown = int.tryParse(data['cooldown']?.toString() ?? '') ?? 60;
+    rewardedPlacementId = data['rewardedId']?.toString() ?? 'BP_Rewarded_Android';
+    interstitialPlacementId = data['interstitialId']?.toString() ?? 'Interstitial_Android';
+    bannerPlacementId = data['bannerId']?.toString() ?? 'Banner_Android';
+    unityTestMode = data['testMode'] == true;
+    rewardedAdsEnabled = data['rewardedAdsEnabled'] ?? true;
+    interstitialEnabled = data['interstitialEnabled'] ?? true;
+    rewardedSpinEnabled = data['rewardedSpinEnabled'] ?? true;
+    rewardedScratchEnabled = data['rewardedScratchEnabled'] ?? true;
+    rewardedGameEnabled = data['rewardedGameEnabled'] ?? true;
+    rewardedDailyLimit = int.tryParse(data['rewardedDailyLimit']?.toString() ?? '') ?? 10;
   }
 
   double coinsToRupees(int coins) {
