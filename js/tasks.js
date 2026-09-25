@@ -203,7 +203,7 @@ function ensureBannerModal() {
       <div class="flex items-center justify-between">
         <div>
           <div id="bannerModalTitle" class="text-lg font-black text-white">Add Banner</div>
-          <div class="text-[10px] text-gray-500">Upload the banner image directly from your phone or computer.</div>
+          <div class="text-[10px] text-gray-500">Use an image URL or upload directly if Firebase Storage is available.</div>
         </div>
         <button onclick="closeAddBannerModal()" class="text-gray-400 text-xl">×</button>
       </div>
@@ -218,6 +218,9 @@ function ensureBannerModal() {
 
       <div class="space-y-2">
         <label class="block text-[10px] text-gray-400 font-bold uppercase">Banner Image</label>
+        <input id="bannerImageUrl" type="url" placeholder="Paste direct image URL (https://.../banner.png)" class="w-full px-3 py-3 bg-black/50 border border-white/10 rounded-xl text-xs text-white" oninput="handleBannerImageUrlChanged()">
+        <div class="text-[9px] text-gray-500">Recommended: GitHub Raw / GitHub Pages direct image URL. No Firebase Storage upgrade needed.</div>
+        <div class="text-center text-[9px] text-gray-600">OR</div>
         <label class="flex items-center justify-center gap-2 w-full px-3 py-4 bg-blue-500/10 border border-blue-400/30 border-dashed rounded-2xl text-xs text-blue-300 font-black cursor-pointer active:scale-[0.99]">
           <span>📤 Choose Image</span>
           <input id="bannerImageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" onchange="handleBannerImageSelected(event)">
@@ -253,6 +256,7 @@ function openAddBannerModal() {
   document.getElementById('bannerCurrentStoragePath').value = '';
   document.getElementById('bannerTitle').value = '';
   document.getElementById('bannerSub').value = '';
+  document.getElementById('bannerImageUrl').value = '';
   document.getElementById('bannerTargetUrl').value = '';
   document.getElementById('bannerOrder').value = '1';
   document.getElementById('bannerActive').checked = true;
@@ -268,6 +272,34 @@ function openAddBannerModal() {
 function closeAddBannerModal() {
   const m = document.getElementById('bannerModal');
   if (m) m.classList.add('hidden');
+}
+
+function handleBannerImageUrlChanged() {
+  const input = document.getElementById('bannerImageUrl');
+  const url = input ? input.value.trim() : '';
+  const fileInput = document.getElementById('bannerImageFile');
+  const name = document.getElementById('bannerUploadName');
+  const box = document.getElementById('bannerImagePreview');
+  const img = document.getElementById('bannerPreviewImg');
+
+  if (!url) return;
+
+  if (!/^https?:\/\//i.test(url)) {
+    if (name) name.textContent = 'Enter a valid http(s) image URL';
+    if (box) box.classList.add('hidden');
+    return;
+  }
+
+  if (fileInput) fileInput.value = '';
+  if (name) name.textContent = 'Image URL selected';
+  if (img && box) {
+    img.src = url;
+    img.onload = () => box.classList.remove('hidden');
+    img.onerror = () => {
+      box.classList.add('hidden');
+      if (name) name.textContent = 'Image URL could not be loaded';
+    };
+  }
 }
 
 function handleBannerImageSelected(event) {
@@ -296,6 +328,8 @@ function handleBannerImageSelected(event) {
     return alert('Banner image must be 8 MB or smaller.');
   }
 
+  const urlInput = document.getElementById('bannerImageUrl');
+  if (urlInput) urlInput.value = '';
   if (name) name.textContent = file.name + ' • ' + (file.size / 1024 / 1024).toFixed(2) + ' MB';
   if (img && box) {
     img.src = URL.createObjectURL(file);
@@ -396,11 +430,14 @@ async function saveNewBanner() {
   const isActive = document.getElementById('bannerActive').checked;
   const fileInput = document.getElementById('bannerImageFile');
   const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+  const imageUrlInput = document.getElementById('bannerImageUrl');
+  const imageUrl = imageUrlInput ? imageUrlInput.value.trim() : '';
   const currentImageUrl = document.getElementById('bannerCurrentImageUrl').value.trim();
   const currentStoragePath = document.getElementById('bannerCurrentStoragePath').value.trim();
 
   if (!title) return alert('Enter banner title!');
-  if (!id && !file) return alert('Choose a banner image first.');
+  if (!id && !file && !imageUrl) return alert('Paste an image URL or choose a banner image.');
+  if (imageUrl && !/^https?:\/\//i.test(imageUrl)) return alert('Enter a valid image URL starting with http:// or https://');
   if (file && (!file.type.startsWith('image/') || file.size > 8 * 1024 * 1024)) {
     return alert('Please choose an image up to 8 MB.');
   }
@@ -411,20 +448,23 @@ async function saveNewBanner() {
 
     // Generate the Firestore document ID before upload so the Storage path is stable.
     const docRef = id ? db.collection('banners').doc(id) : db.collection('banners').doc();
-    let imageUrl = currentImageUrl;
+    let savedImageUrl = currentImageUrl;
     let storagePath = currentStoragePath;
 
-    if (file) {
+    if (imageUrl) {
+      savedImageUrl = imageUrl;
+      storagePath = '';
+    } else if (file) {
       setBannerUploadProgress(0);
       const uploaded = await uploadBannerImage(file, 'banners/' + docRef.id + '/' + Date.now());
-      imageUrl = uploaded.url;
+      savedImageUrl = uploaded.url;
       storagePath = uploaded.path;
     }
 
     const payload = {
       title,
       sub,
-      imageUrl,
+      imageUrl: savedImageUrl,
       targetUrl,
       isActive,
       order,
@@ -472,11 +512,12 @@ async function editBanner(id) {
   document.getElementById('bannerCurrentStoragePath').value = b.storagePath || '';
   document.getElementById('bannerTitle').value = b.title || '';
   document.getElementById('bannerSub').value = b.sub || '';
+  document.getElementById('bannerImageUrl').value = b.imageUrl || b.image || '';
   document.getElementById('bannerTargetUrl').value = b.targetUrl || b.url || b.link || '';
   document.getElementById('bannerOrder').value = String(b.order ?? 1);
   document.getElementById('bannerActive').checked = b.isActive !== false;
   document.getElementById('bannerImageFile').value = '';
-  document.getElementById('bannerUploadName').textContent = 'Keep current image or choose a new one';
+  document.getElementById('bannerUploadName').textContent = b.imageUrl || b.image ? 'Current image URL loaded' : 'No new image selected';
   document.getElementById('bannerUploadProgress').classList.add('hidden');
 
   const currentImage = b.imageUrl || b.image || '';
