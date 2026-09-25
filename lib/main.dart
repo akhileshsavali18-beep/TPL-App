@@ -174,40 +174,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   Future<void> _completeSocialTask(String name, int reward) async {
     if (currentUid == null) return;
-    final ref = FirebaseFirestore.instance.collection('users').doc(currentUid);
-    final now = DateTime.now();
-    final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-
     try {
-      await FirebaseFirestore.instance.runTransaction((tx) async {
-        final snap = await tx.get(ref);
-        final data = snap.data() ?? <String, dynamic>{};
-        final oldDate = data['dailyBonusDate']?.toString() ?? '';
-        final oldProgress = oldDate == todayKey ? ((data['dailyTaskProgress'] as num?)?.toInt() ?? 0) : 0;
-        final oldSpins = oldDate == todayKey ? ((data['spinsLeft'] as num?)?.toInt() ?? 0) : 0;
-        final oldScratch = oldDate == todayKey ? ((data['scratchLeft'] as num?)?.toInt() ?? 0) : 0;
-        final nextProgress = oldProgress + 1;
-        final nextSpins = oldSpins < 1 ? 1 : oldSpins;
-        final nextScratch = nextProgress >= 3 && oldScratch < 1 ? 1 : oldScratch;
-
-        tx.set(ref, {
-          'coins': FieldValue.increment(reward),
-          'dailyBonusDate': todayKey,
-          'dailyTaskProgress': nextProgress,
-          'spinsLeft': nextSpins,
-          'scratchLeft': nextScratch,
-        }, SetOptions(merge: true));
-      });
-
-      if (mounted) {
-        setState(() {
-          coinHistory.insert(0, '+$reward Coins - Completed $name');
-        });
-      }
+      await _updateCoinsInFirebase(reward, 'Completed $name');
     } catch (e) {
-      debugPrint('Task completion error: $e');
+      debugPrint('Social task completion error: $e');
     }
   }
+
 
   void switchTab(int index) {
     setState(() => _currentIndex = index);
