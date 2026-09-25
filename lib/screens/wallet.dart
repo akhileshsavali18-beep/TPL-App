@@ -98,10 +98,6 @@ class _WalletScreenState extends State<WalletScreen> {
       _showMessage('Minimum 100 coins required to convert.', Colors.amber);
       return;
     }
-    if (raw % rate != 0) {
-      _showMessage('Coins must be in multiples of ' + rate.toString() + '.', Colors.amber);
-      return;
-    }
     if (raw > widget.coins) {
       _showMessage('You do not have enough coins.', Colors.redAccent);
       return;
@@ -619,7 +615,7 @@ class _WalletScreenState extends State<WalletScreen> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final value = int.tryParse(_coinController.text.trim()) ?? 0;
-            final valid = value >= 100 && value <= widget.coins && value % rate == 0;
+            final valid = value >= 100 && value <= widget.coins;
             final cash = value / rate;
 
             return Padding(
@@ -647,7 +643,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       labelText: 'Coins to convert',
-                      hintText: '100, 200, 300...',
+                      hintText: '100, 150, 152, 245...',
                       labelStyle: const TextStyle(color: Colors.white60),
                       hintStyle: const TextStyle(color: Colors.white30),
                       prefixIcon: const Icon(Icons.monetization_on, color: Colors.amber),
