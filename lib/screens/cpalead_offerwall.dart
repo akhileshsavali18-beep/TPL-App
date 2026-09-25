@@ -194,7 +194,7 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
           const SizedBox(height: 14), const Text('Task Steps', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)), const SizedBox(height: 8),
           ...offer.events.take(4).map((event) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(children: [
             const Icon(Icons.check_circle_outline, color: Color(0xFF00FF87), size: 17), const SizedBox(width: 8),
-            Expanded(child: Text('${event['name'] ?? event['description'] ?? 'Complete this step'}  +${event['amount'] ?? ''}', style: const TextStyle(color: Colors.white60, fontSize: 12))),
+            Expanded(child: Text("${event['name'] ?? event['description'] ?? 'Complete this step'}  +${event['amount'] ?? ''}", style: const TextStyle(color: Colors.white60, fontSize: 12))),
           ]))),
         ],
         const SizedBox(height: 18),
