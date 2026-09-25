@@ -169,40 +169,218 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
   );
 
   Widget _offerImage(CpaleadOffer offer) {
-    if (offer.imageUrl.isEmpty) return Container(width: 64, height: 64, decoration: BoxDecoration(color: const Color(0xFF080B10), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.local_offer_rounded, color: Color(0xFF00FF87), size: 28));
-    return ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.network(offer.imageUrl, width: 64, height: 64, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(width: 64, height: 64, color: const Color(0xFF080B10), child: const Icon(Icons.local_offer_rounded, color: Color(0xFF00FF87))));
+    if (offer.imageUrl.isEmpty) {
+      return Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: const Color(0xFF080B10),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(
+          Icons.local_offer_rounded,
+          color: Color(0xFF00FF87),
+          size: 28,
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Image.network(
+        offer.imageUrl,
+        width: 64,
+        height: 64,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          width: 64,
+          height: 64,
+          color: const Color(0xFF080B10),
+          child: const Icon(
+            Icons.local_offer_rounded,
+            color: Color(0xFF00FF87),
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _errorView() => Center(child: Padding(padding: const EdgeInsets.all(18), child: Column(mainAxisSize: MainAxisSize.min, children: [
-    const Icon(Icons.cloud_off_rounded, color: Colors.white38, size: 40), const SizedBox(height: 8),
-    Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-    const SizedBox(height: 12), ElevatedButton(onPressed: _load, child: const Text('Retry')),
-  ])));
-
-  Widget _emptyView() => const Center(child: Text('No offers available right now. Please check again later.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54)));
-
-  void _showDetails(CpaleadOffer offer) {
-    showModalBottomSheet(context: context, backgroundColor: const Color(0xFF0D111A), isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
-      builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(20,16,20,20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(5)))),
-        const SizedBox(height: 18),
-        Row(children: [_offerImage(offer), const SizedBox(width: 12), Expanded(child: Text(offer.title, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)))]),
-        const SizedBox(height: 14),
-        Container(width: double.infinity, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFF00FF87).withOpacity(.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF00FF87).withOpacity(.16))), child: Text('+${offer.estimatedCoins} Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 20, fontWeight: FontWeight.w900))),
-        const SizedBox(height: 12), Text(offer.description, style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
-        if (offer.events.isNotEmpty) ...[
-          const SizedBox(height: 14), const Text('Task Steps', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)), const SizedBox(height: 8),
-          ...offer.events.take(4).map((event) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(children: [
-            const Icon(Icons.check_circle_outline, color: Color(0xFF00FF87), size: 17), const SizedBox(width: 8),
-            Expanded(child: Text("${event['name'] ?? event['description'] ?? 'Complete this step'}  +${event['amount'] ?? ''}", style: const TextStyle(color: Colors.white60, fontSize: 12))),
-          ]))),
-        ],
-        const SizedBox(height: 18),
-        SizedBox(width: double.infinity, height: 52, child: ElevatedButton(onPressed: () { Navigator.pop(context); _openOffer(offer); },
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-          child: const Text('START TASK', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)))),
-      ])));
+  Widget _errorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_rounded, color: Colors.white38, size: 40),
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _load,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+
+  Widget _emptyView() {
+    return const Center(
+      child: Text(
+        'No tasks available right now. Please check again later.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.white54),
+      ),
+    );
+  }
+
+  void _showDetails(CpaleadOffer task) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0D111A),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  _offerImage(task),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00FF87).withOpacity(.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFF00FF87).withOpacity(.16),
+                  ),
+                ),
+                child: Text(
+                  '+${task.estimatedCoins} Coins',
+                  style: const TextStyle(
+                    color: Color(0xFF00FF87),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                task.description,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              if (task.events.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                const Text(
+                  'Task Steps',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...task.events.take(4).map(
+                  (event) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline,
+                          color: Color(0xFF00FF87),
+                          size: 17,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            (event['name'] ?? event['description'] ?? 'Complete this step').toString() +
+                                '  +' +
+                                (event['amount'] ?? '').toString(),
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _openOffer(task);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00FF87),
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'START TASK',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 }
 
 class CpaleadOfferwallScreen extends StatelessWidget {
