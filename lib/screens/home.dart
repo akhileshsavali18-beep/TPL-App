@@ -68,9 +68,26 @@ class HomeScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: AnnouncementBanner()),
             const SliverToBoxAdapter(child: UnityBannerWidget()),
             const SliverToBoxAdapter(child: HomeBannerCarousel()),
+            // Quick earning/play categories directly below the banner, matching the compact Chillar-style home flow.
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(child: _quickCard(Icons.casino_rounded, 'Spin', 'Watch Ad → Coins', onOpenGames)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _quickCard(Icons.style_rounded, 'Scratch', 'Watch Ad → Coins', onOpenGames)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _quickCard(Icons.sports_esports_rounded, 'Games', 'Play Games', onOpenGames)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _quickCard(Icons.task_alt_rounded, 'Social', 'Earn Coins', onOpenTasks)),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                 child: Row(children: [
                   const Expanded(child: Text('💰 All Offers', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900))),
                   TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CpaleadOfferwallScreen())), child: const Text('View All')),
@@ -78,33 +95,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SliverToBoxAdapter(child: CpaleadOfferwallPanel(height: 540)),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
-                child: Row(children: [const Expanded(child: Text('🎯 Social Tasks', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900))), TextButton(onPressed: onOpenTasks, child: const Text('View All'))]),
-              ),
-            ),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('tasks').snapshots(),
-              builder: (context, snapshot) {
-                final docs = !snapshot.hasData ? <QueryDocumentSnapshot>[] : snapshot.data!.docs.where((d) => (d.data() as Map<String, dynamic>)['isActive'] != false).take(4).toList();
-                if (docs.isEmpty) return const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(16), child: Text('No social tasks available right now.', style: TextStyle(color: Colors.white38, fontSize: 12))));
-                return SliverList(delegate: SliverChildBuilderDelegate((context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>;
-                  final title = data['title']?.toString() ?? 'Task';
-                  final coins = (data['coins'] as num?)?.toInt() ?? 0;
-                  return Container(margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), decoration: BoxDecoration(color: const Color(0xFF111622), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.white10)), child: Row(children: [const Icon(Icons.task_alt_rounded, color: Color(0xFF00FF87)), const SizedBox(width: 10), Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12))), Text('+' + coins.toString(), style: const TextStyle(color: Color(0xFF00FF87), fontWeight: FontWeight.w900))]));
-                }, childCount: docs.length));
-              },
-            ),
-            SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(16, 20, 16, 8), child: Row(children: [const Expanded(child: Text('🎮 Play & Win', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900))), TextButton(onPressed: onOpenGames, child: const Text('Games'))]))),
-            SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 28), child: Row(children: [
-              Expanded(child: _quickCard(Icons.casino_rounded, 'Spin', 'Ad → Extra Spin', onOpenGames)),
-              const SizedBox(width: 9),
-              Expanded(child: _quickCard(Icons.style_rounded, 'Scratch', 'Ad → Extra Scratch', onOpenGames)),
-              const SizedBox(width: 9),
-              Expanded(child: _quickCard(Icons.sports_esports_rounded, 'Gamezop', 'Play games', onOpenGames)),
-            ]))),
           ],
         ),
       ),
