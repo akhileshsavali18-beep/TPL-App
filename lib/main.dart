@@ -231,8 +231,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onOpenGames: () => switchTab(2),
       ),
       TasksTabScreen(
+        spinsLeft: spinsLeft,
+        scratchLeft: scratchLeft,
         onCompleteTask: (name, reward) {
           _updateCoinsInFirebase(reward, 'Completed $name');
+        },
+        onSpinUsed: () {
+          if (currentUid != null) {
+            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+              'spinsLeft': FieldValue.increment(-1),
+            });
+          }
+        },
+        onScratchUsed: () {
+          if (currentUid != null) {
+            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
+              'scratchLeft': FieldValue.increment(-1),
+            });
+          }
         },
       ),
       GamesScreen(
