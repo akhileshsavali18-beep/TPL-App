@@ -42,7 +42,9 @@ class CpaleadOffer {
     );
   }
 
-  // Keep the existing reward calculation unchanged.\n  // The visible task reward is displayed as 100 coins per calculated reward unit.\n  int get estimatedCoins => ((double.tryParse(amount) ?? 0) * 100).round();\n  int get displayCoins => estimatedCoins * 100;
+  // Keep the existing reward calculation: 1 reward unit = 100 coins.
+  int get estimatedCoins => ((double.tryParse(amount) ?? 0) * 100).round();
+  int get displayCoins => estimatedCoins;
 }
 
 class CpaleadApiService {
