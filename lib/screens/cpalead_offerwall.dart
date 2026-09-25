@@ -31,6 +31,11 @@ class _CpaleadOfferwallScreenState extends State<CpaleadOfferwallScreen> {
       if (template.isEmpty) throw Exception('CPAlead Offerwall is not configured yet.');
       if (!template.startsWith('https://')) throw Exception('Offerwall URL must use HTTPS.');
 
+      final host = Uri.tryParse(template)?.host.toLowerCase() ?? '';
+      if (!(host == 'cpalead.com' || host.endsWith('.cpalead.com'))) {
+        throw Exception('CPAlead Offerwall is not configured. Please set the CPAlead URL in Admin Settings.');
+      }
+
       var url = template.replaceAll('{uid}', Uri.encodeComponent(user.uid));
       if (!template.contains('{uid}')) {
         final separator = url.contains('?') ? '&' : '?';
@@ -134,6 +139,11 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
       final template = (data['cpaleadUrlTemplate'] ?? data['cpaleadUrl'] ?? '').toString().trim();
       if (template.isEmpty) throw Exception('CPAlead Offerwall is not configured in Admin Settings.');
       if (!template.startsWith('https://')) throw Exception('Offerwall URL must use HTTPS.');
+
+      final host = Uri.tryParse(template)?.host.toLowerCase() ?? '';
+      if (!(host == 'cpalead.com' || host.endsWith('.cpalead.com'))) {
+        throw Exception('CPAlead Offerwall is not configured. Please set the CPAlead URL in Admin Settings.');
+      }
 
       var url = template.replaceAll('{uid}', Uri.encodeComponent(user.uid));
       if (!template.contains('{uid}')) {
