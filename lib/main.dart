@@ -274,7 +274,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ReferScreen(
         referCash: referCash,
         invitedFriends: invitedFriends,
-        onNavigateToWallet: () => switchTab(4),
+        onNavigateToWallet: () => switchTab(3),
       ),
       WalletScreen(
         coins: coins,
