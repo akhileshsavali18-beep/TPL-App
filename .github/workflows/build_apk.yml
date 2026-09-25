@@ -93,8 +93,11 @@ jobs:
           if "def keystoreProperties = new Properties()" not in s:
               s = s.replace("android {", signing + "android {", 1)
 
-          if "signingConfigs {" not in s:
-              s = s.replace("android {", """android {
+          # Always configure the release signing object. flutter create can generate
+          # a signingConfigs block already, so do not condition this on the block
+          # being absent. A second signingConfigs closure safely configures the same
+          # release signing object and prevents fallback to the runner debug key.
+          s = s.replace("android {", """android {
               signingConfigs {
                   release {
                       keyAlias keystoreProperties['keyAlias']
@@ -130,7 +133,26 @@ jobs:
           echo "=== APK package/version ==="
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -E "package:|sdkVersion:"
           echo "=== APK signing certificates ==="
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
+          SIGNER_SHA256="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK" | awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}')"
+          echo "APK signer SHA-256: $SIGNER_SHA256"
+
+          KEYSTORE_SHA256="$(keytool -list -v -keystore android/tpl-release.p12 -storetype PKCS12 -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" | awk '/SHA256:/{print $2; exit}' | tr -d ':')"
+          echo "Keystore certificate SHA-256: $KEYSTORE_SHA256"
+
+          if [ -z "$SIGNER_SHA256" ] || [ -z "$KEYSTORE_SHA256" ]; then
+            echo "Could not determine APK or keystore certificate fingerprint." >&2
+            exit 1
+          fi
+
+          APK_SHA256_NORMALIZED="$(echo "$SIGNER_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ':')"
+          KEYSTORE_SHA256_NORMALIZED="$(echo "$KEYSTORE_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ':')"
+
+          if [ "$APK_SHA256_NORMALIZED" != "$KEYSTORE_SHA256_NORMALIZED" ]; then
+            echo "ERROR: APK is NOT signed with the configured persistent release keystore." >&2
+            exit 1
+          fi
+
+          echo "OK: APK is signed with the configured persistent release keystore."
 
       - name: Prepare Release APK
         run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
