@@ -20,15 +20,17 @@ h1{margin:0 0 8px;font-size:28px}p{color:#9ca3af;line-height:1.5}
 <h1>Join TPL PRO</h1>
 <p>Complete eligible tasks, earn coins and withdraw rewards.</p>
 <div id="codeBox" class="code">TPL</div>
-<button id="copyBtn" class="btn" style="border:0;width:100%;cursor:pointer">COPY INVITE CODE</button><a class="btn" href="https://github.com/akhileshsavali18-beep/TPL-App/releases/latest">DOWNLOAD LATEST TPL PRO</a>
-<p class="note">After installing TPL PRO, enter the invite code shown above during signup if it is not filled automatically.</p>
+<button id="copyBtn" class="btn" style="border:0;width:100%;cursor:pointer">COPY INVITE CODE</button><button id="downloadBtn" class="btn" style="border:0;width:100%;cursor:pointer">DOWNLOAD LATEST TPL PRO</button>
+<p class="note">The latest TPL PRO APK is downloaded from the GitHub latest release. Your invite code is copied before download so it can be used during signup.</p>
 </div>
 <script>
 const params=new URLSearchParams(location.search);
 const ref=(params.get('ref')||'').trim().toUpperCase();
+const latestApk='https://github.com/akhileshsavali18-beep/TPL-App/releases/latest/download/TPL-Pro-Release-APK.apk';
 document.getElementById('codeBox').textContent=ref||'NO CODE';
 if(ref){document.title='TPL PRO — Invite '+ref;}
 document.getElementById('copyBtn').onclick=async()=>{if(!ref)return;try{await navigator.clipboard.writeText(ref);document.getElementById('copyBtn').textContent='COPIED ✓';}catch(e){document.getElementById('copyBtn').textContent='CODE: '+ref;}};
+document.getElementById('downloadBtn').onclick=async()=>{if(ref){try{await navigator.clipboard.writeText(ref);}catch(e){}} window.location.href=latestApk;};
 </script>
 </body>
 </html>
