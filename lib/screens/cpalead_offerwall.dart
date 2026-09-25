@@ -30,7 +30,7 @@ class CpaleadOffer {
     return CpaleadOffer(
       id: (json['id'] ?? '').toString(),
       title: (json['title'] ?? 'Offer').toString(),
-      description: (json['description'] ?? json['long_description'] ?? 'Complete the required steps to earn your reward.').toString(),
+      description: (json['description'] ?? json['long_description'] ?? 'Complete the required steps to earn your coins.').toString(),
       link: (json['link'] ?? '').toString(),
       amount: (json['amount'] ?? 0).toString(),
       currency: (json['payout_currency'] ?? 'USD').toString(),
@@ -107,7 +107,7 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
     if (_filter == 'All') return _offers;
     return _offers.where((o) {
       final value = '\${o.category} \${o.payoutType} \${o.title} \${o.description}'.toLowerCase();
-      if (_filter == 'Apps') return value.contains('app') || value.contains('install') || value.contains('cpi');
+      if (_filter == 'App Tasks') return value.contains('app') || value.contains('install') || value.contains('cpi');
       if (_filter == 'Surveys') return value.contains('survey');
       return !value.contains('survey');
     }).toList();
@@ -127,10 +127,10 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
       decoration: BoxDecoration(color: const Color(0xFF0D111A), borderRadius: BorderRadius.circular(22), border: Border.all(color: const Color(0xFF00FF87).withOpacity(.16))),
       child: Column(children: [
         Row(children: [
-          const Expanded(child: Text('Earn rewards by completing offers', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900))),
+          const Expanded(child: Text('Complete tasks & earn coins', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900))),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded, color: Colors.white70)),
         ]),
-        SizedBox(height: 42, child: ListView(scrollDirection: Axis.horizontal, children: ['All','Apps','Surveys','Offers'].map((value) {
+        SizedBox(height: 42, child: ListView(scrollDirection: Axis.horizontal, children: ['All','App Tasks','Surveys','Tasks'].map((value) {
           final selected = _filter == value;
           return Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(
             label: Text(value), selected: selected, onSelected: (_) => setState(() => _filter = value),
@@ -191,7 +191,7 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
         Container(width: double.infinity, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFF00FF87).withOpacity(.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF00FF87).withOpacity(.16))), child: Text('+\${offer.estimatedCoins} Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 20, fontWeight: FontWeight.w900))),
         const SizedBox(height: 12), Text(offer.description, style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
         if (offer.events.isNotEmpty) ...[
-          const SizedBox(height: 14), const Text('How to earn', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)), const SizedBox(height: 8),
+          const SizedBox(height: 14), const Text('Task Steps', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)), const SizedBox(height: 8),
           ...offer.events.take(4).map((event) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(children: [
             const Icon(Icons.check_circle_outline, color: Color(0xFF00FF87), size: 17), const SizedBox(width: 8),
             Expanded(child: Text('\${event['name'] ?? event['description'] ?? 'Complete this step'}  +\${event['amount'] ?? ''}', style: const TextStyle(color: Colors.white60, fontSize: 12))),
@@ -200,7 +200,7 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
         const SizedBox(height: 18),
         SizedBox(width: double.infinity, height: 52, child: ElevatedButton(onPressed: () { Navigator.pop(context); _openOffer(offer); },
           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF87), foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-          child: const Text('START OFFER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)))),
+          child: const Text('START TASK', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)))),
       ])));
   }
 }
@@ -209,7 +209,7 @@ class CpaleadOfferwallScreen extends StatelessWidget {
   const CpaleadOfferwallScreen({super.key});
   @override Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFF080B10),
-    appBar: AppBar(backgroundColor: const Color(0xFF0D111A), elevation: 0, title: const Text('Earn with Offers', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)), iconTheme: const IconThemeData(color: Colors.white)),
+    appBar: AppBar(backgroundColor: const Color(0xFF0D111A), elevation: 0, title: const Text('Tasks & Rewards', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)), iconTheme: const IconThemeData(color: Colors.white)),
     body: const CpaleadOfferwallPanel(height: double.infinity),
   );
 }
