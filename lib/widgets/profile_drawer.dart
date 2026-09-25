@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'unity_banner_widget.dart';
 import 'transaction_history.dart';
+import '../screens/splash_login.dart';
 
 class ProfileDrawer extends StatelessWidget {
   final VoidCallback? onWalletTap;
@@ -134,7 +135,12 @@ class ProfileDrawer extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 onTap: () async {
                   await FirebaseAuth.instance.signOut();
-                  if (context.mounted) Navigator.pop(context);
+                  if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const SplashScreen()),
+                      (route) => false,
+                    );
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
