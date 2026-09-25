@@ -1,3 +1,10 @@
+bool _isAllowedOfferwallHost(String host) {
+  return host == 'cpalead.com' ||
+      host.endsWith('.cpalead.com') ||
+      host == 'cdnflair.com' ||
+      host.endsWith('.cdnflair.com');
+}
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,8 +39,8 @@ class _CpaleadOfferwallScreenState extends State<CpaleadOfferwallScreen> {
       if (!template.startsWith('https://')) throw Exception('Offerwall URL must use HTTPS.');
 
       final host = Uri.tryParse(template)?.host.toLowerCase() ?? '';
-      if (!(host == 'cpalead.com' || host.endsWith('.cpalead.com'))) {
-        throw Exception('CPAlead Offerwall is not configured. Please set the CPAlead URL in Admin Settings.');
+      if (!_isAllowedOfferwallHost(host)) {
+        throw Exception('CPAlead Offerwall URL is not allowed. Use the Direct Link from CPAlead Get Code.');
       }
 
       var url = template.replaceAll('{uid}', Uri.encodeComponent(user.uid));
@@ -141,8 +148,8 @@ class _CpaleadOfferwallPanelState extends State<CpaleadOfferwallPanel> {
       if (!template.startsWith('https://')) throw Exception('Offerwall URL must use HTTPS.');
 
       final host = Uri.tryParse(template)?.host.toLowerCase() ?? '';
-      if (!(host == 'cpalead.com' || host.endsWith('.cpalead.com'))) {
-        throw Exception('CPAlead Offerwall is not configured. Please set the CPAlead URL in Admin Settings.');
+      if (!_isAllowedOfferwallHost(host)) {
+        throw Exception('CPAlead Offerwall URL is not allowed. Use the Direct Link from CPAlead Get Code.');
       }
 
       var url = template.replaceAll('{uid}', Uri.encodeComponent(user.uid));
