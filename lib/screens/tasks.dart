@@ -309,7 +309,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   }
 
   Widget _scratchCard() {
-    final unlocked = _cpaleadQualifiedTasks >= 3 && !_scratchRevealed;
+    final canScratch = _cpaleadQualifiedTasks >= 3 && !_scratchRevealed;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -326,7 +326,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
         const SizedBox(height: 16),
         GestureDetector(
           onPanUpdate: unlocked ? (_) {} : null,
-          onTap: unlocked ? null : _unlockScratch,
+          onTap: canScratch ? _unlockScratch : null,
           child: Container(
             height: 118,
             width: double.infinity,
@@ -335,7 +335,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
               borderRadius: BorderRadius.circular(15),
             ),
             child: Center(
-              child: unlocked
+              child: _scratchRevealed
                   ? const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(Icons.card_giftcard_rounded, color: Colors.black87, size: 30),
                       SizedBox(height: 5),
