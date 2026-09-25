@@ -51,7 +51,6 @@ class _ReferScreenState extends State<ReferScreen> {
       final logs = await FirebaseFirestore.instance
           .collection('referral_logs')
           .where('referrerUid', isEqualTo: user.uid)
-          .orderBy('createdAt', descending: true)
           .get();
 
       final friends = <Map<String, dynamic>>[];
