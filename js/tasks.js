@@ -314,30 +314,75 @@ function setBannerUploadProgress(percent) {
 
 function uploadBannerImage(file, storagePath) {
   return new Promise((resolve, reject) => {
-    if (!firebase.storage) {
-      reject(new Error('Firebase Storage SDK is not loaded.'));
-      return;
-    }
+    let settled = false;
+    let timeoutId;
 
-    const safeName = (file.name || 'banner').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const ref = firebase.storage().ref().child(storagePath + '_' + safeName);
-    const task = ref.put(file, { contentType: file.type || 'image/jpeg' });
+    const finishReject = (error) => {
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      reject(error instanceof Error ? error : new Error(String(error || 'Upload failed')));
+    };
 
-    task.on('state_changed',
-      snapshot => {
-        const progress = snapshot.totalBytes ? (snapshot.bytesTransferred / snapshot.totalBytes) * 100 : 0;
-        setBannerUploadProgress(progress);
-      },
-      error => reject(error),
-      async () => {
-        try {
-          const url = await task.snapshot.ref.getDownloadURL();
-          resolve({ url: url, path: task.snapshot.ref.fullPath });
-        } catch (e) {
-          reject(e);
-        }
+    const finishResolve = (value) => {
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      resolve(value);
+    };
+
+    try {
+      if (!firebase.storage) {
+        finishReject(new Error('Firebase Storage SDK is not loaded. Refresh the admin page.'));
+        return;
       }
-    );
+
+      const storage = firebase.storage();
+      const safeName = (file.name || 'banner').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const ref = storage.ref().child(storagePath + '_' + safeName);
+
+      // Fail fast instead of leaving the admin panel stuck at 0%.
+      timeoutId = setTimeout(() => {
+        finishReject(new Error(
+          'Firebase Storage upload timed out. Check that Firebase Storage is enabled and its rules allow the logged-in admin to upload.'
+        ));
+      }, 30000);
+
+      const task = ref.put(file, {
+        contentType: file.type || 'image/jpeg',
+        cacheControl: 'public,max-age=31536000'
+      });
+
+      task.on(
+        'state_changed',
+        snapshot => {
+          const progress = snapshot.totalBytes
+            ? (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+            : 0;
+          setBannerUploadProgress(progress);
+        },
+        error => {
+          console.error('Firebase Storage upload error:', error);
+          finishReject(new Error(
+            'Storage upload failed: ' + (error && error.message ? error.message : error)
+          ));
+        },
+        async () => {
+          try {
+            const url = await task.snapshot.ref.getDownloadURL();
+            finishResolve({ url: url, path: task.snapshot.ref.fullPath });
+          } catch (e) {
+            finishReject(new Error(
+              'Upload completed but download URL failed: ' + (e && e.message ? e.message : e)
+            ));
+          }
+        }
+      );
+    } catch (e) {
+      finishReject(new Error(
+        'Firebase Storage could not start: ' + (e && e.message ? e.message : e)
+      ));
+    }
   });
 }
 
