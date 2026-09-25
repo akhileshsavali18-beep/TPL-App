@@ -73,7 +73,7 @@ class AdService {
     }
   }
 
-  Future<void> showRewardedAd({
+  Future<bool> showRewardedAd({
     required BuildContext context,
     required VoidCallback onReward,
     VoidCallback? onFailed,
@@ -84,24 +84,27 @@ class AdService {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rewarded Ads are currently unavailable.')));
       }
       onFailed?.call();
-      return;
+      return false;
     }
     if (!canShowAd()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please wait ${remainingCooldownSeconds()} seconds before another ad.')));
       }
       onFailed?.call();
-      return;
+      return false;
     }
     if (!_isInitialized) await init();
-    if (!_isInitialized) { onFailed?.call(); return; }
+    if (!_isInitialized) { onFailed?.call(); return false; }
     if (!await _consumeDailyRewardedSlot()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Daily rewarded-ad limit reached.')));
       }
       onFailed?.call();
-      return;
+      return false;
     }
+
+    final loaded = await _loadPlacement(config.rewardedPlacementId);
+    if (!loaded) { onFailed?.call(); return false; }
 
     UnityAds.showVideoAd(
       placementId: config.rewardedPlacementId,
@@ -119,6 +122,7 @@ class AdService {
         onFailed?.call();
       },
     );
+    return true;
   }
 
   Future<bool> showInterstitialAd({required BuildContext context, VoidCallback? onFinished}) async {
