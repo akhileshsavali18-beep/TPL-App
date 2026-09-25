@@ -56,14 +56,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
-
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Enter your email address first to reset password.')),
       );
       return;
     }
-
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       if (mounted) {
@@ -76,11 +74,8 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String message = 'Could not send reset link.';
-      if (e.code == 'user-not-found') {
-        message = 'No account found with this email.';
-      } else if (e.code == 'invalid-email') {
-        message = 'Please enter a valid email address.';
-      }
+      if (e.code == 'user-not-found') message = 'No account found with this email.';
+      if (e.code == 'invalid-email') message = 'Please enter a valid email address.';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
@@ -151,28 +146,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!_isLoginMode &&
         (username.length < 3 ||
             username.length > 20 ||
-            !RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username must be 3-20 characters: letters, numbers or _.')),
-      );
-      return;
-    }
-
-    if (loginIdentifier.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email or username!')),
-      );
-      return;
-    }
-
-    if (!_isLoginMode && !loginIdentifier.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address!')),
-      );
-      return;
-    }
-
-    if (password.length < 6) {
+            !RegExp(r'^[a-zA-Z0-9_]+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Password must be at least 6 characters!')),
       );
@@ -216,6 +190,7 @@ class _SplashScreenState extends State<SplashScreen> {
               const SnackBar(content: Text('Username already taken. Please choose another.')),
             );
           }
+          setState(() => _isLoading = false);
           return;
         }
 
@@ -234,7 +209,7 @@ class _SplashScreenState extends State<SplashScreen> {
             'email': loginIdentifier,
             'displayName': username,
             'coins': 0,
-            'taskCash': 0.0, // Referral ₹5 stays locked until 2 qualified CPAlead task completions
+            'taskCash': 0.0,
             'referCash': 0.0,
             'spinsLeft': 1,
             'scratchLeft': 0,
@@ -587,21 +562,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
           await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
             'uid': user.uid,
-            'email': loginIdentifier,
-            'displayName': username,
+            'email': email,
+            'displayName': email.split('@')[0],
             'coins': 0,
-            'taskCash': 0.0, // Referral ₹5 stays locked until 2 qualified CPAlead task completions
+            'taskCash': hasValidReferral ? 5.0 : 0.0, // ₹5 bonus on invite code
             'referCash': 0.0,
             'spinsLeft': 1,
             'scratchLeft': 0,
             'referralCode': myReferralCode,
-            'username': username,
-            'usernameLower': usernameLower,
             'referredBy': hasValidReferral ? _inviteController.text.trim().toUpperCase() : null,
-            'referredByUid': hasValidReferral ? _verifiedReferrerUid : null,
-            'referralBonusLockedCash': hasValidReferral ? 5.0 : 0.0,
-            'referralBonusUnlocked': !hasValidReferral,
-            'referralTaskCount': 0,
             'withdrawalCount': 0,
             'streakClaimedToday': false,
             'hasConvertedToday': false,
@@ -612,16 +581,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
           if (hasValidReferral) {
             await FirebaseFirestore.instance.collection('users').doc(_verifiedReferrerUid).update({
-              'referCashLocked': FieldValue.increment(5.0),
+              'referCash': FieldValue.increment(5.0),
             });
 
             await FirebaseFirestore.instance.collection('referral_logs').add({
               'referrerUid': _verifiedReferrerUid,
               'referredUid': user.uid,
-              'referredEmail': loginIdentifier,
+              'referredEmail': email,
               'bonusGiven': 5.0,
-              'status': 'locked',
-              'requiredTaskCount': 2,
               'createdAt': FieldValue.serverTimestamp(),
             });
           }
@@ -636,7 +603,7 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String message = 'Authentication failed';
-      if (e.code == 'user-not-found') message = 'No account found with this email or username.';
+      if (e.code == 'user-not-found') message = 'No account registered with this email.';
       if (e.code == 'wrong-password') message = 'Incorrect password.';
       if (e.code == 'email-already-in-use') message = 'Email already registered. Please Login.';
       if (e.code == 'weak-password') message = 'Password is too weak.';
