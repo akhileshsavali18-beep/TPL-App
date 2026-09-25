@@ -608,33 +608,22 @@ class _WalletScreenState extends State<WalletScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF111622),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final value = int.tryParse(_coinController.text.trim()) ?? 0;
-            final valid = value >= 100 && value <= widget.coins;
             final cash = value / rate;
-
+            final enough = value >= 100 && value <= widget.coins;
             return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
+              padding: EdgeInsets.only(left: 20, right: 20, top: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Convert Coins to Cash', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 6),
-                  Text(
-                    'Minimum 100 coins • ' + rate.toString() + ' coins = ₹1',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
+                  Text('Minimum 100 coins • ' + rate.toString() + ' coins = ₹1', style: const TextStyle(color: Colors.white54, fontSize: 12)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _coinController,
@@ -655,25 +644,29 @@ class _WalletScreenState extends State<WalletScreen> {
                   const SizedBox(height: 12),
                   Text(
                     value > 0 ? 'You receive: ₹' + cash.toStringAsFixed(2) : 'Enter coins to see cash value',
-                    style: TextStyle(
-                      color: valid ? const Color(0xFF00FF87) : Colors.white54,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: enough ? const Color(0xFF00FF87) : Colors.white54, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: valid
-                          ? () async {
-                              Navigator.pop(ctx);
-                              await _convertCoinsToCash();
-                            }
-                          : null,
+                      onPressed: () async {
+                        final entered = int.tryParse(_coinController.text.trim()) ?? 0;
+                        if (entered < 100) {
+                          _showMessage('Minimum 100 coins required to convert.', Colors.amber);
+                          return;
+                        }
+                        if (entered > widget.coins) {
+                          _showMessage('You do not have enough coins.', Colors.redAccent);
+                          return;
+                        }
+                        Navigator.pop(ctx);
+                        await _convertCoinsToCash();
+                      },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.black,
+                        backgroundColor: enough ? Colors.amber : Colors.white12,
+                        foregroundColor: enough ? Colors.black : Colors.white38,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: const Text('Convert Now', style: TextStyle(fontWeight: FontWeight.w900)),

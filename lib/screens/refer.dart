@@ -28,6 +28,9 @@ class _ReferScreenState extends State<ReferScreen> {
   List<Map<String, dynamic>> _liveReferredFriends = [];
   double _lockedReferralCash = 0;
   final int _requiredReferralTasks = 2;
+  String _referredByCode = '';
+  int _myReferralTaskProgress = 0;
+  bool _myReferralUnlocked = false;
 
   String get _permanentReferralLink =>
       'https://akhileshsavali18-beep.github.io/TPL-App/ref.html?ref=${Uri.encodeComponent(_referralCode)}';
@@ -46,12 +49,21 @@ class _ReferScreenState extends State<ReferScreen> {
       final userData = userDoc.data() ?? {};
       final code = (userData['referralCode'] ?? '').toString();
       final locked = (userData['referCashLocked'] as num?)?.toDouble() ?? 0;
-      if (mounted) setState(() { _referralCode = code; _lockedReferralCash = locked; });
+      final myProgress = (userData['referralTaskCount'] as num?)?.toInt() ??
+          (userData['cpaleadQualifiedTasks'] as num?)?.toInt() ?? 0;
+      final myUnlocked = userData['referralBonusUnlocked'] == true || myProgress >= _requiredReferralTasks;
+      final referredBy = (userData['referredBy'] ?? '').toString();
+      if (mounted) setState(() {
+        _referralCode = code;
+        _lockedReferralCash = locked;
+        _myReferralTaskProgress = myProgress;
+        _myReferralUnlocked = myUnlocked;
+        _referredByCode = referredBy;
+      });
 
-      final logs = await FirebaseFirestore.instance
-          .collection('referral_logs')
-          .where('referrerUid', isEqualTo: user.uid)
-          .get();
+      final allLogs = await FirebaseFirestore.instance.collection('referral_logs').get();
+      final logs = allLogs.docs.where((doc) =>
+          (doc.data()['referrerUid'] ?? '').toString() == user.uid).toList();
 
       final friends = <Map<String, dynamic>>[];
       for (final log in logs.docs) {
@@ -242,6 +254,34 @@ $link
 
                   const SizedBox(height: 24),
 
+                  if (_referredByCode.isNotEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10231C),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF00FF87).withOpacity(.25)),
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Text('Referral Bonus Progress', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                        const SizedBox(height: 6),
+                        Text('Invited with code $_referredByCode', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                        const SizedBox(height: 5),
+                        Text(
+                          _myReferralUnlocked
+                              ? '✅ Referral bonus unlocked'
+                              : '$_myReferralTaskProgress/$_requiredReferralTasks verified CPAlead tasks • ₹5 locked',
+                          style: TextStyle(
+                            color: _myReferralUnlocked ? const Color(0xFF00FF87) : Colors.white60,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
                   if (_lockedReferralCash > 0) ...[
                     Container(
                       width: double.infinity,
@@ -315,7 +355,16 @@ $link
                                   ],
                                 ),
                               ),
-                              const Text('+₹5.00', style: TextStyle(color: Color(0xFF00FF87), fontWeight: FontWeight.w900, fontSize: 13)),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(friend['unlocked'] == true ? 'UNLOCKED' : 'LOCKED',
+                                      style: TextStyle(color: friend['unlocked'] == true ? const Color(0xFF00FF87) : Colors.amber, fontWeight: FontWeight.w900, fontSize: 10)),
+                                  const SizedBox(height: 4),
+                                  Text(friend['progress'].toString() + '/' + friend['required'].toString() + ' tasks',
+                                      style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                                ],
+                              ),
                             ],
                           ),
                         );

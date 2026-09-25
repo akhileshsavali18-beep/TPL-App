@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../widgets/unity_banner_widget.dart';
 import '../services/ad_service.dart';
@@ -30,21 +29,24 @@ class TasksTabScreen extends StatefulWidget {
   State<TasksTabScreen> createState() => _TasksTabScreenState();
 }
 
-class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProviderStateMixin {
+class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final Map<String, bool> _completed = {};
   late AnimationController _spinController;
   double _wheelAngle = 0;
   bool _spinning = false;
   int _scratchProgress = 0;
   bool _scratchRevealed = false;
-  final List<int> _wheelRewards = [20, 2, 5, 0, 3, 20];
+  final List<int> _wheelRewards = [20, 2, 5, 0, 3, 1];
   int _cpaleadQualifiedTasks = 0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   int _lastTickSlice = -1;
+  Completer<void>? _taskReturnCompleter;
+  bool _waitingForTaskReturn = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _spinController = AnimationController(vsync: this, duration: const Duration(milliseconds: 3200));
     _listenForCpaleadProgress();
   }
@@ -63,9 +65,30 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _spinController.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _waitingForTaskReturn) {
+      _waitingForTaskReturn = false;
+      _taskReturnCompleter?.complete();
+      _taskReturnCompleter = null;
+    }
+  }
+
+  Future<void> _waitForTaskReturn() async {
+    _waitingForTaskReturn = true;
+    _taskReturnCompleter = Completer<void>();
+    try {
+      await _taskReturnCompleter!.future.timeout(const Duration(minutes: 10));
+    } catch (_) {
+      _waitingForTaskReturn = false;
+      _taskReturnCompleter = null;
+    }
   }
 
   Future<void> _handleTask(String taskId, String title, int coins, String url) async {
@@ -81,7 +104,10 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     if (url.trim().isNotEmpty) {
       try {
         await launchUrlString(url.trim(), mode: LaunchMode.externalApplication);
-      } catch (_) {}
+        await _waitForTaskReturn();
+      } catch (_) {
+        return;
+      }
     }
 
     if (!mounted || (_completed[taskId] ?? false)) return;
@@ -340,7 +366,9 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
               borderRadius: BorderRadius.circular(15),
             ),
             child: Center(
-              child: _scratchRevealed
+              child: SizedBox(
+                width: double.infinity,
+                child: _scratchRevealed
                   ? const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(Icons.card_giftcard_rounded, color: Colors.black87, size: 30),
                       SizedBox(height: 5),
@@ -352,6 +380,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                       SizedBox(height: 4),
                       Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('TAP TO WATCH & SCRATCH', textAlign: TextAlign.center, style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w900, fontSize: 11))),
                     ]),
+              ),
             ),
           ),
         ),
@@ -370,7 +399,20 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
           decoration: BoxDecoration(color: Colors.white.withOpacity(.06), borderRadius: BorderRadius.circular(14)),
           clipBehavior: Clip.antiAlias,
           child: logo.isNotEmpty
-              ? SvgPicture.network(logo, fit: BoxFit.contain, placeholderBuilder: (_) => const SizedBox(width: 28, height: 28), errorBuilder: (_, __, ___) => const Icon(Icons.public, color: Colors.white54, size: 28))
+              ? Image.network(
+                  logo,
+                  fit: BoxFit.contain,
+                  width: 30,
+                  height: 30,
+                  errorBuilder: (_, __, ___) => Icon(
+                    platform.contains('instagram') ? Icons.camera_alt_rounded
+                        : platform.contains('youtube') ? Icons.play_circle_fill_rounded
+                        : platform.contains('telegram') ? Icons.send_rounded
+                        : Icons.public,
+                    color: Colors.white54,
+                    size: 28,
+                  ),
+                )
               : const Icon(Icons.public, color: Colors.white54, size: 28),
         ),
         const SizedBox(width: 12),
@@ -390,9 +432,9 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   }
 
   String _platformLogo(String platform) {
-    if (platform.contains('instagram')) return 'https://cdn.simpleicons.org/instagram/E4405F';
-    if (platform.contains('youtube')) return 'https://cdn.simpleicons.org/youtube/FF0000';
-    if (platform.contains('telegram')) return 'https://cdn.simpleicons.org/telegram/26A5E4';
+    if (platform.contains('instagram')) return 'https://www.google.com/s2/favicons?domain=instagram.com&sz=128';
+    if (platform.contains('youtube')) return 'https://www.google.com/s2/favicons?domain=youtube.com&sz=128';
+    if (platform.contains('telegram')) return 'https://www.google.com/s2/favicons?domain=telegram.org&sz=128';
     return '';
   }
 
