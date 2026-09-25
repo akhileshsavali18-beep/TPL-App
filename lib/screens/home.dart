@@ -74,13 +74,13 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
                 child: Row(
                   children: [
-                    Expanded(child: _quickCard(Icons.casino_rounded, 'Spin', 'Watch Ad → Coins', onOpenGames)),
+                    Expanded(child: _quickCard(Icons.rotate_right_rounded, 'Spin', 'Spin & earn', onOpenGames)),
                     const SizedBox(width: 8),
-                    Expanded(child: _quickCard(Icons.style_rounded, 'Scratch', 'Watch Ad → Coins', onOpenGames)),
+                    Expanded(child: _quickCard(Icons.confirmation_number_rounded, 'Scratch', 'Scratch & earn', onOpenGames)),
                     const SizedBox(width: 8),
-                    Expanded(child: _quickCard(Icons.sports_esports_rounded, 'Games', 'Play Games', onOpenGames)),
+                    Expanded(child: _quickCard(Icons.sports_esports_rounded, 'Games', 'Play games', onOpenGames)),
                     const SizedBox(width: 8),
-                    Expanded(child: _quickCard(Icons.task_alt_rounded, 'Social', 'Earn Coins', onOpenTasks)),
+                    Expanded(child: _quickCard(Icons.groups_rounded, 'Social', 'Earn coins', onOpenTasks)),
                   ],
                 ),
               ),
