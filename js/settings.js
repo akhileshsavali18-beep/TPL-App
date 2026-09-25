@@ -142,9 +142,10 @@ async function saveRewardedAdsConfig() {
 
 async function saveCpaleadConfig() {
   const cpaleadActive = document.getElementById('cpaleadEnabled')?.checked ?? false;
+  const cpaleadPublisherId = document.getElementById('cpaleadPublisherId')?.value.trim() || '';
   const cpaleadUrlTemplate = document.getElementById('cpaleadUrlInput')?.value.trim() || '';
   const cpaleadPostbackUrl = document.getElementById('cpaleadPostbackUrl')?.value.trim() || '';
-  await db.collection('settings').doc('offerwalls').set({cpaleadActive, cpaleadUrlTemplate, cpaleadUrl: cpaleadUrlTemplate, cpaleadPostbackUrl, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+  await db.collection('settings').doc('offerwalls').set({cpaleadActive, cpaleadPublisherId, cpaleadUrlTemplate, cpaleadUrl: cpaleadUrlTemplate, cpaleadPostbackUrl, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
   showToast('CPAlead settings saved live!');
 }
 
@@ -155,6 +156,7 @@ function loadOfferwallSettings() {
   db.collection('settings').doc('offerwalls').onSnapshot(doc => {
     const d = doc.exists ? doc.data() : {};
     const active=document.getElementById('cpaleadEnabled'); if(active) active.checked=d.cpaleadActive !== false;
+    const publisher=document.getElementById('cpaleadPublisherId'); if(publisher) publisher.value=d.cpaleadPublisherId || '';
     const url=document.getElementById('cpaleadUrlInput'); if(url) url.value=d.cpaleadUrlTemplate || d.cpaleadUrl || '';
     const post=document.getElementById('cpaleadPostbackUrl'); if(post) post.value=d.cpaleadPostbackUrl || '';
   });
