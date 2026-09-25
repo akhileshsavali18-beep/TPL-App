@@ -26,6 +26,8 @@ class _ReferScreenState extends State<ReferScreen> {
   bool _isLoading = true;
   bool _isGeneratingLink = false;
   List<Map<String, dynamic>> _liveReferredFriends = [];
+  double _lockedReferralCash = 0;
+  final int _requiredReferralTasks = 2;
 
   String get _permanentReferralLink =>
       'https://akhileshsavali18-beep.github.io/TPL-App/ref.html?ref=${Uri.encodeComponent(_referralCode)}';
@@ -39,38 +41,48 @@ class _ReferScreenState extends State<ReferScreen> {
   Future<void> _fetchReferralData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
     try {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      if (userDoc.exists && mounted) {
-        final code = userDoc.data()?['referralCode'] ?? '';
-        setState(() => _referralCode = code);
+      final userData = userDoc.data() ?? {};
+      final code = (userData['referralCode'] ?? '').toString();
+      final locked = (userData['referCashLocked'] as num?)?.toDouble() ?? 0;
+      if (mounted) setState(() { _referralCode = code; _lockedReferralCash = locked; });
 
-        if (code.isNotEmpty) {
-          // Real data fetch from Firestore
-          final friendsSnap = await FirebaseFirestore.instance
-              .collection('users')
-              .where('referredBy', isEqualTo: code)
-              .get();
+      final logs = await FirebaseFirestore.instance
+          .collection('referral_logs')
+          .where('referrerUid', isEqualTo: user.uid)
+          .orderBy('createdAt', descending: true)
+          .get();
 
-          if (mounted) {
-            setState(() {
-              _liveReferredFriends = friendsSnap.docs.map((doc) {
-                final email = doc.data()['email'] ?? 'Anonymous';
-                final maskedEmail = email.contains('@')
-                    ? '${email.substring(0, 3)}***@${email.split('@')[1]}'
-                    : email;
-                return {
-                  'name': doc.data()['displayName'] ?? 'TPL Player',
-                  'email': maskedEmail,
-                };
-              }).toList();
-            });
-          }
+      final friends = <Map<String, dynamic>>[];
+      for (final log in logs.docs) {
+        final logData = log.data();
+        final referredUid = (logData['referredUid'] ?? '').toString();
+        Map<String, dynamic> referredData = {};
+        if (referredUid.isNotEmpty) {
+          final refSnap = await FirebaseFirestore.instance.collection('users').doc(referredUid).get();
+          referredData = refSnap.data() ?? {};
         }
+        final progress = (referredData['cpaleadQualifiedTasks'] as num?)?.toInt() ??
+            (referredData['referralTaskCount'] as num?)?.toInt() ?? 0;
+        final required = (logData['requiredTaskCount'] as num?)?.toInt() ?? _requiredReferralTasks;
+        final unlocked = logData['status'] == 'unlocked' || progress >= required;
+        final bonus = (logData['bonusGiven'] as num?)?.toDouble() ?? 5.0;
+        final email = (referredData['email'] ?? logData['referredEmail'] ?? 'Anonymous').toString();
+        final at = email.indexOf('@');
+        final maskedEmail = at > 0 ? '${email.substring(0, at).take(3).join()}***@${email.substring(at + 1)}' : email;
+        friends.add({
+          'name': referredData['displayName'] ?? 'TPL Player',
+          'email': maskedEmail,
+          'progress': progress,
+          'required': required,
+          'bonus': bonus,
+          'unlocked': unlocked,
+        });
       }
+      if (mounted) setState(() => _liveReferredFriends = friends);
     } catch (e) {
-      debugPrint("Error fetching refer data: $e");
+      debugPrint('Error fetching referral data: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -230,6 +242,24 @@ $link
                   ),
 
                   const SizedBox(height: 24),
+
+                  if (_lockedReferralCash > 0) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF211733),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.purpleAccent.withOpacity(.25)),
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Text('Referral Bonus Progress', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                        const SizedBox(height: 6),
+                        Text('₹${_lockedReferralCash.toStringAsFixed(2)} locked • Unlocks after ${_requiredReferralTasks} verified CPAlead tasks', style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                      ]),
+                    ),
+                  ],
 
                   // Real Invited Friends (No Dummy Data)
                   Text(
