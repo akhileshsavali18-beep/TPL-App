@@ -14,7 +14,6 @@ import 'services/app_update_service.dart';
 import 'screens/splash_login.dart';
 import 'screens/home.dart';
 import 'screens/tasks.dart';
-import 'screens/games.dart';
 import 'screens/refer.dart';
 import 'screens/wallet.dart';
 import 'widgets/profile_drawer.dart';
@@ -250,7 +249,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       HomeScreen(
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
         onOpenTasks: () => switchTab(1),
-        onOpenGames: () => switchTab(2),
       ),
       TasksTabScreen(
         spinsLeft: spinsLeft,
@@ -270,26 +268,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             FirebaseFirestore.instance.collection('users').doc(currentUid).update({
               'scratchLeft': FieldValue.increment(-1),
             });
-          }
-        },
-      ),
-      GamesScreen(
-        spinsLeft: spinsLeft,
-        scratchLeft: scratchLeft,
-        onSpinWin: (winCoins) {
-          if (currentUid != null) {
-            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-              'spinsLeft': FieldValue.increment(-1),
-            });
-            _updateCoinsInFirebase(winCoins, 'Lucky Spin');
-          }
-        },
-        onScratchWin: (winCoins) {
-          if (currentUid != null) {
-            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-              'scratchLeft': FieldValue.increment(-1),
-            });
-            _updateCoinsInFirebase(winCoins, 'Golden Scratch');
           }
         },
       ),
@@ -327,7 +305,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home, color: Color(0xFF00FF87)), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment, color: Color(0xFF00FF87)), label: 'Tasks'),
-            NavigationDestination(icon: Icon(Icons.sports_esports_outlined), selectedIcon: Icon(Icons.sports_esports, color: Color(0xFF00FF87)), label: 'Games'),
             NavigationDestination(icon: Icon(Icons.group_outlined), selectedIcon: Icon(Icons.group, color: Color(0xFF00FF87)), label: 'Refer'),
             NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet, color: Color(0xFF00FF87)), label: 'Wallet'),
           ],
