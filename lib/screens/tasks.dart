@@ -1,8 +1,10 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../widgets/unity_banner_widget.dart';
 import '../services/ad_service.dart';
@@ -35,7 +37,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   bool _spinning = false;
   int _scratchProgress = 0;
   bool _scratchRevealed = false;
-  final List<int> _wheelRewards = [1, 2, 5, 0, 3, 1];
+  final List<int> _wheelRewards = [20, 2, 5, 0, 3, 20];
   int _cpaleadQualifiedTasks = 0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   int _lastTickSlice = -1;
@@ -69,9 +71,11 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   Future<void> _handleTask(String taskId, String title, int coins, String url) async {
     if (_completed[taskId] ?? false) return;
 
+    final adDone = Completer<void>();
     final config = RemoteConfigService.instance;
-    if (config.interstitialEnabled) {
-      await AdService.instance.showInterstitialAd(context: context);
+    if (config.interstitialEnabled && config.adsEnabled) {
+      await AdService.instance.showInterstitialAd(context: context, onFinished: () { if (!adDone.isCompleted) adDone.complete(); });
+      if (!adDone.isCompleted) await adDone.future.timeout(const Duration(seconds: 35), onTimeout: () {});
     }
 
     if (url.trim().isNotEmpty) {
@@ -132,14 +136,15 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
         setState(() => _spinning = false);
         _playWinSound();
         widget.onSpinUsed?.call();
+        if (reward >= 20) widget.onCompleteTask('Spin Bonus', reward);
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
             backgroundColor: const Color(0xFF151922),
-            title: Text(reward == 0 ? 'Better Luck!' : 'Bonus Unlocked!'),
+            title: Text(reward == 0 ? 'Better Luck!' : (reward >= 20 ? '🎉 +$reward Coins' : 'Bonus Unlocked!')),
             content: Text(reward == 0
                 ? 'No bonus this time. Try again when your next spin is available.'
-                : 'You unlocked a $reward× gameplay bonus. This bonus does not add cashable wallet coins.'),
+                : (reward >= 20 ? '20 coins have been added to your wallet.' : 'You unlocked a $reward× gameplay bonus.')),
             actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
           ),
         );
@@ -345,7 +350,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                   : const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(Icons.touch_app_rounded, color: Colors.black87, size: 28),
                       SizedBox(height: 4),
-                      Text('TAP TO WATCH & SCRATCH', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w900, fontSize: 11)),
+                      Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('TAP TO WATCH & SCRATCH', textAlign: TextAlign.center, style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w900, fontSize: 11))),
                     ]),
             ),
           ),
@@ -365,7 +370,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
           decoration: BoxDecoration(color: Colors.white.withOpacity(.06), borderRadius: BorderRadius.circular(14)),
           clipBehavior: Clip.antiAlias,
           child: logo.isNotEmpty
-              ? Image.network(logo, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.public, color: Colors.white54, size: 28))
+              ? SvgPicture.network(logo, fit: BoxFit.contain, placeholderBuilder: (_) => const SizedBox(width: 28, height: 28), errorBuilder: (_, __, ___) => const Icon(Icons.public, color: Colors.white54, size: 28))
               : const Icon(Icons.public, color: Colors.white54, size: 28),
         ),
         const SizedBox(width: 12),
