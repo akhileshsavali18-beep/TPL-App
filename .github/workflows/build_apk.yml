@@ -67,12 +67,13 @@ jobs:
             exit 1
           fi
 
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/tpl-release.jks
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/tpl-release.p12
           cat > android/key.properties <<EOF
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=../tpl-release.jks
+          storeFile=../tpl-release.p12
+          storeType=PKCS12
           EOF
 
           python3 - <<'PY'
@@ -97,6 +98,7 @@ jobs:
                       keyPassword keystoreProperties['keyPassword']
                       storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
                       storePassword keystoreProperties['storePassword']
+                      storeType keystoreProperties['storeType'] ?: 'PKCS12'
                   }
               }
           """, 1)
