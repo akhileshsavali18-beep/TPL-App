@@ -1,4 +1,3 @@
-# TPL Pro release build
 name: Build TPL Pro APK
 
 permissions:
@@ -21,118 +20,129 @@ jobs:
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "17"
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.5"
-          channel: stable
+          flutter-version: '3.24.5'
+          channel: 'stable'
           cache: true
 
-      - name: Generate Android project and configure signing
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - name: Auto-Generate Android Scaffolding & Fix Config
         run: |
-          set -e
-
           mkdir -p temp_backup
-          if [ -f android/app/src/main/AndroidManifest.xml ]; then
-            cp android/app/src/main/AndroidManifest.xml temp_backup/AndroidManifest.xml
-          fi
-          if [ -f android/app/google-services.json ]; then
-            cp android/app/google-services.json temp_backup/google-services.json
-          fi
+          [ -f android/app/src/main/AndroidManifest.xml ] && cp android/app/src/main/AndroidManifest.xml temp_backup/
+          [ -f google-services.json ] && cp google-services.json temp_backup/
+          [ -f android/app/google-services.json ] && cp android/app/google-services.json temp_backup/
 
           flutter create . --project-name tpl_app --platforms=android --org com.tplpro.app
 
           if [ -f temp_backup/AndroidManifest.xml ]; then
+            mkdir -p android/app/src/main
             cp temp_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           fi
+
           if [ -f temp_backup/google-services.json ]; then
             cp temp_backup/google-services.json android/app/google-services.json
           fi
 
+          # Set minSdk to 23 and compileSdk to 35 for audioplayers compatibility
           sed -i 's/flutter.minSdkVersion/23/g' android/app/build.gradle || true
+          sed -i 's/minSdkVersion 21/minSdkVersion 23/g' android/app/build.gradle || true
           sed -i 's/flutter.compileSdkVersion/35/g' android/app/build.gradle || true
           sed -i 's/compileSdkVersion 34/compileSdkVersion 35/g' android/app/build.gradle || true
 
-          sed -i '/plugins {/a\    id "com.google.gms.google-services" version "4.4.2" apply false' android/settings.gradle || true
-          sed -i '/plugins {/a\    id "com.google.gms.google-services"' android/app/build.gradle || true
+          # Google Services Gradle configuration
+          sed -i '/plugins {/a \    id "com.google.gms.google-services" version "4.4.2" apply false' android/settings.gradle || true
+          sed -i '/plugins {/a \    id "com.google.gms.google-services"' android/app/build.gradle || true
 
-          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo "Missing Android signing secrets." >&2
+          # Persistent release signing for in-app APK updates.
+          # Required GitHub secrets:
+          # ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+          # ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] || [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] || [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]; then
+            echo "Missing persistent Android signing secrets." >&2
             exit 1
           fi
 
-          echo "$KEYSTORE_B64" | base64 --decode > android/tpl-release.p12
-
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/tpl-release.p12
           cat > android/key.properties <<EOF
-storePassword=$KEYSTORE_PASSWORD
-keyPassword=$KEY_PASSWORD
-keyAlias=$KEY_ALIAS
-storeFile=../tpl-release.p12
-storeType=PKCS12
-EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=../tpl-release.p12
+          storeType=PKCS12
+          EOF
 
           python3 - <<'PY'
-from pathlib import Path
-import re
+          from pathlib import Path
+          import re
 
-p = Path("android/app/build.gradle")
-s = p.read_text()
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
 
-props = """def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file('key.properties')
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
+          signing = """def keystoreProperties = new Properties()
+          def keystorePropertiesFile = rootProject.file('key.properties')
+          if (keystorePropertiesFile.exists()) {
+              keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+          }
 
-"""
+          """
 
-if "def keystoreProperties = new Properties()" not in s:
-    s = s.replace("android {", props + "android {", 1)
+          # Keep plugins {} first, then add keystore properties immediately
+          # before android {}.
+          if "def keystoreProperties = new Properties()" not in s:
+              s = s.replace("android {", signing + "android {", 1)
 
-release = """release {
-    keyAlias keystoreProperties['keyAlias']
-    keyPassword keystoreProperties['keyPassword']
-    storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-    storePassword keystoreProperties['storePassword']
-    storeType keystoreProperties['storeType'] ?: 'PKCS12'
-}"""
+          # Force an explicit release signing config regardless of the
+          # Flutter-generated template.
+          release_config = """signingConfigs {
+                  release {
+                      keyAlias keystoreProperties['keyAlias']
+                      keyPassword keystoreProperties['keyPassword']
+                      storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                      storePassword keystoreProperties['storePassword']
+                      storeType keystoreProperties['storeType'] ?: 'PKCS12'
+                  }
+              }
 
-if "keyAlias keystoreProperties['keyAlias']" not in s:
-    if "signingConfigs {" in s:
-        s = s.replace("signingConfigs {", "signingConfigs {\n" + release, 1)
-    else:
-        s = s.replace("android {", "android {\n    signingConfigs {\n" + release + "\n}\n", 1)
+          """
 
-s = re.sub(r"signingConfig\s*=\s*signingConfigs\.debug", "signingConfig = signingConfigs.release", s)
-s = re.sub(r"signingConfig\s+signingConfigs\.debug", "signingConfig signingConfigs.release", s)
+          if "keyAlias keystoreProperties['keyAlias']" not in s:
+              s = s.replace("android {", "android {\n              " + release_config, 1)
 
-# Force release buildType to use the persistent key.
-if "signingConfig = signingConfigs.release" not in s and "signingConfig signingConfigs.release" not in s:
-    s = re.sub(
-        r"(buildTypes\s*\{\s*release\s*\{)",
-        r"\1\n            signingConfig = signingConfigs.release",
-        s,
-        count=1,
-    )
+          # Flutter templates can spell the release signer in different ways.
+          # Replace every debug signer reference inside release configuration.
+          s = re.sub(
+              r"signingConfig\s*(?:=\s*)?signingConfigs\.debug",
+              "signingConfig signingConfigs.release",
+              s,
+          )
+          s = re.sub(
+              r"signingConfig\\s*=\\s*signingConfigs\\.getByName\\([\\\"']debug[\\\"']\\)",
+              "signingConfig signingConfigs.release",
+              s,
+          )
 
-p.write_text(s)
+          # If the template has a release buildType but no signer reference,
+          # inject the persistent release signer into that block.
+          if "buildTypes" in s and "signingConfig signingConfigs.release" not in s:
+              s = re.sub(
+                  r"(buildTypes\s*\{\s*release\s*\{)",
+                  r"\1\n              signingConfig signingConfigs.release",
+                  s,
+                  count=1,
+              )
 
-print("=== signing configuration ===")
-for i, line in enumerate(s.splitlines(), 1):
-    if "signingConfig" in line or "keyAlias" in line or "storeFile" in line:
-        print(f"{i}: {line}")
-PY
+          p.write_text(s)
 
-          echo "=== build.gradle signing lines ==="
-          grep -nE "signingConfig|keyAlias|storeFile" android/app/build.gradle || true
+          print("=== Final Android signing references ===")
+          for i, line in enumerate(s.splitlines(), 1):
+              if "signingConfig" in line or "keyAlias" in line or "storeFile" in line:
+                  print(f"{i}: {line}")
+          PY
 
       - name: Install Flutter Dependencies
         run: flutter pub get
@@ -146,34 +156,34 @@ PY
       - name: Build Android Release APK
         run: flutter build apk --release --build-name=1.0.0 --build-number=$BUILD_NUMBER --dart-define=APP_BUILD_NUMBER=$BUILD_NUMBER
 
-      - name: Verify APK package and persistent signing
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      - name: Verify APK package and signing
         run: |
-          set -e
           APK=build/app/outputs/flutter-apk/app-release.apk
-
+          echo "=== APK SHA256 ==="
+          sha256sum "$APK"
           echo "=== APK package/version ==="
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -E "package:|sdkVersion:"
+          echo "=== APK signing certificates ==="
+          SIGNER_SHA256="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK" | awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}')"
+          echo "APK signer SHA-256: $SIGNER_SHA256"
 
-          echo "=== APK certificate ==="
-          APK_CERT="$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK" | awk '/Signer #1 certificate SHA-256 digest:/{print $NF; exit}')"
-          echo "APK signer SHA-256: $APK_CERT"
+          KEYSTORE_SHA256="$(keytool -list -v -keystore android/tpl-release.p12 -storetype PKCS12 -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" -alias "${{ secrets.ANDROID_KEY_ALIAS }}" | awk '/SHA256:/{print $2; exit}' | tr -d ':')"
+          echo "Keystore certificate SHA-256: $KEYSTORE_SHA256"
 
-          echo "=== Keystore certificate ==="
-          KEY_CERT="$(keytool -list -v -keystore android/tpl-release.p12 -storetype PKCS12 -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" | awk '/SHA256:/{print $2; exit}' | tr -d ':')"
-          echo "Keystore SHA-256: $KEY_CERT"
-
-          APK_CERT_NORM="$(echo "$APK_CERT" | tr '[:upper:]' '[:lower:]' | tr -d ':')"
-          KEY_CERT_NORM="$(echo "$KEY_CERT" | tr '[:upper:]' '[:lower:]' | tr -d ':')"
-
-          if [ "$APK_CERT_NORM" != "$KEY_CERT_NORM" ]; then
-            echo "ERROR: APK is not signed with the persistent release keystore." >&2
+          if [ -z "$SIGNER_SHA256" ] || [ -z "$KEYSTORE_SHA256" ]; then
+            echo "Could not determine APK or keystore certificate fingerprint." >&2
             exit 1
           fi
 
-          echo "OK: Persistent release signing confirmed."
+          APK_SHA256_NORMALIZED="$(echo "$SIGNER_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ':')"
+          KEYSTORE_SHA256_NORMALIZED="$(echo "$KEYSTORE_SHA256" | tr '[:upper:]' '[:lower:]' | tr -d ':')"
+
+          if [ "$APK_SHA256_NORMALIZED" != "$KEYSTORE_SHA256_NORMALIZED" ]; then
+            echo "ERROR: APK is NOT signed with the configured persistent release keystore." >&2
+            exit 1
+          fi
+
+          echo "OK: APK is signed with the configured persistent release keystore."
 
       - name: Prepare Release APK
         run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
@@ -192,3 +202,4 @@ PY
         with:
           name: TPL-Pro-Release-APK
           path: build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
+          
