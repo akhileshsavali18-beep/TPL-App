@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import '../widgets/unity_banner_widget.dart';
 
@@ -29,9 +27,8 @@ class _ReferScreenState extends State<ReferScreen> {
   bool _isGeneratingLink = false;
   List<Map<String, dynamic>> _liveReferredFriends = [];
 
-  // 🔗 GPLinks API Configuration
-  static const String _gpLinksApiToken = '6fbb840dff7b4f2e4239b3200e0d62fce9b5fbab';
-  static const String _destinationAppUrl = 'https://t.me/your_tpl_channel';
+  String get _permanentReferralLink =>
+      'https://akhileshsavali18-beep.github.io/TPL-App/ref.html?ref=${Uri.encodeComponent(_referralCode)}';
 
   @override
   void initState() {
@@ -79,40 +76,21 @@ class _ReferScreenState extends State<ReferScreen> {
     }
   }
 
-  // GPLinks Shortener API
-  Future<String> _getShortenedGPLink() async {
-    try {
-      final apiUrl = Uri.parse(
-        'https://gplinks.in/api?api=$_gpLinksApiToken&url=${Uri.encodeComponent("$_destinationAppUrl?ref=$_referralCode")}',
-      );
-      final res = await http.get(apiUrl).timeout(const Duration(seconds: 4));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['status'] == 'success' && data['shortenedUrl'] != null) {
-          return data['shortenedUrl'];
-        }
-      }
-    } catch (e) {
-      debugPrint("GPLinks API call notice: $e");
-    }
-    return _destinationAppUrl;
-  }
-
   Future<void> _shareReferral() async {
+    if (_referralCode.isEmpty) return;
     setState(() => _isGeneratingLink = true);
-    final link = await _getShortenedGPLink();
-    setState(() => _isGeneratingLink = false);
-
+    final link = _permanentReferralLink;
     final msg = '''
-🔥 Play Games & Earn Real Cash daily on TPL Pro!
+🔥 Join TPL PRO and earn rewards!
 
-1️⃣ Download App: $link
-2️⃣ Use Invite Code: $_referralCode
-🎁 Get ₹5 Cash Bonus instantly on signup!
-💸 Instant UPI withdrawals directly to your bank!
+📲 Download TPL PRO:
+$link
+
+🎁 Invite Code: $_referralCode
+💰 Complete tasks and earn coins.
 ''';
-
-    Share.share(msg);
+    await Share.share(msg);
+    if (mounted) setState(() => _isGeneratingLink = false);
   }
 
   void _copyCode() {
@@ -242,7 +220,7 @@ class _ReferScreenState extends State<ReferScreen> {
                                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                                 : const Icon(Icons.share_rounded, size: 20),
                             label: Text(
-                              _isGeneratingLink ? 'CREATING GPLINK...' : 'SHARE LINK ON WHATSAPP',
+                              _isGeneratingLink ? 'CREATING REFERRAL LINK...' : 'SHARE LINK ON WHATSAPP',
                               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                             ),
                           ),
@@ -271,7 +249,7 @@ class _ReferScreenState extends State<ReferScreen> {
                       ),
                       child: const Center(
                         child: Text(
-                          'No friends invited yet. Share your link to earn ₹5 per referral!',
+                          'No friends invited yet. Share your TPL PRO referral link to earn ₹5 per referral!',
                           style: TextStyle(color: Colors.grey, fontSize: 12),
                           textAlign: TextAlign.center,
                         ),
