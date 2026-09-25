@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../widgets/unity_banner_widget.dart';
@@ -35,6 +36,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   int _scratchProgress = 0;
   bool _scratchRevealed = false;
   final List<int> _wheelRewards = [1, 2, 5, 0, 3, 1];
+  int _cpaleadQualifiedTasks = 0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   int _lastTickSlice = -1;
 
@@ -42,6 +44,19 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   void initState() {
     super.initState();
     _spinController = AnimationController(vsync: this, duration: const Duration(milliseconds: 3200));
+    _listenForCpaleadProgress();
+  }
+
+  void _listenForCpaleadProgress() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots().listen((doc) {
+      final data = doc.data();
+      if (!mounted || data == null) return;
+      setState(() {
+        _cpaleadQualifiedTasks = (data['cpaleadQualifiedTasks'] as num?)?.toInt() ?? 0;
+      });
+    });
   }
 
   @override
@@ -237,7 +252,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   }
 
   Widget _spinCard() {
-    final disabled = widget.spinsLeft <= 0 || _spinning;
+    final disabled = _cpaleadQualifiedTasks < 1 || widget.spinsLeft <= 0 || _spinning;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -294,7 +309,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   }
 
   Widget _scratchCard() {
-    final unlocked = _scratchRevealed;
+    final unlocked = _cpaleadQualifiedTasks >= 3 && !_scratchRevealed;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
