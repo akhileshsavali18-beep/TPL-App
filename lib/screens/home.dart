@@ -34,13 +34,33 @@ class HomeScreen extends StatelessWidget {
                       builder: (context, snapshot) {
                         final data = snapshot.data?.data() as Map<String, dynamic>?;
                         final coins = (data?['coins'] as num?)?.toInt() ?? 0;
-                        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text('TPL PRO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.2)),
-                          Text('🪙 ' + coins.toString() + ' Coins', style: const TextStyle(color: Color(0xFF00FF87), fontSize: 11, fontWeight: FontWeight.w800)),
-                        ]);
+                        return const Text(
+                          'TPL PRO',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1.2),
+                        );
                       },
                     ),
                   ),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: user == null ? null : FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+                    builder: (context, snapshot) {
+                      final data = snapshot.data?.data() as Map<String, dynamic>?;
+                      final coins = (data?['coins'] as num?)?.toInt() ?? 0;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00FF87).withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF00FF87).withOpacity(0.20)),
+                        ),
+                        child: Text(
+                          '🪙 $coins',
+                          style: const TextStyle(color: Color(0xFF00FF87), fontSize: 12, fontWeight: FontWeight.w900),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 6),
                   NotificationBellButton(onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
                 ]),
               ),
@@ -50,23 +70,14 @@ class HomeScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: HomeBannerCarousel()),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-                child: Row(children: [
-                  const Expanded(child: Text('🔥 Earn More Coins', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900))),
-                  TextButton(onPressed: onOpenTasks, child: const Text('Tasks')),
-                ]),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
                 child: Row(children: [
                   const Expanded(child: Text('💰 All Offers', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900))),
-                  TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CpaleadOfferwallScreen())), child: const Text('Full Screen')),
+                  TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CpaleadOfferwallScreen())), child: const Text('View All')),
                 ]),
               ),
             ),
-            const SliverToBoxAdapter(child: CpaleadOfferwallPanel(height: 620)),
+            const SliverToBoxAdapter(child: CpaleadOfferwallPanel(height: 540)),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
