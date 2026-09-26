@@ -121,6 +121,8 @@ exports.initializeUser = onCall(callableOptions, async (request) => {
       spinsLeft: 0,
       scratchLeft: 0,
       dailyBonusDate: null,
+      spinDate: null,
+      scratchDate: null,
       dailyTaskProgress: 0,
       referralCode: myReferralCode,
       username,
@@ -404,7 +406,7 @@ exports.claimSpin = onCall(callableOptions, async (request) => {
         }
 
         let spins = Number(user.spinsLeft ?? 0);
-        if (user.dailyBonusDate !== today) spins = spinLimit;
+        if (user.spinDate !== today) spins = spinLimit;
         if (spins <= 0) {
           throw new HttpsError("resource-exhausted", "No spins left today.");
         }
@@ -412,7 +414,7 @@ exports.claimSpin = onCall(callableOptions, async (request) => {
         const index = crypto.randomInt(0, WHEEL_REWARDS.length);
         const reward = WHEEL_REWARDS[index];
         tx.update(userRef, {
-          dailyBonusDate: today,
+          spinDate: today,
           spinsLeft: spins - 1,
           lastSpinAt: FieldValue.serverTimestamp(),
           ...(reward >= 20 ? { coins: FieldValue.increment(reward) } : {}),
@@ -452,13 +454,13 @@ exports.claimScratch = onCall(callableOptions, async (request) => {
         }
 
         let scratches = Number(user.scratchLeft ?? 0);
-        if (user.dailyBonusDate !== todayKey()) scratches = scratchLimit;
+        if (user.scratchDate !== todayKey()) scratches = scratchLimit;
         if (scratches <= 0) {
           throw new HttpsError("resource-exhausted", "No scratches left today.");
         }
 
         tx.update(userRef, {
-          dailyBonusDate: todayKey(),
+          scratchDate: todayKey(),
           scratchLeft: scratches - 1,
           lastScratchAt: FieldValue.serverTimestamp(),
         });
