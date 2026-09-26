@@ -118,6 +118,7 @@ exports.initializeUser = onCall(callableOptions, async (request) => {
       referCashLocked: 0.0,
       spinsLeft: 0,
       scratchLeft: 0,
+      offerwallQualifiedTasks: 0,
       dailyBonusDate: null,
       spinDate: null,
       scratchDate: null,
