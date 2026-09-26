@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/announcement_banner.dart';
 import '../widgets/home_banner_carousel.dart';
 import '../widgets/unity_banner_widget.dart';
-import 'cpalead_offerwall.dart';
 import 'notifications.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -82,16 +81,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                child: Row(children: [
-                  const Expanded(child: Text('💰 All Offers', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900))),
-                  TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CpaleadOfferwallScreen())), child: const Text('View All')),
-                ]),
-              ),
-            ),
-            const SliverToBoxAdapter(child: CpaleadOfferwallPanel(height: 540)),
           ],
         ),
       ),
