@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 // Services
 import 'services/security_service.dart';
 import 'services/ad_service.dart';
 import 'services/remote_config_service.dart';
 import 'services/app_update_service.dart';
+import 'services/security_api.dart';
 
 // Screens
 import 'screens/splash_login.dart';
@@ -23,6 +25,12 @@ void main() async {
   
   try {
     await Firebase.initializeApp();
+    // Production App Check: Play Integrity on Android.
+    // Firebase Console must register this Android app before reward callables
+    // are enforced.
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: const AndroidPlayIntegrityProvider(),
+    );
     await RemoteConfigService.instance.init();
     
     // ಅಡ್ಮಿನ್ ಕಂಟ್ರೋಲ್ ಪ್ರಕಾರ ಆಡ್ಸ್ ಇನಿಶಿಯಲೈಸ್ ಮಾಡುವುದು
@@ -138,45 +146,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           taskCash = (data['taskCash'] ?? 0.0).toDouble();
           referCash = (data['referCash'] ?? 0.0).toDouble();
           savedUpiId = data['upiId'];
-          spinsLeft = isToday ? (data['spinsLeft'] ?? 0) : 0;
-          scratchLeft = isToday ? (data['scratchLeft'] ?? 0) : 0;
+          spinsLeft = isToday
+              ? (data['spinsLeft'] ?? 0)
+              : RemoteConfigService.instance.dailySpinLimit;
+          scratchLeft = isToday
+              ? (data['scratchLeft'] ?? 0)
+              : RemoteConfigService.instance.dailyScratchLimit;
           streakClaimedToday = data['streakClaimedToday'] ?? false;
           hasConvertedToday = data['hasConvertedToday'] ?? false;
           hasTaskWithdrawnToday = data['hasTaskWithdrawnToday'] ?? false;
           hasReferWithdrawnToday = data['hasReferWithdrawnToday'] ?? false;
         });
-        if (!isToday) {
-          FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-            'dailyBonusDate': todayKey,
-            'dailyTaskProgress': 0,
-            'spinsLeft': 0,
-            'scratchLeft': 0,
-          }, SetOptions(merge: true));
-        }
+        // Daily bonus counters are now reset/consumed only by Cloud Functions.
+        // The client never writes reward/economy fields directly.
       }
     });
   }
 
-  Future<void> _updateCoinsInFirebase(int addCoins, String reason) async {
-    if (currentUid == null) return;
+  Future<void> _completeSocialTask(String name, int reward, {String? taskId}) async {
+    if (taskId == null || taskId.isEmpty) return;
     try {
-      await FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-        'coins': FieldValue.increment(addCoins),
-      });
-      setState(() {
-        coinHistory.insert(0, '+$addCoins Coins - $reason');
-      });
+      final result = await SecurityApi.instance.completeSocialTask(taskId);
+      final credited = (result['reward'] as num?)?.toInt() ?? 0;
+      if (credited > 0 && mounted) {
+        setState(() {
+          coinHistory.insert(0, '+$credited Coins - Completed $name');
+        });
+      }
     } catch (e) {
-      debugPrint("Error updating coins: $e");
-    }
-  }
-
-  Future<void> _completeSocialTask(String name, int reward) async {
-    if (currentUid == null) return;
-    try {
-      await _updateCoinsInFirebase(reward, 'Completed $name');
-    } catch (e) {
-      debugPrint('Social task completion error: $e');
+      debugPrint('Secure task completion error: $e');
     }
   }
 
@@ -253,23 +251,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       TasksTabScreen(
         spinsLeft: spinsLeft,
         scratchLeft: scratchLeft,
-        onCompleteTask: (name, reward) {
-          _completeSocialTask(name, reward);
+        onCompleteTask: (name, reward, [taskId]) {
+          _completeSocialTask(name, reward, taskId: taskId);
         },
-        onSpinUsed: () {
-          if (currentUid != null) {
-            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-              'spinsLeft': FieldValue.increment(-1),
-            });
-          }
-        },
-        onScratchUsed: () {
-          if (currentUid != null) {
-            FirebaseFirestore.instance.collection('users').doc(currentUid).update({
-              'scratchLeft': FieldValue.increment(-1),
-            });
-          }
-        },
+        onSpinUsed: () {},
+        onScratchUsed: () {},
       ),
       ReferScreen(
         referCash: referCash,
