@@ -1,7 +1,6 @@
-const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { logger } = require("firebase-functions");
-const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const crypto = require("crypto");
@@ -18,7 +17,6 @@ const APP_ID = "1:940679131159:android:edd514726cb0bf645a2c52";
 const SOCIAL_MIN_SECONDS = 8;
 const SOCIAL_SESSION_MINUTES = 10;
 const WHEEL_REWARDS = [20, 2, 5, 0, 3, 1];
-const CPALEAD_POSTBACK_SECRET = defineSecret("CPALEAD_POSTBACK_SECRET");
 
 function requireAuth(request) {
   if (!request.auth?.uid) {
@@ -400,7 +398,7 @@ exports.claimSpin = onCall(callableOptions, async (request) => {
         const user = userSnap.data() || {};
         const today = todayKey();
 
-        const qualified = Number(user.cpaleadQualifiedTasks ?? 0);
+        const qualified = Number(user.offerwallQualifiedTasks ?? 0);
         if (qualified < 1) {
           throw new HttpsError("failed-precondition", "Complete at least 1 qualified offer first.");
         }
@@ -449,7 +447,7 @@ exports.claimScratch = onCall(callableOptions, async (request) => {
         const userSnap = await tx.get(userRef);
         if (!userSnap.exists) throw new HttpsError("failed-precondition", "Account setup is incomplete.");
         const user = userSnap.data() || {};
-        if (Number(user.cpaleadQualifiedTasks ?? 0) < 3) {
+        if (Number(user.offerwallQualifiedTasks ?? 0) < 3) {
           throw new HttpsError("failed-precondition", "Complete at least 3 qualified offers first.");
         }
 
@@ -589,79 +587,5 @@ exports.requestWithdrawal = onCall(callableOptions, async (request) => {
     return { ok: true, requestId: withdrawalRef.id };
   } catch (err) {
     throw normalizeError(err);
-  }
-});
-
-// CPAlead webhook: configure CPAlead to call this endpoint after a verified conversion.
-// It is intentionally idempotent and never trusts the mobile client for reward crediting.
-// Expected parameters: uid/subid, lead_id/transaction_id, payout/amount, optional secret.
-exports.cpaleadPostback = onRequest(
-  { secrets: [CPALEAD_POSTBACK_SECRET] },
-  async (req, res) => {
-  try {
-    if (req.method !== "GET" && req.method !== "POST") {
-      return res.status(405).send("Method Not Allowed");
-    }
-
-    const body = req.method === "POST" ? (req.body || {}) : req.query;
-    const uid = cleanString(body.uid || body.subid || body.sub_id, 128);
-    const leadId = cleanString(body.lead_id || body.leadid || body.transaction_id || body.txid, 200);
-    const payout = Number(body.payout ?? body.amount ?? 0);
-
-    if (!uid || !leadId || !Number.isFinite(payout) || payout <= 0) {
-      return res.status(400).send("invalid");
-    }
-
-    const configuredSecret = CPALEAD_POSTBACK_SECRET.value();
-    const suppliedSecret = cleanString(body.password || body.secret || body.token || "", 200);
-    if (!configuredSecret || suppliedSecret !== configuredSecret) {
-      return res.status(403).send("forbidden");
-    }
-
-    const processedRef = db.collection("processed_leads").doc(leadId);
-    const userRef = db.collection("users").doc(uid);
-    const offerwall = (await db.collection("settings").doc("offerwalls").get()).data() || {};
-    const coinsPerPayoutUnit = Math.max(1, Number(offerwall.coinsPerPayoutUnit ?? 100));
-
-    await db.runTransaction(async (tx) => {
-      const processed = await tx.get(processedRef);
-      if (processed.exists) return;
-
-      const user = await tx.get(userRef);
-      if (!user.exists) throw new Error("user-not-found");
-      const coins = Math.max(0, Math.round(payout * coinsPerPayoutUnit));
-
-      tx.update(userRef, {
-        coins: FieldValue.increment(coins),
-        cpaleadQualifiedTasks: FieldValue.increment(1),
-        lastOfferRewardAt: FieldValue.serverTimestamp(),
-      });
-
-      tx.set(processedRef, {
-        leadId,
-        uid,
-        payout,
-        coins,
-        processedAt: FieldValue.serverTimestamp(),
-      });
-
-      tx.set(db.collection("transactions").doc(), {
-        uid,
-        category: "cpalead",
-        title: "CPAlead Offer Reward",
-        coins,
-        amount: 0,
-        payout,
-        status: "success",
-        source: "cpalead_postback",
-        leadId,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-    });
-
-    return res.status(200).send("ok");
-  } catch (err) {
-    logger.error("CPAlead postback failed", err);
-    return res.status(500).send("error");
   }
 });
