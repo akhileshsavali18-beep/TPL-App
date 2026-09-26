@@ -183,6 +183,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
 
+  Future<void> openTabWithAd(int index) async {
+    final config = RemoteConfigService.instance;
+    if (config.adsEnabled && config.interstitialEnabled) {
+      final shown = await AdService.instance.showInterstitialAd(context: context);
+      if (!shown) return;
+    }
+    if (mounted) setState(() => _currentIndex = index);
+  }
+
   void switchTab(int index) {
     setState(() => _currentIndex = index);
   }
@@ -250,7 +259,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screens = [
       HomeScreen(
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
-        onOpenTasks: () => switchTab(1),
+        onOpenTasks: () => openTabWithAd(1),
       ),
       TasksTabScreen(
         spinsLeft: spinsLeft,
@@ -264,7 +273,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ReferScreen(
         referCash: referCash,
         invitedFriends: invitedFriends,
-        onNavigateToWallet: () => switchTab(3),
+        onNavigateToWallet: () => openTabWithAd(3),
       ),
       WalletScreen(
         coins: coins,
