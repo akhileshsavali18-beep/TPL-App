@@ -139,17 +139,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         final data = doc.data()!;
         final now = DateTime.now();
         final todayKey = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-        final dailyDate = data['dailyBonusDate']?.toString() ?? '';
-        final isToday = dailyDate == todayKey;
+        final spinDate = data['spinDate']?.toString() ?? '';
+        final scratchDate = data['scratchDate']?.toString() ?? '';
+        final spinIsToday = spinDate == todayKey;
+        final scratchIsToday = scratchDate == todayKey;
         setState(() {
           coins = (data['coins'] as num?)?.toInt() ?? 0;
           taskCash = (data['taskCash'] ?? 0.0).toDouble();
           referCash = (data['referCash'] ?? 0.0).toDouble();
           savedUpiId = data['upiId'];
-          spinsLeft = isToday
+          spinsLeft = spinIsToday
               ? (data['spinsLeft'] ?? 0)
               : RemoteConfigService.instance.dailySpinLimit;
-          scratchLeft = isToday
+          scratchLeft = scratchIsToday
               ? (data['scratchLeft'] ?? 0)
               : RemoteConfigService.instance.dailyScratchLimit;
           streakClaimedToday = data['streakClaimedToday'] ?? false;
