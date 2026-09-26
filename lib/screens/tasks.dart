@@ -40,7 +40,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   int _scratchProgress = 0;
   bool _scratchRevealed = false;
   final List<int> _wheelRewards = [20, 2, 5, 0, 3, 1];
-  int _cpaleadQualifiedTasks = 0;
+  int _qualifiedOfferTasks = 0;
   final AudioPlayer _audioPlayer = AudioPlayer();
   int _lastTickSlice = -1;
   Completer<void>? _taskReturnCompleter;
@@ -51,7 +51,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _spinController = AnimationController(vsync: this, duration: const Duration(milliseconds: 3200));
-    _listenForCpaleadProgress();
+    _listenForQualifiedOfferProgress();
     _loadCompletedTasks();
   }
 
@@ -72,14 +72,14 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     }
   }
 
-  void _listenForCpaleadProgress() {
+  void _listenForQualifiedOfferProgress() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
     FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots().listen((doc) {
       final data = doc.data();
       if (!mounted || data == null) return;
       setState(() {
-        _cpaleadQualifiedTasks = (data['cpaleadQualifiedTasks'] as num?)?.toInt() ?? 0;
+        _qualifiedOfferTasks = (data['offerwallQualifiedTasks'] as num?)?.toInt() ?? 0;
       });
     });
   }
@@ -386,7 +386,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   }
 
   Widget _spinCard() {
-    final disabled = _cpaleadQualifiedTasks < 1 || widget.spinsLeft <= 0 || _spinning;
+    final disabled = _qualifiedOfferTasks < 1 || widget.spinsLeft <= 0 || _spinning;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -443,7 +443,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   }
 
   Widget _scratchCard() {
-    final canScratch = _cpaleadQualifiedTasks >= 3 && !_scratchRevealed;
+    final canScratch = _qualifiedOfferTasks >= 3 && !_scratchRevealed;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
