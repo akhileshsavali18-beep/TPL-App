@@ -291,7 +291,7 @@ $link
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         const Text('Referral Bonus Progress', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
                         const SizedBox(height: 6),
-                        Text('₹${_lockedReferralCash.toStringAsFixed(2)} locked • Unlocks after ${_requiredReferralTasks} verified CPAlead tasks', style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                        Text('₹${_lockedReferralCash.toStringAsFixed(2)} locked • Unlocks after ${_requiredReferralTasks} verified offer tasks', style: const TextStyle(color: Colors.white60, fontSize: 11)),
                       ]),
                     ),
                   ],
