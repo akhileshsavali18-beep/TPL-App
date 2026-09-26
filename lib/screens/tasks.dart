@@ -8,9 +8,10 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../widgets/unity_banner_widget.dart';
 import '../services/ad_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/security_api.dart';
 
 class TasksTabScreen extends StatefulWidget {
-  final Function(String, int) onCompleteTask;
+  final Future<int?> Function(String, String) onCompleteTask;
   final int spinsLeft;
   final int scratchLeft;
   final VoidCallback? onSpinUsed;
@@ -109,6 +110,17 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
       }
     }
 
+    try {
+      await SecurityApi.instance.startSocialTask(taskId);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not start secure task: $e')),
+        );
+      }
+      return;
+    }
+
     if (url.trim().isNotEmpty) {
       try {
         await launchUrlString(url.trim(), mode: LaunchMode.externalApplication);
@@ -119,11 +131,20 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     }
 
     if (!mounted || (_completed[taskId] ?? false)) return;
-    widget.onCompleteTask(title, coins);
-    setState(() => _completed[taskId] = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('🎉 +$coins Coins added for $title'),
+    try {
+      final credited = await widget.onCompleteTask(taskId, title);
+      if (credited == null || credited <= 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Task could not be verified yet.')),
+          );
+        }
+        return;
+      }
+      setState(() => _completed[taskId] = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🎉 +$credited Coins added for $title'),
         backgroundColor: const Color(0xFF00FF87),
         behavior: SnackBarBehavior.floating,
       ),
@@ -155,34 +176,60 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     );
   }
 
-  void _spinWheel() {
+  Future<void> _spinWheel() async {
     if (_spinning) return;
-    final index = math.Random().nextInt(_wheelRewards.length);
-    final slice = 2 * math.pi / _wheelRewards.length;
-    final target = _wheelAngle + (math.pi * 2 * 5) + ((math.pi * 1.5) - (index + 0.5) * slice);
-    setState(() => _spinning = true);
-    _spinController
-      ..reset()
-      ..forward().then((_) {
-        if (!mounted) return;
-        _wheelAngle = target % (math.pi * 2);
-        final reward = _wheelRewards[index];
-        setState(() => _spinning = false);
-        _playWinSound();
-        widget.onSpinUsed?.call();
-        if (reward >= 20) widget.onCompleteTask('Spin Bonus', reward);
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            backgroundColor: const Color(0xFF151922),
-            title: Text(reward == 0 ? 'Better Luck!' : (reward >= 20 ? '🎉 +$reward Coins' : 'Bonus Unlocked!')),
-            content: Text(reward == 0
-                ? 'No bonus this time. Try again when your next spin is available.'
-                : (reward >= 20 ? '20 coins have been added to your wallet.' : 'You unlocked a $reward× gameplay bonus.')),
-            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-          ),
+
+    try {
+      final result = await SecurityApi.instance.claimSpin();
+      final index = (result['index'] as num?)?.toInt() ?? 0;
+      final reward = (result['reward'] as num?)?.toInt() ?? 0;
+      final safeIndex = index.clamp(0, _wheelRewards.length - 1);
+      final slice = 2 * math.pi / _wheelRewards.length;
+      final target = _wheelAngle +
+          (math.pi * 2 * 5) +
+          ((math.pi * 1.5) - (safeIndex + 0.5) * slice);
+
+      if (!mounted) return;
+      setState(() => _spinning = true);
+      _spinController
+        ..reset()
+        ..forward().then((_) {
+          if (!mounted) return;
+          _wheelAngle = target % (math.pi * 2);
+          setState(() => _spinning = false);
+          _playWinSound();
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              backgroundColor: const Color(0xFF151922),
+              title: Text(
+                reward == 0
+                    ? 'Better Luck!'
+                    : (reward >= 20 ? '🎉 +$reward Coins' : 'Bonus Unlocked!'),
+              ),
+              content: Text(
+                reward == 0
+                    ? 'No bonus this time. Try again when your next spin is available.'
+                    : (reward >= 20
+                        ? '$reward coins have been added to your wallet.'
+                        : 'You unlocked a $reward× gameplay bonus.'),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Spin failed: $e')),
         );
-      });
+      }
+    }
   }
 
   Future<void> _unlockScratch() async {
@@ -193,16 +240,24 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     }
     AdService.instance.showRewardedAd(
       context: context,
-      onReward: () {
-        if (!mounted) return;
-        setState(() => _scratchRevealed = true);
-        _playWinSound();
-        widget.onScratchUsed?.call();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('🎉 Scratch bonus unlocked!'),
-          backgroundColor: Color(0xFF00FF87),
-          behavior: SnackBarBehavior.floating,
-        ));
+      onReward: () async {
+        try {
+          await SecurityApi.instance.claimScratch();
+          if (!mounted) return;
+          setState(() => _scratchRevealed = true);
+          _playWinSound();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('🎉 Scratch bonus unlocked!'),
+            backgroundColor: Color(0xFF00FF87),
+            behavior: SnackBarBehavior.floating,
+          ));
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Scratch failed: $e')),
+            );
+          }
+        }
       },
       onFailed: () {},
     );
