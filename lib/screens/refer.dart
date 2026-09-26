@@ -61,25 +61,21 @@ class _ReferScreenState extends State<ReferScreen> {
         _referredByCode = referredBy;
       });
 
-      final allLogs = await FirebaseFirestore.instance.collection('referral_logs').get();
-      final logs = allLogs.docs.where((doc) =>
-          (doc.data()['referrerUid'] ?? '').toString() == user.uid).toList();
+      final logSnap = await FirebaseFirestore.instance
+          .collection('referral_logs')
+          .where('referrerUid', isEqualTo: user.uid)
+          .get();
+      final logs = logSnap.docs;
 
       final friends = <Map<String, dynamic>>[];
       for (final log in logs) {
         final logData = log.data();
         final referredUid = (logData['referredUid'] ?? '').toString();
-        Map<String, dynamic> referredData = {};
-        if (referredUid.isNotEmpty) {
-          final refSnap = await FirebaseFirestore.instance.collection('users').doc(referredUid).get();
-          referredData = refSnap.data() ?? {};
-        }
-        final progress = (referredData['cpaleadQualifiedTasks'] as num?)?.toInt() ??
-            (referredData['referralTaskCount'] as num?)?.toInt() ?? 0;
+        final progress = (logData['progress'] as num?)?.toInt() ?? 0;
         final required = (logData['requiredTaskCount'] as num?)?.toInt() ?? _requiredReferralTasks;
         final unlocked = logData['status'] == 'unlocked' || progress >= required;
         final bonus = (logData['bonusGiven'] as num?)?.toDouble() ?? 5.0;
-        final email = (referredData['email'] ?? logData['referredEmail'] ?? 'Anonymous').toString();
+        final email = (logData['referredEmail'] ?? 'Anonymous').toString();
         final at = email.indexOf('@');
         final maskedEmail = at > 0 ? '${email.substring(0, at).substring(0, at >= 3 ? 3 : at)}***@${email.substring(at + 1)}' : email;
         friends.add({
