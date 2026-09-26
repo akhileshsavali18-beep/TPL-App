@@ -81,8 +81,8 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
         final data = doc.data();
         final rawCategory = (data['category'] ?? 'coin').toString().toLowerCase();
         final source = (data['source'] ?? '').toString().toLowerCase();
-        final category = source == 'cpalead_postback' || rawCategory == 'offer' || rawCategory == 'cpalead'
-            ? 'cpalead'
+        final category = rawCategory == 'offer' || rawCategory == 'offerwall'
+            ? 'offerwall'
             : source == 'social_task' || rawCategory == 'reward'
                 ? 'social'
                 : source == 'spin' || rawCategory == 'spin'
@@ -145,7 +145,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             indicatorColor: Color(0xFF00FF87),
             tabs: [
               Tab(text: 'All'),
-              Tab(text: 'CPAlead'),
+              Tab(text: 'Offerwall'),
               Tab(text: 'Social'),
               Tab(text: 'Spin'),
               Tab(text: 'Scratch'),
@@ -159,7 +159,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             child: TabBarView(
               children: [
                 _buildList(_items),
-                _buildList(_items.where((e) => e.category == 'cpalead').toList()),
+                _buildList(_items.where((e) => e.category == 'offerwall').toList()),
                 _buildList(_items.where((e) => e.category == 'social').toList()),
                 _buildList(_items.where((e) => e.category == 'spin').toList()),
                 _buildList(_items.where((e) => e.category == 'scratch').toList()),
@@ -189,7 +189,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             ? Icons.swap_horiz
             : item.category == 'refer'
                 ? Icons.people_alt
-                : item.category == 'cpalead'
+                : item.category == 'offerwall'
                     ? Icons.local_offer_rounded
                     : item.category == 'social'
                         ? Icons.groups_rounded
@@ -202,7 +202,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             ? Colors.amber
             : item.category == 'refer'
                 ? Colors.purpleAccent
-                : item.category == 'cpalead'
+                : item.category == 'offerwall'
                     ? Colors.orangeAccent
                     : item.category == 'social'
                         ? Colors.lightBlueAccent
