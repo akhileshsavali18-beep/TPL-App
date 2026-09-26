@@ -163,8 +163,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
-  Future<void> _completeSocialTask(String name, int reward, {String? taskId}) async {
-    if (taskId == null || taskId.isEmpty) return;
+  Future<int?> _completeSocialTask(String taskId, String name) async {
+    if (taskId.isEmpty) return null;
     try {
       final result = await SecurityApi.instance.completeSocialTask(taskId);
       final credited = (result['reward'] as num?)?.toInt() ?? 0;
@@ -173,8 +173,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           coinHistory.insert(0, '+$credited Coins - Completed $name');
         });
       }
+      return credited;
     } catch (e) {
       debugPrint('Secure task completion error: $e');
+      return null;
     }
   }
 
@@ -251,8 +253,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       TasksTabScreen(
         spinsLeft: spinsLeft,
         scratchLeft: scratchLeft,
-        onCompleteTask: (name, reward, [taskId]) {
-          _completeSocialTask(name, reward, taskId: taskId);
+        onCompleteTask: (taskId, name) {
+          return _completeSocialTask(taskId, name);
         },
         onSpinUsed: () {},
         onScratchUsed: () {},
