@@ -362,7 +362,6 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
             });
           }
         }
-      }
 
       return { already: false, reward };
     });
