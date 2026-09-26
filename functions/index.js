@@ -372,9 +372,7 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
   }
 });
 
-exports.claimSpin = onCall(
-  { ...callableOptions, consumeAppCheckToken: true },
-  async (request) => {
+exports.claimSpin = onCall(callableOptions, async (request) => {
     try {
       const uid = requireAuth(request);
       const userRef = db.collection("users").doc(uid);
@@ -427,9 +425,7 @@ exports.claimSpin = onCall(
   }
 );
 
-exports.claimScratch = onCall(
-  { ...callableOptions, consumeAppCheckToken: true },
-  async (request) => {
+exports.claimScratch = onCall(callableOptions, async (request) => {
     try {
       const uid = requireAuth(request);
       const userRef = db.collection("users").doc(uid);
