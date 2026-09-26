@@ -541,13 +541,11 @@ async function toggleBannerActive(id, active) {
 }
 
 async function saveOfferwallsConfig() {
-  const cpaleadActive = document.getElementById('cpaleadEnabled').checked;
-  const cpaleadUrl = document.getElementById('cpaleadUrlInput').value.trim();
-  const earnkaroActive = document.getElementById('earnkaroEnabled').checked;
-  const earnkaroUrl = document.getElementById('earnkaroUrl').value.trim();
+  const earnkaroActive = document.getElementById('earnkaroEnabled')?.checked ?? false;
+  const earnkaroUrl = document.getElementById('earnkaroUrl')?.value.trim() || '';
 
   await db.collection('settings').doc('offerwalls').set({
-    cpaleadActive, cpaleadUrl, earnkaroActive, earnkaroUrl,
+    earnkaroActive, earnkaroUrl,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true });
 
