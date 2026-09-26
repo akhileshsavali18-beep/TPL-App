@@ -117,17 +117,54 @@ class AdService {
 
   Future<bool> showInterstitialAd({required BuildContext context, VoidCallback? onFinished}) async {
     final config = RemoteConfigService.instance;
-    if (!config.adsEnabled || !config.interstitialEnabled) { onFinished?.call(); return false; }
+    if (!config.adsEnabled || !config.interstitialEnabled) {
+      onFinished?.call();
+      return false;
+    }
+    if (!canShowAd()) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please wait ${remainingCooldownSeconds()} seconds before another ad.')),
+        );
+      }
+      onFinished?.call();
+      return false;
+    }
     if (!_isInitialized) await init();
-    if (!_isInitialized) { onFinished?.call(); return false; }
+    if (!_isInitialized) {
+      onFinished?.call();
+      return false;
+    }
     final loaded = await _loadPlacement(config.interstitialPlacementId);
-    if (!loaded) { onFinished?.call(); return false; }
-    UnityAds.showVideoAd(
-      placementId: config.interstitialPlacementId,
-      onComplete: (_) { _lastAdTime = DateTime.now(); onFinished?.call(); },
-      onFailed: (_, __, ___) => onFinished?.call(),
-      onSkipped: (_) => onFinished?.call(),
-    );
-    return true;
+    if (!loaded) {
+      onFinished?.call();
+      return false;
+    }
+
+    final completer = Completer<bool>();
+    void finish(bool success) {
+      if (!completer.isCompleted) {
+        _lastAdTime = DateTime.now();
+        onFinished?.call();
+        completer.complete(success);
+      }
+    }
+
+    try {
+      await UnityAds.showVideoAd(
+        placementId: config.interstitialPlacementId,
+        onComplete: (_) => finish(true),
+        onFailed: (_, __, ___) => finish(false),
+        onSkipped: (_) => finish(false),
+      );
+      return await completer.future.timeout(
+        const Duration(seconds: 90),
+        onTimeout: () => false,
+      );
+    } catch (e) {
+      debugPrint('Unity interstitial show exception: $e');
+      finish(false);
+      return false;
+    }
   }
 }
