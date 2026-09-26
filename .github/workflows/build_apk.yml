@@ -195,11 +195,11 @@ jobs:
           name: TPL Pro Build ${{ github.run_number }}
           generate_release_notes: false
           make_latest: true
-          files: build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
+          files: build/app/outputs/flutter-apk/TPL PRO.apk
 
       - name: Upload APK to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: TPL PRO
-          path: build/app/outputs/flutter-apk/TPL-Pro-Release-APK.apk
+          path: build/app/outputs/flutter-apk/TPL PRO.apk
           
