@@ -346,7 +346,7 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
 
       tx.set(db.collection("transactions").doc(), {
         uid,
-        category: "reward",
+        category: "social",
         title: cleanString(taskSnap.data()?.title, 200) || "Task Reward",
         coins: reward,
         amount: 0,
