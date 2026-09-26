@@ -29,7 +29,7 @@ void main() async {
     // Firebase Console must register this Android app before reward callables
     // are enforced.
     await FirebaseAppCheck.instance.activate(
-      providerAndroid: const AndroidPlayIntegrityProvider(),
+      androidProvider: AndroidProvider.playIntegrity,
     );
     await RemoteConfigService.instance.init();
     
