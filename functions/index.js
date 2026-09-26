@@ -379,6 +379,8 @@ exports.claimSpin = onCall(
     try {
       const uid = requireAuth(request);
       const userRef = db.collection("users").doc(uid);
+      const limits = (await db.collection("settings").doc("game_limits").get()).data() || {};
+      const spinLimit = Math.max(0, Number(limits.spinLimit ?? 1));
       const result = await db.runTransaction(async (tx) => {
         const userSnap = await tx.get(userRef);
         if (!userSnap.exists) throw new HttpsError("failed-precondition", "Account setup is incomplete.");
@@ -391,7 +393,7 @@ exports.claimSpin = onCall(
         }
 
         let spins = Number(user.spinsLeft ?? 0);
-        if (user.dailyBonusDate !== today) spins = 1;
+        if (user.dailyBonusDate !== today) spins = spinLimit;
         if (spins <= 0) {
           throw new HttpsError("resource-exhausted", "No spins left today.");
         }
@@ -432,6 +434,8 @@ exports.claimScratch = onCall(
     try {
       const uid = requireAuth(request);
       const userRef = db.collection("users").doc(uid);
+      const limits = (await db.collection("settings").doc("game_limits").get()).data() || {};
+      const scratchLimit = Math.max(0, Number(limits.scratchLimit ?? 1));
       const result = await db.runTransaction(async (tx) => {
         const userSnap = await tx.get(userRef);
         if (!userSnap.exists) throw new HttpsError("failed-precondition", "Account setup is incomplete.");
@@ -441,7 +445,7 @@ exports.claimScratch = onCall(
         }
 
         let scratches = Number(user.scratchLeft ?? 0);
-        if (user.dailyBonusDate !== todayKey()) scratches = 1;
+        if (user.dailyBonusDate !== todayKey()) scratches = scratchLimit;
         if (scratches <= 0) {
           throw new HttpsError("resource-exhausted", "No scratches left today.");
         }
