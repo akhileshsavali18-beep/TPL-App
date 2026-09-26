@@ -15,7 +15,8 @@ const firebaseConfig = {
   projectId: "tpl-5bd9d",
   storageBucket: "tpl-5bd9d.firebasestorage.app",
   messagingSenderId: "940679131159",
-  appId: "1:940679131159:android:f5ed5fc5b6f6ac285a2c52"
+  appId: "1:940679131159:web:8b3de2fbf61b57615a2c52",
+  measurementId: "G-KRP2LPFGQ4"
 };
 
 if (!firebase.apps.length) {
@@ -24,12 +25,26 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+const AUTHORIZED_ADMIN_UID = "VsGSj7MPsoXIwLbBKPey4rV4Oxg1";
+
+function fetchAllData() {
+  if (typeof listenUsers === 'function') listenUsers();
+  if (typeof loadTasksHub === 'function') loadTasksHub();
+  if (typeof loadSettings === 'function') loadSettings();
+  if (typeof loadOfferwallSettings === 'function') loadOfferwallSettings();
+  // The payout desk has its own listener in admin.html.
+}
+
 // --- 3. Auth State Handler ---
 auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('dashboardScreen').classList.remove('hidden');
     switchTab('dashboard');
+    if (user.uid !== AUTHORIZED_ADMIN_UID) {
+      auth.signOut();
+      return;
+    }
     if (typeof fetchAllData === 'function') {
       fetchAllData();
     }
