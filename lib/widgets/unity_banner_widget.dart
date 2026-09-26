@@ -23,6 +23,7 @@ class UnityBannerWidget extends StatelessWidget {
       child: UnityBannerAd(
         placementId: config.bannerPlacementId,
         onLoad: (placementId) => debugPrint('Unity Banner Loaded: $placementId'),
+        onShown: (placementId) => debugPrint('Unity Banner Shown: $placementId'),
         onClick: (placementId) => debugPrint('Unity Banner Clicked: $placementId'),
         onFailed: (placementId, error, message) =>
             debugPrint('Unity Banner Error: $placementId - $error: $message'),
