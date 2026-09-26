@@ -295,12 +295,20 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
         ? Number(user.dailyTaskProgress ?? 0)
         : 0;
       const referralTaskCount = Number(user.referralTaskCount ?? 0);
+      const referredByUid = user.referredByUid;
+      const newReferralCount = referralTaskCount + 1;
+      const referralLogRef = referredByUid
+        ? db.collection("referral_logs").doc(uid)
+        : null;
+      const referralLogSnap = referralLogRef
+        ? await tx.get(referralLogRef)
+        : null;
 
       tx.update(userRef, {
         coins: FieldValue.increment(reward),
         dailyBonusDate: today,
         dailyTaskProgress: dailyProgress + 1,
-        referralTaskCount: referralTaskCount + 1,
+        referralTaskCount: newReferralCount,
         lastRewardAt: FieldValue.serverTimestamp(),
       });
 
@@ -324,22 +332,25 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
         createdAt: FieldValue.serverTimestamp(),
       });
 
-      const referredByUid = user.referredByUid;
-      const newReferralCount = referralTaskCount + 1;
-      if (referredByUid && newReferralCount >= 2 && user.referralBonusUnlocked !== true) {
-        const referrerRef = db.collection("users").doc(referredByUid);
-        const referrerSnap = await tx.get(referrerRef);
-        const referralLogRef = db.collection("referral_logs").doc(uid);
-        const referralLogSnap = await tx.get(referralLogRef);
-        if (referrerSnap.exists) {
-          tx.update(referrerRef, {
-            referCash: FieldValue.increment(5.0),
-            referCashLocked: FieldValue.increment(-5.0),
-          });
-          tx.update(userRef, {
-            referralBonusUnlocked: true,
-          });
-          if (referralLogSnap.exists) {
+      if (referredByUid && referralLogRef && referralLogSnap) {
+        const currentProgress = Number(referralLogSnap.data()?.progress ?? referralTaskCount);
+        const progress = Math.max(currentProgress, newReferralCount);
+        tx.update(referralLogRef, {
+          progress,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+
+        if (newReferralCount >= 2 && user.referralBonusUnlocked !== true) {
+          const referrerRef = db.collection("users").doc(referredByUid);
+          const referrerSnap = await tx.get(referrerRef);
+          if (referrerSnap.exists) {
+            tx.update(referrerRef, {
+              referCash: FieldValue.increment(5.0),
+              referCashLocked: FieldValue.increment(-5.0),
+            });
+            tx.update(userRef, {
+              referralBonusUnlocked: true,
+            });
             tx.update(referralLogRef, {
               status: "unlocked",
               unlockedAt: FieldValue.serverTimestamp(),
