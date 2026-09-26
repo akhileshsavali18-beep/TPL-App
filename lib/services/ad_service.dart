@@ -70,31 +70,6 @@ class AdService {
     }
   }
 
-  Future<bool> _consumeDailyRewardedSlot() async {
-    final config = RemoteConfigService.instance;
-    if (config.rewardedDailyLimit <= 0) return true;
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return false;
-    final ref = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    final today = DateTime.now();
-    final key = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    try {
-      var allowed = false;
-      await FirebaseFirestore.instance.runTransaction((tx) async {
-        final snap = await tx.get(ref);
-        final data = snap.data() ?? <String, dynamic>{};
-        final oldDate = data['rewardedAdsDate']?.toString() ?? '';
-        final count = oldDate == key ? ((data['rewardedAdsCount'] as num?)?.toInt() ?? 0) : 0;
-        if (count >= config.rewardedDailyLimit) return;
-        allowed = true;
-        tx.set(ref, {'rewardedAdsDate': key, 'rewardedAdsCount': count + 1}, SetOptions(merge: true));
-      });
-      return allowed;
-    } catch (e) {
-      debugPrint('Rewarded ad daily limit check failed: $e');
-      return false;
-    }
-  }
 
   Future<bool> showRewardedAd({
     required BuildContext context,
@@ -118,14 +93,6 @@ class AdService {
     }
     if (!_isInitialized) await init();
     if (!_isInitialized) { onFailed?.call(); return false; }
-    if (!await _consumeDailyRewardedSlot()) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Daily rewarded-ad limit reached.')));
-      }
-      onFailed?.call();
-      return false;
-    }
-
     final loaded = await _loadPlacement(config.rewardedPlacementId);
     if (!loaded) { onFailed?.call(); return false; }
 
