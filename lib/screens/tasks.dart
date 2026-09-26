@@ -232,6 +232,26 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     }
   }
 
+  Future<void> _claimScratchReward() async {
+    try {
+      await SecurityApi.instance.claimScratch();
+      if (!mounted) return;
+      setState(() => _scratchRevealed = true);
+      _playWinSound();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('🎉 Scratch bonus unlocked!'),
+        backgroundColor: Color(0xFF00FF87),
+        behavior: SnackBarBehavior.floating,
+      ));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Scratch failed: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _unlockScratch() async {
     if (widget.scratchLeft <= 0 || _scratchRevealed) return;
     if (!RemoteConfigService.instance.rewardedScratchEnabled) {
@@ -240,24 +260,8 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     }
     AdService.instance.showRewardedAd(
       context: context,
-      onReward: () async {
-        try {
-          await SecurityApi.instance.claimScratch();
-          if (!mounted) return;
-          setState(() => _scratchRevealed = true);
-          _playWinSound();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('🎉 Scratch bonus unlocked!'),
-            backgroundColor: Color(0xFF00FF87),
-            behavior: SnackBarBehavior.floating,
-          ));
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Scratch failed: $e')),
-            );
-          }
-        }
+      onReward: () {
+        _claimScratchReward();
       },
       onFailed: () {},
     );
