@@ -50,7 +50,7 @@ class _ReferScreenState extends State<ReferScreen> {
       final code = (userData['referralCode'] ?? '').toString();
       final locked = (userData['referCashLocked'] as num?)?.toDouble() ?? 0;
       final myProgress = (userData['referralTaskCount'] as num?)?.toInt() ??
-          (userData['cpaleadQualifiedTasks'] as num?)?.toInt() ?? 0;
+          (userData['offerwallQualifiedTasks'] as num?)?.toInt() ?? 0;
       final myUnlocked = userData['referralBonusUnlocked'] == true || myProgress >= _requiredReferralTasks;
       final referredBy = (userData['referredBy'] ?? '').toString();
       if (mounted) setState(() {
@@ -268,7 +268,7 @@ $link
                         Text(
                           _myReferralUnlocked
                               ? '✅ Referral bonus unlocked'
-                              : '$_myReferralTaskProgress/$_requiredReferralTasks verified CPAlead tasks • ₹5 locked',
+                              : '$_myReferralTaskProgress/$_requiredReferralTasks verified offer tasks • ₹5 locked',
                           style: TextStyle(
                             color: _myReferralUnlocked ? const Color(0xFF00FF87) : Colors.white60,
                             fontSize: 11,
