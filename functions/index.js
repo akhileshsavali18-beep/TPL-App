@@ -303,6 +303,12 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
       const referralLogSnap = referralLogRef
         ? await tx.get(referralLogRef)
         : null;
+      const referrerRef = (referredByUid && newReferralCount >= 2 && user.referralBonusUnlocked !== true)
+        ? db.collection("users").doc(referredByUid)
+        : null;
+      const referrerSnap = referrerRef
+        ? await tx.get(referrerRef)
+        : null;
 
       tx.update(userRef, {
         coins: FieldValue.increment(reward),
@@ -340,10 +346,7 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
           updatedAt: FieldValue.serverTimestamp(),
         });
 
-        if (newReferralCount >= 2 && user.referralBonusUnlocked !== true) {
-          const referrerRef = db.collection("users").doc(referredByUid);
-          const referrerSnap = await tx.get(referrerRef);
-          if (referrerSnap.exists) {
+        if (newReferralCount >= 2 && user.referralBonusUnlocked !== true && referrerRef && referrerSnap?.exists) {
             tx.update(referrerRef, {
               referCash: FieldValue.increment(5.0),
               referCashLocked: FieldValue.increment(-5.0),
