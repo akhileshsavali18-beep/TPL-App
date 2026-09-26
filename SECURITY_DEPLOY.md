@@ -10,7 +10,6 @@ The app now treats coins, cash balances, referral bonuses, spins, scratches, con
 - Spin/scratch counters and spin outcomes are generated server-side.
 - Coin conversion and withdrawals are atomic server transactions.
 - Referral bonus unlocking is server-side.
-- CPAlead rewards use `subid=uid`, `lead_id` idempotency and a Secret Manager postback password.
 - Firebase App Check with Android Play Integrity is enabled in the Flutter client and enforced by reward callables.
 - Storage banner uploads are admin-only and image/size validated.
 
@@ -37,7 +36,6 @@ Repository -> Settings -> Secrets and variables -> Actions.
 Add:
 
 - `FIREBASE_SERVICE_ACCOUNT`: Google Cloud service-account JSON that is allowed to deploy Firebase Functions/rules.
-- `CPALEAD_POSTBACK_SECRET`: a long random secret. Use the same value as the CPAlead postback password.
 
 Do not commit either value to the repository.
 
@@ -52,18 +50,7 @@ This deploys:
 - Firestore indexes
 - Storage rules
 
-The workflow also creates/updates the CPAlead Secret Manager secret.
-
-### 4. Configure CPAlead
-
-Use CPAlead's postback configuration with the deployed HTTPS function URL and:
-
 `subid={subid}&lead_id={lead_id}&payout={payout}&password={password}`
-
-The exact URL is shown by Firebase after deploying `cpaleadPostback`.
-
-CPAlead's current publisher documentation recommends passing your own user reference in `subid`, using `lead_id` for duplicate protection, `payout` as the reward input, and a shared postback password:
-https://www.cpalead.com/en/postback/documentation
 
 ## Important limitation
 
@@ -81,4 +68,3 @@ A generic Instagram/Telegram URL opening is not proof that the user actually fol
 8. Spin twice in one daily window: second attempt denied.
 9. Convert coins concurrently from two clients: only the valid atomic transaction succeeds.
 10. Submit a withdrawal: the server re-checks balance atomically so it cannot go negative.
-11. Replay the same CPAlead `lead_id`: no second reward.
