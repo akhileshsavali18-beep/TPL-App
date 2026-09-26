@@ -153,7 +153,7 @@ exports.initializeUser = onCall(callableOptions, async (request) => {
 
       tx.set(userRef, userData);
       if (referrerDoc) {
-        const logRef = db.collection("referral_logs").doc();
+        const logRef = db.collection("referral_logs").doc(uid);
         tx.set(logRef, {
           referrerUid: referrerDoc.id,
           referredUid: uid,
@@ -244,12 +244,10 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
     const claimRef = userRef.collection("task_claims").doc(taskId);
 
     const result = await db.runTransaction(async (tx) => {
-      const [taskSnap, userSnap, sessionSnap, claimSnap] = await Promise.all([
-        tx.get(taskRef),
-        tx.get(userRef),
-        tx.get(sessionRef),
-        tx.get(claimRef),
-      ]);
+      const taskSnap = await tx.get(taskRef);
+      const userSnap = await tx.get(userRef);
+      const sessionSnap = await tx.get(sessionRef);
+      const claimSnap = await tx.get(claimRef);
 
       if (!taskSnap.exists || taskSnap.data()?.isActive === false) {
         throw new HttpsError("not-found", "Task is not available.");
@@ -317,6 +315,8 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
       if (referredByUid && newReferralCount >= 2 && user.referralBonusUnlocked !== true) {
         const referrerRef = db.collection("users").doc(referredByUid);
         const referrerSnap = await tx.get(referrerRef);
+        const referralLogRef = db.collection("referral_logs").doc(uid);
+        const referralLogSnap = await tx.get(referralLogRef);
         if (referrerSnap.exists) {
           tx.update(referrerRef, {
             referCash: FieldValue.increment(5.0),
@@ -325,12 +325,8 @@ exports.completeSocialTask = onCall(callableOptions, async (request) => {
           tx.update(userRef, {
             referralBonusUnlocked: true,
           });
-          const logSnap = await db.collection("referral_logs")
-            .where("referredUid", "==", uid)
-            .limit(1)
-            .get();
-          if (!logSnap.empty) {
-            tx.update(logSnap.docs[0].ref, {
+          if (referralLogSnap.exists) {
+            tx.update(referralLogRef, {
               status: "unlocked",
               unlockedAt: FieldValue.serverTimestamp(),
             });
@@ -571,6 +567,8 @@ exports.cpaleadPostback = onRequest(async (req, res) => {
 
     const processedRef = db.collection("processed_leads").doc(leadId);
     const userRef = db.collection("users").doc(uid);
+    const offerwall = (await db.collection("settings").doc("offerwalls").get()).data() || {};
+    const coinsPerPayoutUnit = Math.max(1, Number(offerwall.coinsPerPayoutUnit ?? 100));
 
     await db.runTransaction(async (tx) => {
       const processed = await tx.get(processedRef);
@@ -578,11 +576,6 @@ exports.cpaleadPostback = onRequest(async (req, res) => {
 
       const user = await tx.get(userRef);
       if (!user.exists) throw new Error("user-not-found");
-
-      // CPAlead payout is USD by default in this app's offer display.
-      // Keep the conversion configurable in settings/offerwalls.
-      const offerwall = (await db.collection("settings").doc("offerwalls").get()).data() || {};
-      const coinsPerPayoutUnit = Math.max(1, Number(offerwall.coinsPerPayoutUnit ?? 100));
       const coins = Math.max(0, Math.round(payout * coinsPerPayoutUnit));
 
       tx.update(userRef, {
