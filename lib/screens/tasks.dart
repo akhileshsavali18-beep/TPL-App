@@ -96,8 +96,6 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     if (_completed[taskId] ?? false) return;
 
     final config = RemoteConfigService.instance;
-    // Social-task flow: LIVE interstitial must finish before the external
-    // Instagram/YouTube/Telegram task opens.
     if (config.interstitialEnabled && config.adsEnabled) {
       final adShown = await AdService.instance.showInterstitialAd(context: context);
       if (!adShown) {
@@ -131,25 +129,27 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     }
 
     if (!mounted || (_completed[taskId] ?? false)) return;
-    try {
-      final credited = await widget.onCompleteTask(taskId, title);
-      if (credited == null || credited <= 0) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Task could not be verified yet.')),
-          );
-        }
-        return;
-      }
-      setState(() => _completed[taskId] = true);
+
+    final credited = await widget.onCompleteTask(taskId, title);
+    if (!mounted) return;
+
+    if (credited == null || credited <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('🎉 +$credited Coins added for $title'),
+        const SnackBar(content: Text('Task could not be verified yet.')),
+      );
+      return;
+    }
+
+    setState(() => _completed[taskId] = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('🎉 +$credited Coins added for $title'),
         backgroundColor: const Color(0xFF00FF87),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
+
 
   void _playTickSound() {
     try {
@@ -171,7 +171,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     }
     AdService.instance.showRewardedAd(
       context: context,
-      onReward: _spinWheel,
+      onReward: () { _spinWheel(); },
       onFailed: () {},
     );
   }
