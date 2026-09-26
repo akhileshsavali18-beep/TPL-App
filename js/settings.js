@@ -2,7 +2,6 @@
 
 function loadSettings() {
   if (typeof db === 'undefined') return;
-  loadOfferwallSettings();
 
   db.collection('settings').doc('unity_ads').onSnapshot(doc => {
     const d = doc.exists ? doc.data() : {};
@@ -47,7 +46,7 @@ function loadSettings() {
     const d = doc.exists ? doc.data() : {};
     const set=(id,v)=>{const el=document.getElementById(id); if(el && v!==undefined && v!==null) el.value=Array.isArray(v)?v.join(', '):v;};
     const check=(id,v)=>{const el=document.getElementById(id); if(el && v!==undefined) el.checked=!!v;};
-    set('task-cpalead-share', d.cpaleadUserShare ?? 50);
+    set('task-offerwall-share', d.offerwallUserShare ?? 50);
     set('task-spin-unlock', d.spinUnlockTasks ?? 2);
     set('task-scratch-unlock', d.scratchUnlockTasks ?? 3);
     set('task-spin-rewards', d.spinRewards ?? [1,2,5,0,3,1]);
@@ -135,24 +134,10 @@ async function saveRewardedAdsConfig() {
   showToast('Rewarded-ad controls saved live!');
 }
 
-async function saveCpaleadConfig() {
-  const cpaleadActive = document.getElementById('cpaleadEnabled')?.checked ?? false;
-  const cpaleadPublisherId = document.getElementById('cpaleadPublisherId')?.value.trim() || '';
-  const cpaleadPostbackUrl = document.getElementById('cpaleadPostbackUrl')?.value.trim() || '';
-  const userShare = parseInt(document.getElementById('cpalead-user-share')?.value || '50') || 50;
-  const coinRate = parseInt(document.getElementById('cpalead-coin-rate')?.value || '100') || 100;
-  await db.collection('settings').doc('offerwalls').set({
-    cpaleadActive, cpaleadPublisherId, cpaleadPostbackUrl,
-    cpaleadUserShare: userShare, cpaleadCoinRate: coinRate,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, {merge:true});
-  showToast('CPAlead Backend settings saved live!');
-}
-
 async function saveTaskRewardRules() {
   const parseList = id => (document.getElementById(id)?.value || '').split(',').map(v=>parseInt(v.trim())).filter(v=>!Number.isNaN(v));
   const data = {
-    cpaleadUserShare: parseInt(document.getElementById('task-cpalead-share')?.value || '50') || 50,
+    offerwallUserShare: parseInt(document.getElementById('task-offerwall-share')?.value || '50') || 50,
     spinUnlockTasks: Math.max(1, parseInt(document.getElementById('task-spin-unlock')?.value || '2') || 2),
     scratchUnlockTasks: Math.max(1, parseInt(document.getElementById('task-scratch-unlock')?.value || '3') || 3),
     spinRewards: parseList('task-spin-rewards'),
@@ -201,16 +186,4 @@ async function saveAppControls() {
   };
   await db.collection('settings').doc('economy').set(data,{merge:true});
   showToast('App Controls saved live!');
-}
-
-function loadOfferwallSettings() {
-  if (typeof db === 'undefined') return;
-  db.collection('settings').doc('offerwalls').onSnapshot(doc => {
-    const d = doc.exists ? doc.data() : {};
-    const active=document.getElementById('cpaleadEnabled'); if(active) active.checked=d.cpaleadActive !== false;
-    const publisher=document.getElementById('cpaleadPublisherId'); if(publisher) publisher.value=d.cpaleadPublisherId || '';
-    const post=document.getElementById('cpaleadPostbackUrl'); if(post) post.value=d.cpaleadPostbackUrl || '';
-    const share=document.getElementById('cpalead-user-share'); if(share) share.value=d.cpaleadUserShare ?? 50;
-    const rate=document.getElementById('cpalead-coin-rate'); if(rate) rate.value=d.cpaleadCoinRate ?? 100;
-  });
 }
