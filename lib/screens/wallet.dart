@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/remote_config_service.dart';
 import '../services/security_api.dart';
+import '../services/ad_service.dart';
 import '../widgets/transaction_history.dart';
 import '../widgets/unity_banner_widget.dart';
 
@@ -130,6 +131,12 @@ class _WalletScreenState extends State<WalletScreen> {
         Colors.amber,
       );
       return;
+    }
+
+    final config = RemoteConfigService.instance;
+    if (config.adsEnabled && config.interstitialEnabled) {
+      final shown = await AdService.instance.showInterstitialAd(context: context);
+      if (!shown) return;
     }
 
     _amountController.text = '';
@@ -606,6 +613,11 @@ class _WalletScreenState extends State<WalletScreen> {
                           return;
                         }
                         Navigator.pop(ctx);
+                        final config = RemoteConfigService.instance;
+                        if (config.adsEnabled && config.interstitialEnabled) {
+                          final shown = await AdService.instance.showInterstitialAd(context: context);
+                          if (!shown) return;
+                        }
                         await _convertCoinsToCash();
                       },
                       style: ElevatedButton.styleFrom(
