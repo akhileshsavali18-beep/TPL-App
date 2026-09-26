@@ -53,6 +53,16 @@ class SecurityApi {
     return _call('completeSocialTask', {'taskId': taskId});
   }
 
+  Future<List<String>> getCompletedSocialTasks() async {
+    final result = await _call('getCompletedSocialTasks');
+    final raw = result['taskIds'];
+    if (raw is List) {
+      return raw.map((value) => value.toString()).toList();
+    }
+    return <String>[];
+  }
+
+
   Future<Map<String, dynamic>> claimSpin() {
     return _call('claimSpin');
   }
