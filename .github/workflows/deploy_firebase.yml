@@ -1,0 +1,36 @@
+name: Deploy TPL Firebase Backend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Install Functions dependencies
+        working-directory: functions
+        run: npm ci --omit=dev
+
+      - name: Deploy Functions, Firestore rules/indexes and Storage rules
+        run: |
+          firebase deploy             --project tpl-5bd9d             --only functions,firestore:rules,firestore:indexes,storage
