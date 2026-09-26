@@ -38,6 +38,13 @@ class SecurityApi {
     return (result['email'] ?? '').toString();
   }
 
+  Future<bool> validateReferralCode(String code) async {
+    final result = await _call('resolveReferralCode', {
+      'code': code.trim().toUpperCase(),
+    });
+    return result['valid'] == true;
+  }
+
   Future<Map<String, dynamic>> startSocialTask(String taskId) {
     return _call('startSocialTask', {'taskId': taskId});
   }
