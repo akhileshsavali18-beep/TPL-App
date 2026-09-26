@@ -172,6 +172,20 @@ exports.initializeUser = onCall(callableOptions, async (request) => {
   }
 });
 
+exports.resolveReferralCode = onCall(callableOptions, async (request) => {
+  try {
+    const code = cleanString(request.data?.code, 20).toUpperCase();
+    if (!code) return { valid: false };
+    const snap = await db.collection("users")
+      .where("referralCode", "==", code)
+      .limit(1)
+      .get();
+    return { valid: !snap.empty };
+  } catch (err) {
+    throw normalizeError(err);
+  }
+});
+
 exports.resolveUsername = onCall(
   { ...callableOptions, enforceAppCheck: true },
   async (request) => {
