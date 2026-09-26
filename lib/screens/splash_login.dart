@@ -112,47 +112,33 @@ class _SplashScreenState extends State<SplashScreen> {
     if (code.isEmpty) return;
 
     setState(() => _isCheckingInvite = true);
-
     try {
-      final snap = await FirebaseFirestore.instance
-          .collection('users')
-          .where('referralCode', isEqualTo: code)
-          .limit(1)
-          .get();
-
-      if (snap.docs.isNotEmpty) {
-        setState(() {
-          _isInviteValid = true;
-          _verifiedReferrerUid = snap.docs.first.id;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🎉 Valid Code! ₹5 bonus unlocks after 2 qualified tasks.'),
-              backgroundColor: Color(0xFF00FF87),
-            ),
-          );
-        }
-      } else {
-        setState(() {
-          _isInviteValid = false;
-          _verifiedReferrerUid = null;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invalid referral code. Please check.'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
+      final valid = await SecurityApi.instance.validateReferralCode(code);
+      setState(() {
+        _isInviteValid = valid;
+        _verifiedReferrerUid = valid ? 'server' : null;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(valid
+                ? '🎉 Valid Code! ₹5 bonus unlocks after 2 qualified tasks.'
+                : 'Invalid referral code. Please check.'),
+            backgroundColor: valid ? const Color(0xFF00FF87) : Colors.redAccent,
+          ),
+        );
       }
     } catch (e) {
-      debugPrint("Invite verify error: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Referral check failed: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isCheckingInvite = false);
     }
   }
+
 
   String _generateReferralCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -203,15 +189,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (_isLoginMode) {
         String emailForLogin = loginIdentifier;
         if (!loginIdentifier.contains('@')) {
-          final usernameSnap = await FirebaseFirestore.instance
-              .collection('users')
-              .where('usernameLower', isEqualTo: loginIdentifier.toLowerCase())
-              .limit(1)
-              .get();
-          if (usernameSnap.docs.isEmpty) {
-            throw FirebaseAuthException(code: 'user-not-found');
-          }
-          emailForLogin = (usernameSnap.docs.first.data()['email'] ?? '').toString();
+          emailForLogin = await SecurityApi.instance.resolveUsername(loginIdentifier);
           if (emailForLogin.isEmpty) {
             throw FirebaseAuthException(code: 'user-not-found');
           }
@@ -222,22 +200,6 @@ class _SplashScreenState extends State<SplashScreen> {
           password: password,
         );
       } else {
-        final usernameLower = username.toLowerCase();
-        final usernameSnap = await FirebaseFirestore.instance
-            .collection('users')
-            .where('usernameLower', isEqualTo: usernameLower)
-            .limit(1)
-            .get();
-        if (usernameSnap.docs.isNotEmpty) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Username already taken. Please choose another.')),
-            );
-          }
-          setState(() => _isLoading = false);
-          return;
-        }
-
         final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: loginIdentifier,
           password: password,
@@ -245,50 +207,23 @@ class _SplashScreenState extends State<SplashScreen> {
 
         final user = cred.user;
         if (user != null) {
-          final myReferralCode = _generateReferralCode();
-          final bool hasValidReferral = _isInviteValid && _verifiedReferrerUid != null;
-
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-            'uid': user.uid,
-            'email': loginIdentifier,
-            'displayName': username,
-            'coins': 0,
-            'taskCash': 0.0,
-            'referCash': 0.0,
-            'spinsLeft': 0,
-            'scratchLeft': 0,
-            'dailyBonusDate': null,
-            'dailyTaskProgress': 0,
-            'referralCode': myReferralCode,
-            'username': username,
-            'usernameLower': usernameLower,
-            'referredBy': hasValidReferral ? _inviteController.text.trim().toUpperCase() : null,
-            'referredByUid': hasValidReferral ? _verifiedReferrerUid : null,
-            'referralBonusLockedCash': hasValidReferral ? 5.0 : 0.0,
-            'referralBonusUnlocked': !hasValidReferral,
-            'referralTaskCount': 0,
-            'withdrawalCount': 0,
-            'streakClaimedToday': false,
-            'hasConvertedToday': false,
-            'hasTaskWithdrawnToday': false,
-            'hasReferWithdrawnToday': false,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-
-          if (hasValidReferral) {
-            await FirebaseFirestore.instance.collection('users').doc(_verifiedReferrerUid).update({
-              'referCashLocked': FieldValue.increment(5.0),
-            });
-
-            await FirebaseFirestore.instance.collection('referral_logs').add({
-              'referrerUid': _verifiedReferrerUid,
-              'referredUid': user.uid,
-              'referredEmail': loginIdentifier,
-              'bonusGiven': 5.0,
-              'status': 'locked',
-              'requiredTaskCount': 2,
-              'createdAt': FieldValue.serverTimestamp(),
-            });
+          final referralCode =
+              _isInviteValid ? _inviteController.text.trim().toUpperCase() : null;
+          try {
+            await SecurityApi.instance.initializeUser(
+              username: username,
+              email: loginIdentifier,
+              referralCode: referralCode,
+            );
+          } on FirebaseFunctionsException catch (e) {
+            // Account was created in Firebase Auth; sign out if secure
+            // server-side profile initialization fails so no half-created
+            // reward account can continue.
+            await FirebaseAuth.instance.signOut();
+            throw FirebaseAuthException(
+              code: e.code,
+              message: e.message,
+            );
           }
         }
       }
