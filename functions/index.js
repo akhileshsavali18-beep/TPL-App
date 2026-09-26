@@ -1,6 +1,7 @@
 const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { logger } = require("firebase-functions");
+const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const crypto = require("crypto");
@@ -17,6 +18,7 @@ const APP_ID = "1:940679131159:android:edd514726cb0bf645a2c52";
 const SOCIAL_MIN_SECONDS = 8;
 const SOCIAL_SESSION_MINUTES = 10;
 const WHEEL_REWARDS = [20, 2, 5, 0, 3, 1];
+const CPALEAD_POSTBACK_SECRET = defineSecret("CPALEAD_POSTBACK_SECRET");
 
 function requireAuth(request) {
   if (!request.auth?.uid) {
@@ -570,7 +572,9 @@ exports.requestWithdrawal = onCall(callableOptions, async (request) => {
 // CPAlead webhook: configure CPAlead to call this endpoint after a verified conversion.
 // It is intentionally idempotent and never trusts the mobile client for reward crediting.
 // Expected parameters: uid/subid, lead_id/transaction_id, payout/amount, optional secret.
-exports.cpaleadPostback = onRequest(async (req, res) => {
+exports.cpaleadPostback = onRequest(
+  { secrets: [CPALEAD_POSTBACK_SECRET] },
+  async (req, res) => {
   try {
     if (req.method !== "GET" && req.method !== "POST") {
       return res.status(405).send("Method Not Allowed");
@@ -585,11 +589,9 @@ exports.cpaleadPostback = onRequest(async (req, res) => {
       return res.status(400).send("invalid");
     }
 
-    // Optional secret. Store it in environment/secret configuration before enabling
-    // the webhook in production. If CPAlead sends a secret parameter, validate it here.
-    const configuredSecret = process.env.CPALEAD_POSTBACK_SECRET || "";
-    const suppliedSecret = cleanString(body.secret || body.token || "", 200);
-    if (configuredSecret && suppliedSecret !== configuredSecret) {
+    const configuredSecret = CPALEAD_POSTBACK_SECRET.value();
+    const suppliedSecret = cleanString(body.password || body.secret || body.token || "", 200);
+    if (!configuredSecret || suppliedSecret !== configuredSecret) {
       return res.status(403).send("forbidden");
     }
 
