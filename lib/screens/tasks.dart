@@ -32,6 +32,8 @@ class TasksTabScreen extends StatefulWidget {
 
 class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final Map<String, bool> _completed = {};
+  final Set<String> _completedTaskIds = <String>{};
+  final Set<String> _processingTaskIds = <String>{};
   late AnimationController _spinController;
   double _wheelAngle = 0;
   bool _spinning = false;
@@ -50,6 +52,24 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     WidgetsBinding.instance.addObserver(this);
     _spinController = AnimationController(vsync: this, duration: const Duration(milliseconds: 3200));
     _listenForCpaleadProgress();
+    _loadCompletedTasks();
+  }
+
+  Future<void> _loadCompletedTasks() async {
+    try {
+      final ids = await SecurityApi.instance.getCompletedSocialTasks();
+      if (!mounted) return;
+      setState(() {
+        _completedTaskIds
+          ..clear()
+          ..addAll(ids);
+        for (final id in ids) {
+          _completed[id] = true;
+        }
+      });
+    } catch (e) {
+      debugPrint('Completed social task load error: $e');
+    }
   }
 
   void _listenForCpaleadProgress() {
@@ -93,7 +113,9 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   }
 
   Future<void> _handleTask(String taskId, String title, int coins, String url) async {
-    if (_completed[taskId] ?? false) return;
+    if (_completedTaskIds.contains(taskId) || (_completed[taskId] ?? false)) return;
+    if (_processingTaskIds.contains(taskId)) return;
+    _processingTaskIds.add(taskId);
 
     final config = RemoteConfigService.instance;
     if (config.interstitialEnabled && config.adsEnabled) {
@@ -104,6 +126,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
             content: Text('Live ad is not available right now. Please try again.'),
           ));
         }
+        _processingTaskIds.remove(taskId);
         return;
       }
     }
@@ -116,6 +139,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
           SnackBar(content: Text('Could not start secure task: $e')),
         );
       }
+      _processingTaskIds.remove(taskId);
       return;
     }
 
@@ -124,23 +148,32 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
         await launchUrlString(url.trim(), mode: LaunchMode.externalApplication);
         await _waitForTaskReturn();
       } catch (_) {
+        _processingTaskIds.remove(taskId);
         return;
       }
     }
 
-    if (!mounted || (_completed[taskId] ?? false)) return;
+    if (!mounted || (_completedTaskIds.contains(taskId) || (_completed[taskId] ?? false))) {
+      _processingTaskIds.remove(taskId);
+      return;
+    }
 
     final credited = await widget.onCompleteTask(taskId, title);
     if (!mounted) return;
 
     if (credited == null || credited <= 0) {
+      _processingTaskIds.remove(taskId);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Task could not be verified yet.')),
       );
       return;
     }
 
-    setState(() => _completed[taskId] = true);
+    setState(() {
+      _completed[taskId] = true;
+      _completedTaskIds.add(taskId);
+    });
+    _processingTaskIds.remove(taskId);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('🎉 +$credited Coins added for $title'),
@@ -294,8 +327,11 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                   return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFF00FF87))));
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return _empty('No social tasks available right now.');
-                final tasks = snapshot.data!.docs.where((doc) => (doc.data() as Map<String, dynamic>)['isActive'] != false).toList();
-                if (tasks.isEmpty) return _empty('No social tasks available right now.');
+                final tasks = snapshot.data!.docs.where((doc) {
+                  final active = (doc.data() as Map<String, dynamic>)['isActive'] != false;
+                  return active && !_completedTaskIds.contains(doc.id);
+                }).toList();
+                if (tasks.isEmpty) return _empty('No new social tasks available right now.');
                 return ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -316,7 +352,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                         : lowerTitle.contains('youtube') || lowerTitle.contains('subscribe') ? 'youtube'
                         : lowerTitle.contains('telegram') || lowerTitle.contains('join') ? 'telegram'
                         : 'social';
-                    final done = _completed[doc.id] == true;
+                    const done = false;
                     return _socialCard(doc.id, title, subtitle, coins, url, platform, done);
                   },
                 );
