@@ -89,8 +89,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool hasConvertedToday = false;
   bool hasTaskWithdrawnToday = false;
   bool hasReferWithdrawnToday = false;
-  int spinsLeft = 3;
-  int scratchLeft = 2;
+  int spinsLeft = 0;
+  int scratchLeft = 0;
   bool streakClaimedToday = false;
 
   final List<String> coinHistory = [];
@@ -142,7 +142,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         final dailyDate = data['dailyBonusDate']?.toString() ?? '';
         final isToday = dailyDate == todayKey;
         setState(() {
-          coins = data['coins'] ?? 50;
+          coins = (data['coins'] as num?)?.toInt() ?? 0;
           taskCash = (data['taskCash'] ?? 0.0).toDouble();
           referCash = (data['referCash'] ?? 0.0).toDouble();
           savedUpiId = data['upiId'];
