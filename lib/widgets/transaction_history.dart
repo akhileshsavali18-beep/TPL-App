@@ -125,7 +125,7 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 8,
       child: Column(
         children: [
           const TabBar(
@@ -135,6 +135,10 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             indicatorColor: Color(0xFF00FF87),
             tabs: [
               Tab(text: 'All'),
+              Tab(text: 'CPAlead'),
+              Tab(text: 'Social'),
+              Tab(text: 'Spin'),
+              Tab(text: 'Scratch'),
               Tab(text: 'Coin'),
               Tab(text: 'Cash'),
               Tab(text: 'Refer'),
@@ -145,6 +149,10 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             child: TabBarView(
               children: [
                 _buildList(_items),
+                _buildList(_items.where((e) => e.category == 'cpalead').toList()),
+                _buildList(_items.where((e) => e.category == 'social').toList()),
+                _buildList(_items.where((e) => e.category == 'spin').toList()),
+                _buildList(_items.where((e) => e.category == 'scratch').toList()),
                 _buildList(_items.where((e) => e.category == 'coin').toList()),
                 _buildList(_items.where((e) => e.category == 'cash').toList()),
                 _buildList(_items.where((e) => e.category == 'refer').toList()),
@@ -171,12 +179,28 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
             ? Icons.swap_horiz
             : item.category == 'refer'
                 ? Icons.people_alt
-                : Icons.account_balance_wallet;
+                : item.category == 'cpalead'
+                    ? Icons.local_offer_rounded
+                    : item.category == 'social'
+                        ? Icons.groups_rounded
+                        : item.category == 'spin'
+                            ? Icons.rotate_right_rounded
+                            : item.category == 'scratch'
+                                ? Icons.confirmation_number_rounded
+                                : Icons.account_balance_wallet;
         final iconColor = item.category == 'coin'
             ? Colors.amber
             : item.category == 'refer'
                 ? Colors.purpleAccent
-                : const Color(0xFF00FF87);
+                : item.category == 'cpalead'
+                    ? Colors.orangeAccent
+                    : item.category == 'social'
+                        ? Colors.lightBlueAccent
+                        : item.category == 'spin'
+                            ? const Color(0xFF00FF87)
+                            : item.category == 'scratch'
+                                ? Colors.amberAccent
+                                : const Color(0xFF00FF87);
         final statusColor = item.status == 'success'
             ? const Color(0xFF00FF87)
             : item.status == 'failed'
