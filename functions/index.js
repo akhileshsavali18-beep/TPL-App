@@ -246,6 +246,20 @@ exports.startSocialTask = onCall(callableOptions, async (request) => {
   }
 });
 
+exports.getCompletedSocialTasks = onCall(callableOptions, async (request) => {
+  try {
+    const uid = requireAuth(request);
+    const snap = await db.collection("users").doc(uid)
+      .collection("task_claims")
+      .get();
+    return {
+      taskIds: snap.docs.map((doc) => doc.id),
+    };
+  } catch (err) {
+    throw normalizeError(err);
+  }
+});
+
 exports.completeSocialTask = onCall(callableOptions, async (request) => {
   try {
     const uid = requireAuth(request);
@@ -404,18 +418,16 @@ exports.claimSpin = onCall(callableOptions, async (request) => {
           ...(reward >= 20 ? { coins: FieldValue.increment(reward) } : {}),
         });
 
-        if (reward >= 20) {
-          tx.set(db.collection("transactions").doc(), {
-            uid,
-            category: "reward",
-            title: "Spin Bonus",
-            coins: reward,
-            amount: 0,
-            status: "success",
-            source: "spin",
-            createdAt: FieldValue.serverTimestamp(),
-          });
-        }
+        tx.set(db.collection("transactions").doc(), {
+          uid,
+          category: "spin",
+          title: reward >= 20 ? "Spin Bonus" : "Spin Result",
+          coins: reward,
+          amount: 0,
+          status: "success",
+          source: "spin",
+          createdAt: FieldValue.serverTimestamp(),
+        });
         return { reward, index, spinsLeft: spins - 1 };
       });
       return { ok: true, ...result };
@@ -449,6 +461,16 @@ exports.claimScratch = onCall(callableOptions, async (request) => {
           dailyBonusDate: todayKey(),
           scratchLeft: scratches - 1,
           lastScratchAt: FieldValue.serverTimestamp(),
+        });
+        tx.set(db.collection("transactions").doc(), {
+          uid,
+          category: "scratch",
+          title: "Scratch Card",
+          coins: 0,
+          amount: 0,
+          status: "success",
+          source: "scratch",
+          createdAt: FieldValue.serverTimestamp(),
         });
         return { scratchesLeft: scratches - 1 };
       });
@@ -623,7 +645,7 @@ exports.cpaleadPostback = onRequest(
 
       tx.set(db.collection("transactions").doc(), {
         uid,
-        category: "offer",
+        category: "cpalead",
         title: "CPAlead Offer Reward",
         coins,
         amount: 0,
