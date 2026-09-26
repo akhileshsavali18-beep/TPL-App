@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/remote_config_service.dart';
+import '../services/security_api.dart';
 import '../widgets/transaction_history.dart';
 import '../widgets/unity_banner_widget.dart';
 
@@ -85,13 +86,6 @@ class _WalletScreenState extends State<WalletScreen> {
   int get _cashMinimum => _cashWithdrawalCount == 0 ? 25 : 50;
 
   Future<void> _convertCoinsToCash() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final rate = RemoteConfigService.instance.coinRate > 0
-        ? RemoteConfigService.instance.coinRate
-        : 100;
-
     final raw = int.tryParse(_coinController.text.trim()) ?? 0;
 
     if (raw < 100) {
@@ -106,43 +100,21 @@ class _WalletScreenState extends State<WalletScreen> {
     setState(() => _isProcessing = true);
 
     try {
-      final cash = raw / rate;
-      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-      final transactionRef = FirebaseFirestore.instance.collection('transactions').doc();
-
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snap = await transaction.get(userRef);
-        final currentCoins = (snap.data()?['coins'] as num?)?.toInt() ?? 0;
-        if (currentCoins < raw) {
-          throw Exception('Insufficient coins.');
-        }
-
-        transaction.update(userRef, {
-          'coins': currentCoins - raw,
-          'taskCash': FieldValue.increment(cash),
-          'hasConvertedToday': true,
-        });
-
-        transaction.set(transactionRef, {
-          'uid': user.uid,
-          'category': 'coin',
-          'title': 'Coins to Cash',
-          'coins': raw,
-          'amount': cash,
-          'status': 'success',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      });
-
+      final result = await SecurityApi.instance.convertCoins(raw);
+      final cash = (result['cash'] as num?)?.toDouble() ?? 0.0;
       _coinController.clear();
       widget.onCoinsConverted();
-      _showMessage('Converted ' + raw.toString() + ' coins to ₹' + cash.toStringAsFixed(2) + '.', const Color(0xFF00FF87));
+      _showMessage(
+        'Converted $raw coins to ₹${cash.toStringAsFixed(2)}.',
+        const Color(0xFF00FF87),
+      );
     } catch (e) {
-      _showMessage('Conversion failed: ' + e.toString(), Colors.redAccent);
+      _showMessage('Conversion failed: $e', Colors.redAccent);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
+
 
   Future<void> _requestWithdrawal(bool isCash) async {
     final user = FirebaseAuth.instance.currentUser;
@@ -335,59 +307,31 @@ class _WalletScreenState extends State<WalletScreen> {
     required double amount,
     required String upi,
   }) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
     setState(() => _isProcessing = true);
 
     try {
-      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-      final withdrawalRef = FirebaseFirestore.instance.collection('withdrawals').doc();
+      await SecurityApi.instance.requestWithdrawal(
+        isCash: isCash,
+        amount: amount,
+        upi: upi,
+      );
 
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snap = await transaction.get(userRef);
-        final data = snap.data() ?? {};
-        final field = isCash ? 'taskCash' : 'referCash';
-        final balance = (data[field] as num?)?.toDouble() ?? 0.0;
-
-        if (balance < amount) {
-          throw Exception('Balance changed. Please try again.');
-        }
-
-        final updates = <String, dynamic>{
-          field: balance - amount,
-          'upiId': upi,
-        };
-        if (isCash) {
-          updates['cashWithdrawalCount'] = FieldValue.increment(1);
-        }
-
-        transaction.update(userRef, updates);
-        transaction.set(withdrawalRef, {
-          'uid': user.uid,
-          'userName': user.displayName ?? 'TPL Player',
-          'userEmail': user.email ?? '',
-          'upiId': upi,
-          'amount': amount,
-          'type': isCash ? 'Cash Balance' : 'Referral Balance',
-          'status': 'pending',
-          'mode': 'manual',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      });
-
-      if (isCash) {
+      if (isCash && mounted) {
         setState(() => _cashWithdrawalCount += 1);
       }
       _savedUpi = upi;
       _upiController.text = upi;
-      _showMessage('Withdrawal request placed. Status: Pending.', const Color(0xFF00FF87));
+      _showMessage(
+        'Withdrawal request placed. Status: Pending.',
+        const Color(0xFF00FF87),
+      );
     } catch (e) {
-      _showMessage('Withdrawal failed: ' + e.toString(), Colors.redAccent);
+      _showMessage('Withdrawal failed: $e', Colors.redAccent);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
+
 
   void _showMessage(String message, Color color) {
     if (!mounted) return;
