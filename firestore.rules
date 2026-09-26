@@ -1,0 +1,120 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.uid == "VsGSj7MPsoXIwLbBKPey4rV4Oxg1";
+    }
+
+    // Read-only configuration for signed-in app users; admin may write.
+    match /settings/{document=**} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /app_config/{document=**} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Tasks are administered from the web panel and read by signed-in users.
+    match /tasks/{taskId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /banners/{bannerId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /games/{gameId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // User documents are server-authoritative for all economy/security fields.
+    // Cloud Functions use the Admin SDK and bypass these client rules.
+    match /users/{userId} {
+      allow read: if signedIn()
+                  && (request.auth.uid == userId || isAdmin());
+      allow create: if false;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+
+      // User-owned notification UI may only change the read flag.
+      match /notifications/{notificationId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow update: if signedIn()
+                      && request.auth.uid == userId
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+                      && request.resource.data.read is bool;
+        allow create, delete: if isAdmin();
+      }
+
+      // Reward sessions/claims are server-only. No client can create or replay them.
+      match /task_sessions/{documentId} {
+        allow read, write: if false;
+      }
+
+      match /task_claims/{documentId} {
+        allow read, write: if false;
+      }
+
+      // No generic user subcollection writes. Add an explicit rule above for any
+      // future client-owned subcollection rather than opening this path broadly.
+      match /{subcollection}/{documentId} {
+        allow read, write: if false;
+      }
+    }
+
+    // Withdrawals are created only by the secure callable and managed by admin.
+    match /withdrawals/{withdrawalId} {
+      allow read: if signedIn()
+                  && (
+                    isAdmin()
+                    || resource.data.userId == request.auth.uid
+                    || resource.data.uid == request.auth.uid
+                  );
+      allow create: if false;
+      allow update, delete: if isAdmin();
+    }
+
+    // Wallet transaction ledger is server/admin written only.
+    match /transactions/{transactionId} {
+      allow read: if signedIn()
+                  && (
+                    isAdmin()
+                    || resource.data.userId == request.auth.uid
+                    || resource.data.uid == request.auth.uid
+                  );
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Referral logs are created/updated by Cloud Functions. A referrer can only
+    // query their own logs because the query must satisfy this condition.
+    match /referral_logs/{logId} {
+      allow read: if isAdmin()
+                  || (
+                    signedIn()
+                    && resource.data.referrerUid == request.auth.uid
+                  );
+      allow create, update, delete: if isAdmin();
+    }
+
+    // CPAlead idempotency ledger is never client-accessible.
+    match /processed_leads/{leadId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
