@@ -79,7 +79,17 @@ class _TransactionHistoryViewState extends State<TransactionHistoryView> {
 
       for (final doc in results[1].docs) {
         final data = doc.data();
-        final category = (data['category'] ?? 'coin').toString().toLowerCase();
+        final rawCategory = (data['category'] ?? 'coin').toString().toLowerCase();
+        final source = (data['source'] ?? '').toString().toLowerCase();
+        final category = source == 'cpalead_postback' || rawCategory == 'offer' || rawCategory == 'cpalead'
+            ? 'cpalead'
+            : source == 'social_task' || rawCategory == 'reward'
+                ? 'social'
+                : source == 'spin' || rawCategory == 'spin'
+                    ? 'spin'
+                    : source == 'scratch' || rawCategory == 'scratch'
+                        ? 'scratch'
+                        : rawCategory;
         final rawAmount = data['amount'];
         final amount = rawAmount is num ? rawAmount.toDouble() : double.tryParse(rawAmount.toString()) ?? 0;
         items.add(
