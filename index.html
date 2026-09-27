@@ -90,6 +90,24 @@
         .app-header { display: flex; align-items: center; gap: 18px; }
         .app-logo { width: 72px; height: 72px; border-radius: 16px; box-shadow: 0 6px 16px rgba(0, 255, 135, 0.15); border: 1px solid rgba(255, 255, 255, 0.1); object-fit: cover; }
         .app-info h3 { font-size: 22px; color: #FFFFFF; font-weight: 800; margin-bottom: 4px; }
+        .app-description { color: #94A3B8; font-size: 14.5px; line-height: 1.6; }
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            padding: 11px 18px;
+            border-radius: 10px;
+            background: #00FF87;
+            color: #06100B;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 800;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 6px 18px rgba(0, 255, 135, 0.18);
+        }
+        .download-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0, 255, 135, 0.28); }
+        .app-links { display: flex; flex-wrap: wrap; gap: 10px; }
         .app-category { color: #00FF87; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 
         .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 12px; }
@@ -158,36 +176,72 @@
         <p>A28 Technologies publishes modern mobile utilities and interactive digital reward platforms focused on user engagement, partner exploration, and transparent payout systems.</p>
     </section>
 
-    <!-- Featured Product (TPL) -->
+    <!-- Applications -->
     <section id="products" class="section">
-        <h2 class="section-title">Flagship Application: TPL (Task Premier League)</h2>
-        
+        <h2 class="section-title">Our Applications</h2>
+
+        <!-- TPL PRO -->
         <div class="app-card">
             <div class="app-header">
-                <img src="assets/images/logo.png" alt="TPL Logo" class="app-logo">
+                <img src="assets/images/logo.png" alt="TPL PRO Logo" class="app-logo">
                 <div class="app-info">
-                    <h3>Task Premier League (TPL)</h3>
+                    <h3>TPL PRO (Task Premier League)</h3>
                     <div class="app-category">Task Based Reward Platform</div>
                 </div>
             </div>
 
-            <p style="color: #94A3B8; font-size: 14.5px;">
-                TPL is a mobile application where users complete eligible digital tasks and earn rewards based on successfully completed activities. Users participate in promotional engagement activities, survey evaluations, and digital service discoveries.
+            <p class="app-description">
+                TPL PRO is a mobile application where users complete eligible digital tasks and earn rewards based on successfully completed activities.
             </p>
 
             <div class="features-grid">
                 <div class="feature-box">
                     <h4>📋 Digital Task Completion</h4>
-                    <p>Users engage in eligible digital activities, explore partner services, and submit verified completion steps.</p>
+                    <p>Users engage in eligible digital activities and submit verified completion steps.</p>
                 </div>
                 <div class="feature-box">
                     <h4>🔍 Activity Verification</h4>
-                    <p>Automated backend tracking validates task submissions against partner criteria before crediting points.</p>
+                    <p>Backend tracking validates task submissions against partner criteria before crediting rewards.</p>
                 </div>
                 <div class="feature-box">
-                    <h4>⚡ Manual UPI payouts</h4>
-                    <p>Verified reward earnings are paid manually to user-submitted UPI IDs after payout review.</p>
+                    <h4>⚡ Reward Payouts</h4>
+                    <p>Verified reward earnings are processed according to the platform's payout process.</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- APS TOOLS -->
+        <div class="app-card" style="margin-top: 22px;">
+            <div class="app-header">
+                <img src="https://raw.githubusercontent.com/akhileshsavali18-beep/Smarttoolkit/main/ic_launcher.png" alt="APS TOOLS Logo" class="app-logo">
+                <div class="app-info">
+                    <h3>APS TOOLS</h3>
+                    <div class="app-category">All-in-One Smart Utility Toolkit</div>
+                </div>
+            </div>
+
+            <p class="app-description">
+                APS TOOLS is an all-in-one Android utility app with practical tools for images, PDFs, QR & scanner tasks, finance, mathematics, text, daily utilities, health, science and device tools.
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-box">
+                    <h4>🛠️ 50+ Utility Tools</h4>
+                    <p>A broad collection of everyday tools organized into clear categories for quick access.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>📱 Mobile First</h4>
+                    <p>Designed for fast, simple use on Android devices.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🔒 Privacy Focused</h4>
+                    <p>Many utilities are designed to process user data locally on the device.</p>
+                </div>
+            </div>
+
+            <div class="app-links">
+                <a class="download-btn" href="https://github.com/akhileshsavali18-beep/Smarttoolkit/releases/download/v1.0.1/app-release.apk">⬇️ Download APS TOOLS APK</a>
+                <a class="download-btn" href="https://akhileshsavali18-beep.github.io/Smarttoolkit/">🌐 APS TOOLS Website</a>
             </div>
         </div>
     </section>
